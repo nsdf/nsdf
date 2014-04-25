@@ -162,7 +162,7 @@ class NSDFWriter(object):
         try:
             source_dim = self.uniform_map[population_name]
         except KeyError:
-            if not population:
+            if not sourcelist:
                 raise ValueError('No population specified and no existing dimension scale population with name `%s`'
                                  % (population_name))
             source_dim = None
@@ -172,9 +172,9 @@ class NSDFWriter(object):
         dataset = population.create_dataset(dataset_name, data=datalist, dtype=np.float64)
 
         if model is None:
-            model = self.model_population.create_dataset(population_name, dtype=h5.special_dtype(vlen=str), data=population)
+            model = self.model_population.create_dataset(population_name, dtype=h5.special_dtype(vlen=str), data=[str(src) for src in sourcelist])
         if source_dim is None:
-            source_dim = self.uniform_map.create_dataset(population_name, dtype=h5.special_dtype(vlen=str), data=population)
+            source_dim = self.uniform_map.create_dataset(population_name, dtype=h5.special_dtype(vlen=str), data=[str(src) for src in sourcelist])
             dataset.dims.create_scale(source_dim, 'source')
             dataset.dims[0].attach_scale(source_dim)
         if times:
@@ -188,7 +188,10 @@ class NSDFWriter(object):
         elif t_end is not None:
             dataset.attrs['t_start'] = t_start
             dataset.attrs['t_end'] = t_end
-            dataset.attrs['endpoint'] = endpoint
+            if endpoint:
+                dataset.attrs['endpoint'] = 1
+            else:
+                dataset.attrs['endpoint'] = 0
 
             
 # 
