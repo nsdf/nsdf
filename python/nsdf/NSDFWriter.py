@@ -131,13 +131,18 @@ class NSDFWriter(object):
             None
 
         Raises:
-            ValueError: Population size and dataset length do not match.
+            ValueError: sourcelist and dataset length do not match.
+                or population of name `population_name` exists but the length does not match 
+                or sourcelist is unspecified and no population of name `population_name` exists
+                or sourcelist is unspecified and no dimension scale of name `population_name` exists
+                or both `times` and `t_end` have been passed
+                or dataset already exists
 
         """
         if sourcelist and (len(sourcelist) != len(datalist)):
             raise ValueError('number of sources must match rows in datalist')
         if times and (t_end is not None):
-            raise ValueError('Only one of `times` or `t_end` can be specified.')
+            raise ValueError('only one of `times` or `t_end` can be specified.')
         if times and (len(times) != datalist.shape[1]):
             raise ValueError('number of time points specified must match number of columns in datalist')        
         try:
