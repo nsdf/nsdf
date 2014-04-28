@@ -47,7 +47,7 @@
 
 import h5py as h5
 import numpy as np
-
+from collections import Sequence
 
 class NSDFWriter(object):
     """Writer of NSDF files."""
@@ -78,7 +78,7 @@ class NSDFWriter(object):
                             t_start=0.0, t_end=None, endpoint=False,
                             unit=None,
                             t_unit=None):
-        """Add a uniformly distributed dataset to the file. 
+        """Add a uniformly sampled dataset to the file. 
 
         Save uniformly sampled dataset in the NSDF file. This will
         create the dataset under
@@ -220,6 +220,180 @@ class NSDFWriter(object):
         if t_unit is not None:
             dataset.dims[1].label = t_unit
             
+    def add_nonuniform_dataset(self, population_name, datalist,
+                               variable_name, times, dataset_names=None, 
+                               sourcelist=None,
+                               unit=None,
+                               t_unit=None):
+        """Add nonuniformly sampled dataset to the file. 
+
+        Save nonuniformly sampled dataset in the NSDF file. This has
+        two possible behaviours depending on the nature of dataset
+        name. 
+
+        If `dataset_names` is None, this will create a 2D dataset
+        /data/nonuniform/{population_name}/{variable_name}, first
+        creating the group {population_name} if not already present.
+        If `sourcelist` is specified, it will create a new dataset
+        containing the entries in `sourcelist` under
+        /model/population/{population_name} if required. It also
+        creates a dimension scale /map/nonuniform/{population_name}
+        and attaches this to the first dimension (rows) of the
+        dataset. If `times` is a single array, all rows in the dataset
+        share the same sampling times and the dataset is a fixed
+        length 2D array. `times` will be stored as a dimension scale
+        /map/time/nonuniform/{population_name}/{variable_name}
+        creating the group {population_name} if required and will
+        attach it to the second dimension (columns). On the other
+        hand, if each row in the dataset has different sampling times,
+        then times will be list of arrays not necessarily of the same
+        length. The dataset `dataset_name` in this case is a vlen
+        dataset. Then create a 2D vlen dataset
+        /map/time/nonuniform/{population_name} which has one to one
+        mapping with
+        /data/nonuniform/{population_name}/{variable_name}.
+
+        If `dataset_names` is a list of strings, we store each array
+        in datalist as a separate 1D dataset with the name taken from
+        the corresponding entry in `dataset_names` under
+        /data/nonuniform/{population_name}/{variable_name} group,
+        creating the it first if not already present. In this case, if
+        `times` is a single array, all datasets share the same
+        sampling times and we create a single dimension scale
+        /map/time/nonuniform/{population_name}/{variable_name} and
+        attach it to the first dimension of all the
+        datasets. Otherwise `times` must be a list of arrays with same
+        number of entries as in `datalist`. For each 1D dataset
+        {dataset_name} we create a 1D dimension scale containing the
+        corresponding array in `times` and attach the latter as a
+        dimension scale to the first dimension of the dataset.
+
+        Args:
+            population_name: string name for the source
+                population. A dataset of variable length strings is 
+                created under /model/population and /map/uniform 
+                unless a population of the same name already exists.
+                /map/uniform is turned into a dimension scale and is 
+                attached to the first (row) dimension of the dataset.
+                If a population of the same name exists in either or 
+                both locations, the size of the existing population 
+                must match the number of rows in the dataset. 
+                Otherwise a ValueError is raised.
+
+            datalist: a 2D numpy array of doubles (64 bit float). 
+
+            variable_name: string specifying the name of the variable
+                being recorded.
+        
+            times: float array of sampling times or a list of such
+                arrays, in which case it must match the datalist in all
+                dimensions.
+
+            sourcelist: list of string specifying the source object
+                identifiers. An object identifier can be any string.
+                If None or unspecified, a population with name 
+                `population_name` must already exist in 
+                `/model/population` as well as `/map/uniform`.
+                default: None
+
+            unit: (optional) string specifying the unit of the
+                quantity. If specified, this will be stored in the `UNIT`
+                attribute of the dataset.
+
+            t_unit: (optional) string specifying the unit of time in
+                sampling time. If specified, this is stored in the
+                label of the second dimension of the
+                dataset. Moreover, if a dimension scale is created for
+                sampling times, then that also gets this value in its
+                UNIT attribute.
+
+        # NOTE possible combinations
+        N - 1D data arrays, N - 1D time arrays (most generic)
+        N - 1D data arrays, 1 - 1D time array
+        1 - 2D data array, 1 - 1D time array
+        1 - 2D ragged data array, 1 - 2D ragged time array
+
+        TODO: This complicated design is to allow creating examples
+        according to different proposals for NSDF. Once we settle on a
+        specification, it should be simplified.
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: sourcelist and dataset length do not match.
+                or population of name `population_name` exists but the length does not match 
+                or sourcelist is unspecified and no population of name `population_name` exists
+                or sourcelist is unspecified and no dimension scale of name `population_name` exists
+                or both `times` and `t_end` have been passed
+                or dataset already exists
+
+        """
+        if sourcelist and (len(sourcelist) != len(datalist)):
+            raise ValueError('number of sources must match rows in datalist')            
+        shared_t = False if isinstance(times[0], Sequence) else True
+        if not shared_t:            
+            for t, data in zip(times, datalist):
+                if len(t) != len(data):
+                    raise ValueError('number of timepoints specified must match number of entries in data')
+        if dataset_names and (len(dataset_names) != len(datalist)):
+            raise ValueError('number of names must be same as that of datasets.')
+        try:
+            time_pop = self.nonuniform_time_dim[population_name]
+        except KeyError:
+            time_pop = self.nonuniform_time_dim.create_group(population_name)
+        try:
+            population = self.nonuniform_data[population_name]
+        except KeyError:
+            population = self.nonuniform_data.create_group(population_name)
+        try:
+            variable = population[variable_name]
+        except KeyError:
+            # N - 1D data + N - 1D times
+            if dataset_names:                
+                variable = population.create_group(variable_name)
+            else: #
+                if shared_t:    # fixed length dataset with one time dimscale
+                    variable = population.create_dataset(variable_name,
+                                                         data=datalist,
+                                                         dtype=np.float64)
+                    time_dim = time_pop.create_dataset(variable_name,
+                                                       data=times,
+                                                       dtype=np.float64)
+                    if t_unit:
+                        tdim.attrs['UNIT'] = t_unit
+                    variable.dims.create_scale(time_dim, 'time')
+                    variable.attach_scale(time_dim)
+                else:    # variable length dataset
+                    variable = population.create_dataset(variable_name,
+                                                         shape=len(datalist),
+                                                         dtype=h5.special_dtype(vlen=np.float32))    # TODO make this float64 once h5py bug is fixed
+                    time_dim = time_pop.create_dataset(variable_name, shape=len(datalist),
+                                                       dtype=h5.special_dtype(vlen=np.float32))    # TODO make this float64 once h5py bug is fixed
+                    if t_unit:
+                        tdim.attrs['UNIT'] = t_unit
+                    for ii in range(len(datalist)):                                    
+                        variable[ii, :] = data
+                        time_dim[ii, :] = times[ii]                
+        if isinstance(variable, h5.Group) and dataset_names:            
+            if shared_t:
+                time_dim = time_pop.create_dataset(variable_name, data=times,
+                                                   dtype=np.float64)
+                if t_unit:
+                    tdim.attrs['UNIT'] = t_unit
+            else:
+                time_dim = time_pop.create_group(variable_name)
+            for ii in range(len(dataset_names)):
+                name, data = dataset_names[ii], datalist[ii]
+                dataset = variable.create_dataset(name, data=data, dtype=np.float64)
+                if shared_t:
+                    tdim =time_dim
+                else:
+                    tdim = time_dim.create_dataset(name, data=times[ii], dtype=np.float64)
+                    if t_unit:
+                        tdim.attrs['UNIT'] = t_unit
+                dataset.dims.create_scale(tdim, 'time')
+                dataset.dims[0].attach_scale(tdim)
 
     def add_spiketrains(self, population_name, spiketrains,
                         dataset_names=None,
