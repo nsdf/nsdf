@@ -73,7 +73,7 @@ class NSDFWriter(object):
     def __del__(self):
         self._fd.close()
 
-    def add_uniform_dataset(self, population_name, dataset_name, datalist,
+    def add_uniform_dataset(self, population_name, datalist, dataset_name, 
                             sourcelist=None, times=None,
                             t_start=0.0, t_end=None, endpoint=False,
                             unit=None,

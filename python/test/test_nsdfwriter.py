@@ -80,15 +80,16 @@ if __name__ == '__main__':
     nsdf_writer = nsdf.writer(sys.argv[2])
     for cellclass, celldict in vm_dict.items():
         data_array = np.vstack(celldict.values())
-        nsdf_writer.add_uniform_dataset('%s_Vm' % (cellclass), 'Vm', data_array,
+        nsdf_writer.add_uniform_dataset('%s_Vm' % (cellclass), data_array, 'Vm',
                                         sourcelist=celldict.keys(),
                                         t_end=fd.attrs['simtime'])
     for cellclass, celldict in spike_dict.items():
         # Here we try to name the datasets by the index of the source
         # so that there is a one-to-one mapping between sourcelist and
         # datasets.
+        dataset_names = None if vlen else ['%d' % n for n in range(len(celldict))]
         nsdf_writer.add_spiketrains(cellclass, celldict.values(),
-                                    ['%d' % n for n in range(len(celldict))],
+                                    dataset_names,
                                     sourcelist=celldict.keys())
     
     
