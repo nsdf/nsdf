@@ -221,8 +221,9 @@ class NSDFWriter(object):
             dataset.dims[1].label = t_unit
             
 
-    def add_spiketrains(self, population_name, spiketrains, dataset_names,
-                        sourcelist=None, vlen=False):
+    def add_spiketrains(self, population_name, spiketrains,
+                        dataset_names=None,
+                        sourcelist=None, unit=None):
         """Add a list of spiketrains to the data.
 
         Add spiketrains listed in `spiketrains` under
@@ -246,6 +247,30 @@ class NSDFWriter(object):
         spiketrains as 2D vlen dataset:
         `/data/event/{population_name}/spike`, else as a series of 1D
         datasets under `/data/event/{population_name}/spike` group.
+
+        Args: 
+            population_name: string, name of the population from which
+                the spiketrains were recorded.
+
+            spiketrains: list of spiketrains where each spiketrain is
+                an sequence of floats representing spike times.
+
+            dataset_names: (optional) list of strings. If this is
+                specified then each spiketrain is stored as a 1D
+                dataset under the group
+                `/data/event/{population_name}/spike`. Otherwise, all
+                the spiketrains are stored as a 2D vlen dataset where
+                each row contains one spiketrain.
+
+            sourcelist: (optional) list of strings identifying the
+                source of each spike train. If unspecified, there must
+                be an entry for {population_name} under `/map/event`
+                with the same number of entries as in `spiketrains`. A
+                one-to-one correspondence is assumed between this and
+                the spiketrains.
+
+            unit: (optional) string specifying the unit of time used
+                in the spiketrains.
         """
         if sourcelist and (len(sourcelist) != len(spiketrains)):
             raise ValueError('number of sources must match rows in spiketrains')
@@ -278,16 +303,18 @@ class NSDFWriter(object):
             source_dim = None
         if population is None:
             population = self.event_data.create_group(population_name)
-        if vlen:
-            dtype = h5.special_dtype(vlen=np.float) # A bug in h5py prevents 64 bit float in vlen
-            spike = population.create_dataset('spike', data=spiketrains, dtype=dtype)
-        else:
+        if dataset_names:
             spike = population.create_group('spike')
             for name, data, src in zip(dataset_names, spiketrains, sourcelist):
                 spiketrain = spike.create_dataset(name, data=data, dtype=np.float64)
                 spiketrain.attrs['SOURCE'] = src
                 if unit is not None:
                     spiketrain.attrs['UNIT'] = unit
+        else:
+            dtype = h5.special_dtype(vlen='float32') # A bug in h5py prevents 64 bit float in vlen
+            spike = population.create_dataset('spike', shape=(len(spiketrains),), dtype=dtype)
+            for ii, train in enumerate(spiketrains):
+                spike[ii] = train
         if unit is not None :
             spike.attrs['UNIT'] = unit
         if model is None:
@@ -295,9 +322,11 @@ class NSDFWriter(object):
                                                          dtype=h5.special_dtype(vlen=str),
                                                          data=[str(src) for src in sourcelist])
         # TODO if spike is a group, we need to map the sources with
-        # their spiketrain datasets.
+        # their spiketrain datasets. One possibility is name the
+        # datasets with integers which represent the index of the
+        # source in sourcelist.
         if source_dim is None:
-            source_dim = self.uniform_map.create_dataset(population_name,
+            source_dim = self.event_map.create_dataset(population_name,
                                                          dtype=h5.special_dtype(vlen=str),
                                                          data=[str(src) for src in sourcelist])
             try:

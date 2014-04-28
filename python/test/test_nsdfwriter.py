@@ -60,22 +60,36 @@ import nsdf
 
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
+    if len(sys.argv) < 3:
         print """Usage: %s sourcefile targetfile
         convert sourcefile in dataviz format to targetfile in NSDF format.""" % (sys.argv[0])
         sys.exit(1)
+    if len(sys.argv) > 3:
+        vlen = eval(sys.argv[3])
     fd = h5.File(sys.argv[1], 'r')
     vm_dict = defaultdict(dict)
     for cellname, vm_array in fd['/Vm'].items():
         cellclass = cellname.split('_')[0]
         vm_dict[cellclass][cellname] = vm_array
+
+    spike_dict = defaultdict(dict)
+    for cellname, spiketrain in fd['/spikes'].items():
+        cellclass = cellname.split('_')[0]
+        spike_dict[cellclass][cellname] = spiketrain
         
     nsdf_writer = nsdf.writer(sys.argv[2])
     for cellclass, celldict in vm_dict.items():
         data_array = np.vstack(celldict.values())
-        nsdf_writer.add_uniform_dataset(cellclass, 'Vm', data_array,
+        nsdf_writer.add_uniform_dataset('%s_Vm' % (cellclass), 'Vm', data_array,
                                         sourcelist=celldict.keys(),
                                         t_end=fd.attrs['simtime'])
+    for cellclass, celldict in spike_dict.items():
+        # Here we try to name the datasets by the index of the source
+        # so that there is a one-to-one mapping between sourcelist and
+        # datasets.
+        nsdf_writer.add_spiketrains(cellclass, celldict.values(),
+                                    ['%d' % n for n in range(len(celldict))],
+                                    sourcelist=celldict.keys())
     
     
 
