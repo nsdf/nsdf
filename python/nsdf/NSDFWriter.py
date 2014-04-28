@@ -378,7 +378,9 @@ class NSDFWriter(object):
                         tdim.attrs['UNIT'] = t_unit
                     for ii in range(len(datalist)):                                    
                         variable[ii] = data
-                        time_dim[ii] = times[ii]                
+                        time_dim[ii] = times[ii]
+        if isinstance(variable, h5.Dataset) and unit:
+            variable.attrs['UNIT'] = unit
         if isinstance(variable, h5.Group) and dataset_names:            
             if shared_t:
                 time_dim = time_pop.create_dataset(variable_name, data=times,
@@ -390,6 +392,8 @@ class NSDFWriter(object):
             for ii in range(len(dataset_names)):
                 name, data = dataset_names[ii], datalist[ii]
                 dataset = variable.create_dataset(name, data=data, dtype=np.float64)
+                if unit:
+                    dataset.attrs['UNIT'] = unit
                 if shared_t:
                     tdim =time_dim
                 else:
@@ -397,7 +401,7 @@ class NSDFWriter(object):
                     if t_unit:
                         tdim.attrs['UNIT'] = t_unit
                 dataset.dims.create_scale(tdim, 'time')
-                dataset.dims[0].attach_scale(tdim)
+                dataset.dims[0].attach_scale(tdim)            
 
     def add_spiketrains(self, population_name, spiketrains,
                         dataset_names=None,
