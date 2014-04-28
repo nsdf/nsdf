@@ -363,6 +363,8 @@ class NSDFWriter(object):
         try:
             population = self.nonuniform_data[population_name]
         except KeyError:
+            if not sourcelist:
+                raise ValueError('either sourcelist should be specified or population must exist.')
             population = self.nonuniform_data.create_group(population_name)
         try:
             variable = population[variable_name]
@@ -408,15 +410,15 @@ class NSDFWriter(object):
             # of each variable
             source_group = self.nonuniform_map.create_group(population_name)
             source_dim = source_group.create_dataset(variable_name,
-                                                     shape=(len(datalist), 2),
-                                                     dtype=h5.special_dtype(vlen=str))
+                                                     shape=(len(datalist),),
+                                                     dtype=np.dtype([('source', 'S1024'), ('data', 'S1024')]))
             for ii in range(len(dataset_names)):
                 name, data = dataset_names[ii], datalist[ii]
                 dataset = variable.create_dataset(name, data=data, dtype=np.float64, **kwargs)
                 if unit:
                     dataset.attrs['UNIT'] = unit
                 dataset.attrs['source'] = sourcelist[ii]
-                source_dim[ii] = (str(sourcelist[ii]), str(dataset.name))                
+                source_dim[ii] = (str(sourcelist[ii]), str(dataset.name))
                 if shared_t:
                     tdim =time_dim
                 else:
@@ -530,11 +532,11 @@ class NSDFWriter(object):
                 source_group = self.event_map.create_group(population_name)
             else:
                 source_group = source_dim
-            source_dim = source_group.create_dataset(variable_name,
-                                                     shape=(len(dataset_names), 2),
-                                                     dtype=h5.special_dtype(vlen=str))
+            source_dim = source_group.create_dataset('spike',
+                                                     shape=(len(dataset_names),),
+                                                     dtype=np.dtype([('source', 'S1024'), ('data', 'S1024')]))
             spike = population.create_group('spike')
-            for ii in range(len(dataset_names):
+            for ii in range(len(dataset_names)):
                 name, data, src  = dataset_names[ii], spiketrains[ii], sourcelist[ii]
                 spiketrain = spike.create_dataset(name, data=data, dtype=np.float64, **kwargs)
                 spiketrain.attrs['SOURCE'] = src

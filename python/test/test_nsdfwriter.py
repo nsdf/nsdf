@@ -105,10 +105,11 @@ if __name__ == '__main__':
         nsdf_writer.add_nonuniform_dataset('%s_Vm' % (cellclass), data_array, 'Vm',
                                            times,
                                            dataset_names=dataset_names,
-                                        compression=compression,
-                                        compression_opts=compression_opts,
-                                        shuffle=shuffle,
-                                        fletcher32=fletcher32)
+                                           sourcelist=celldict.keys(),
+                                           compression=compression,
+                                           compression_opts=compression_opts,
+                                           shuffle=shuffle,
+                                           fletcher32=fletcher32)
     for cellclass, celldict in spike_dict.items():
         # Here we try to name the datasets by the index of the source
         # so that there is a one-to-one mapping between sourcelist and
