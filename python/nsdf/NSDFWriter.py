@@ -330,8 +330,12 @@ class NSDFWriter(object):
 
         """
         if sourcelist and (len(sourcelist) != len(datalist)):
-            raise ValueError('number of sources must match rows in datalist')            
-        shared_t = False if isinstance(times[0], Sequence) else True
+            raise ValueError('number of sources must match rows in datalist')
+        try:
+            iter(times[0])
+            shared_t = False
+        except TypeError:
+            shared_t = True
         if not shared_t:            
             for t, data in zip(times, datalist):
                 if len(t) != len(data):
@@ -366,15 +370,15 @@ class NSDFWriter(object):
                     variable.attach_scale(time_dim)
                 else:    # variable length dataset
                     variable = population.create_dataset(variable_name,
-                                                         shape=len(datalist),
-                                                         dtype=h5.special_dtype(vlen=np.float32))    # TODO make this float64 once h5py bug is fixed
-                    time_dim = time_pop.create_dataset(variable_name, shape=len(datalist),
-                                                       dtype=h5.special_dtype(vlen=np.float32))    # TODO make this float64 once h5py bug is fixed
+                                                         shape=(len(datalist),),
+                                                         dtype=h5.special_dtype(vlen='float32'))    # TODO make this float64 once h5py bug is fixed
+                    time_dim = time_pop.create_dataset(variable_name, shape=(len(datalist),),
+                                                       dtype=h5.special_dtype(vlen='float32'))    # TODO make this float64 once h5py bug is fixed
                     if t_unit:
                         tdim.attrs['UNIT'] = t_unit
                     for ii in range(len(datalist)):                                    
-                        variable[ii, :] = data
-                        time_dim[ii, :] = times[ii]                
+                        variable[ii] = data
+                        time_dim[ii] = times[ii]                
         if isinstance(variable, h5.Group) and dataset_names:            
             if shared_t:
                 time_dim = time_pop.create_dataset(variable_name, data=times,

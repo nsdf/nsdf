@@ -83,6 +83,12 @@ if __name__ == '__main__':
         nsdf_writer.add_uniform_dataset('%s_Vm' % (cellclass), data_array, 'Vm',
                                         sourcelist=celldict.keys(),
                                         t_end=fd.attrs['simtime'])
+        # The following is a dummy case with separate time arrays for each dataset - as if it were nonuniform data
+        dataset_names = None if vlen else celldict.keys()
+        times = [np.linspace(0, float(fd.attrs['simtime']), data_array.shape[1])] * data_array.shape[1]
+        nsdf_writer.add_nonuniform_dataset('%s_Vm' % (cellclass), data_array, 'Vm',
+                                           times,
+                                           dataset_names=dataset_names)
     for cellclass, celldict in spike_dict.items():
         # Here we try to name the datasets by the index of the source
         # so that there is a one-to-one mapping between sourcelist and
