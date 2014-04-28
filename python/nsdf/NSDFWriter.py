@@ -403,11 +403,20 @@ class NSDFWriter(object):
                     tdim.attrs['UNIT'] = t_unit
             else:
                 time_dim = time_pop.create_group(variable_name)
+            # this assumes the dataset names can be different for
+            # different variables and we need to store the full path
+            # of each variable
+            source_group = self.nonuniform_map.create_group(population_name)
+            source_dim = source_group.create_dataset(variable_name,
+                                                     shape=(len(datalist), 2),
+                                                     dtype=h5.special_dtype(vlen=str))
             for ii in range(len(dataset_names)):
                 name, data = dataset_names[ii], datalist[ii]
                 dataset = variable.create_dataset(name, data=data, dtype=np.float64, **kwargs)
                 if unit:
                     dataset.attrs['UNIT'] = unit
+                dataset.attrs['source'] = sourcelist[ii]
+                source_dim[ii] = (str(sourcelist[ii]), str(dataset.name))                
                 if shared_t:
                     tdim =time_dim
                 else:
@@ -517,12 +526,21 @@ class NSDFWriter(object):
         if population is None:
             population = self.event_data.create_group(population_name)
         if dataset_names:
+            if source_dim is None:
+                source_group = self.event_map.create_group(population_name)
+            else:
+                source_group = source_dim
+            source_dim = source_group.create_dataset(variable_name,
+                                                     shape=(len(dataset_names), 2),
+                                                     dtype=h5.special_dtype(vlen=str))
             spike = population.create_group('spike')
-            for name, data, src in zip(dataset_names, spiketrains, sourcelist):
+            for ii in range(len(dataset_names):
+                name, data, src  = dataset_names[ii], spiketrains[ii], sourcelist[ii]
                 spiketrain = spike.create_dataset(name, data=data, dtype=np.float64, **kwargs)
                 spiketrain.attrs['SOURCE'] = src
                 if unit is not None:
                     spiketrain.attrs['UNIT'] = unit
+                source_dim[ii] = (sourcelist[ii], spiketrain.name)
         else:
             dtype = h5.special_dtype(vlen='float32') # A bug in h5py prevents 64 bit float in vlen
             spike = population.create_dataset('spike', shape=(len(spiketrains),), dtype=dtype, **kwargs)
@@ -534,10 +552,11 @@ class NSDFWriter(object):
             model = self.model_population.create_dataset(population_name,
                                                          dtype=h5.special_dtype(vlen=str),
                                                          data=[str(src) for src in sourcelist], **kwargs)
-        # TODO if spike is a group, we need to map the sources with
-        # their spiketrain datasets. One possibility is name the
-        # datasets with integers which represent the index of the
-        # source in sourcelist.
+        # If spike is a group, we need to map the sources with their
+        # spiketrain datasets. One possibility is to name the datasets
+        # with integers which represent the index of the source in
+        # sourcelist. Another, more general way is to create a 2 column
+        # dataset mapping each source to its dataset.
         if source_dim is None:
             source_dim = self.event_map.create_dataset(population_name,
                                                          dtype=h5.special_dtype(vlen=str),
