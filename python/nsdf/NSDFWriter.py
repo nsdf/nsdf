@@ -51,9 +51,8 @@ from collections import Sequence
 
 class NSDFWriter(object):
     """Writer of NSDF files."""
-    def __init__(self, filename, prefer_vlen=False):
+    def __init__(self, filename):
         self._fd = h5.File(filename, 'w')
-        self.prefer_vlen = prefer_vlen
         self.data = self._fd.create_group('/data')
         self.model = self._fd.create_group('/model')
         self.map_ = self._fd.create_group('/map')
@@ -73,11 +72,8 @@ class NSDFWriter(object):
     def __del__(self):
         self._fd.close()
 
-    def add_uniform_dataset(self, population_name, datalist, dataset_name, 
-                            sourcelist=None, times=None,
-                            t_start=0.0, t_end=None, endpoint=False,
-                            unit=None,
-                            t_unit=None):
+    def add_uniform_dataset(self, population_name, datalist, dataset_name,
+                            **kwargs):
         """Add a uniformly sampled dataset to the file. 
 
         Save uniformly sampled dataset in the NSDF file. This will
@@ -141,6 +137,11 @@ class NSDFWriter(object):
                 dataset. Moreover, if a dimension scale is created for
                 sampling times, then that also gets this value in its
                 UNIT attribute.
+            
+            Any additional kwyord arguments are passed to
+            h5py.create_dataset as is. These can include
+            `compression`, `compression_opts`, `shuffle` and
+            `fletcher32`.
 
         Returns:
             None
@@ -154,6 +155,13 @@ class NSDFWriter(object):
                 or dataset already exists
 
         """
+        sourcelist = kwargs.pop('sourcelist', None)
+        times = kwargs.pop('times', None)
+        t_start = kwargs.pop('t_start', 0.0)
+        t_end = kwargs.pop('t_end', None)
+        endpoint = kwargs.pop('endpoint', False)
+        unit = kwargs.pop('unit', None)
+        t_unit = kwargs.pop('t_unit', None)
         if sourcelist and (len(sourcelist) != len(datalist)):
             raise ValueError('number of sources must match rows in datalist')
         if times and (t_end is not None):
@@ -189,18 +197,18 @@ class NSDFWriter(object):
         if population is None:
             population = self.uniform_data.create_group(population_name)
             
-        dataset = population.create_dataset(dataset_name, data=datalist, dtype=np.float64)
+        dataset = population.create_dataset(dataset_name, data=datalist, dtype=np.float64, **kwargs)
         if unit is not None:
             dataset.attrs['UNIT'] = unit
 
         if model is None:
             model = self.model_population.create_dataset(population_name,
                                                          dtype=h5.special_dtype(vlen=str),
-                                                         data=[str(src) for src in sourcelist])
+                                                         data=[str(src) for src in sourcelist], **kwargs)
         if source_dim is None:
             source_dim = self.uniform_map.create_dataset(population_name,
                                                          dtype=h5.special_dtype(vlen=str),
-                                                         data=[str(src) for src in sourcelist])
+                                                         data=[str(src) for src in sourcelist], **kwargs)
             dataset.dims.create_scale(source_dim, 'source')
             dataset.dims[0].attach_scale(source_dim)
         if times:
@@ -208,7 +216,7 @@ class NSDFWriter(object):
                 time_pop =  self.uniform_time_dim[population_name]
             except KeyError:
                 time_pop = self.uniform_time_dim.create_group(population_name)
-            time_dim = time_pop.create_dataset(dataset_name, data=times, dtype=np.float64)
+            time_dim = time_pop.create_dataset(dataset_name, data=times, dtype=np.float64, **kwargs)
             dataset.dims.create_scale(time_dim, 'time')
             dataset.dims[1].attach_scale(time_dim)
             if t_unit is not None:
@@ -221,10 +229,8 @@ class NSDFWriter(object):
             dataset.dims[1].label = t_unit
             
     def add_nonuniform_dataset(self, population_name, datalist,
-                               variable_name, times, dataset_names=None, 
-                               sourcelist=None,
-                               unit=None,
-                               t_unit=None):
+                               variable_name, times,
+                               **kwargs):
         """Add nonuniformly sampled dataset to the file. 
 
         Save nonuniformly sampled dataset in the NSDF file. This has
@@ -307,6 +313,11 @@ class NSDFWriter(object):
                 sampling times, then that also gets this value in its
                 UNIT attribute.
 
+            Any additional kwyord arguments are passed to
+            h5py.create_dataset as is. These can include
+            `compression`, `compression_opts`, `shuffle` and
+            `fletcher32`.
+
         # NOTE possible combinations
         N - 1D data arrays, N - 1D time arrays (most generic)
         N - 1D data arrays, 1 - 1D time array
@@ -325,10 +336,13 @@ class NSDFWriter(object):
                 or population of name `population_name` exists but the length does not match 
                 or sourcelist is unspecified and no population of name `population_name` exists
                 or sourcelist is unspecified and no dimension scale of name `population_name` exists
-                or both `times` and `t_end` have been passed
                 or dataset already exists
 
         """
+        dataset_names = kwargs.pop('dataset_names', None)
+        sourcelist = kwargs.pop('sourcelist', None)
+        unit = kwargs.pop('unit', None)
+        t_unit = kwargs.pop('t_unit', None)
         if sourcelist and (len(sourcelist) != len(datalist)):
             raise ValueError('number of sources must match rows in datalist')
         try:
@@ -360,10 +374,10 @@ class NSDFWriter(object):
                 if shared_t:    # fixed length dataset with one time dimscale
                     variable = population.create_dataset(variable_name,
                                                          data=datalist,
-                                                         dtype=np.float64)
+                                                         dtype=np.float64, **kwargs)
                     time_dim = time_pop.create_dataset(variable_name,
                                                        data=times,
-                                                       dtype=np.float64)
+                                                       dtype=np.float64, **kwargs)
                     if t_unit:
                         tdim.attrs['UNIT'] = t_unit
                     variable.dims.create_scale(time_dim, 'time')
@@ -371,9 +385,9 @@ class NSDFWriter(object):
                 else:    # variable length dataset
                     variable = population.create_dataset(variable_name,
                                                          shape=(len(datalist),),
-                                                         dtype=h5.special_dtype(vlen='float32'))    # TODO make this float64 once h5py bug is fixed
+                                                         dtype=h5.special_dtype(vlen='float32'), **kwargs)    # TODO make this float64 once h5py bug is fixed
                     time_dim = time_pop.create_dataset(variable_name, shape=(len(datalist),),
-                                                       dtype=h5.special_dtype(vlen='float32'))    # TODO make this float64 once h5py bug is fixed
+                                                       dtype=h5.special_dtype(vlen='float32'), **kwargs)    # TODO make this float64 once h5py bug is fixed
                     if t_unit:
                         tdim.attrs['UNIT'] = t_unit
                     for ii in range(len(datalist)):                                    
@@ -384,28 +398,28 @@ class NSDFWriter(object):
         if isinstance(variable, h5.Group) and dataset_names:            
             if shared_t:
                 time_dim = time_pop.create_dataset(variable_name, data=times,
-                                                   dtype=np.float64)
+                                                   dtype=np.float64, **kwargs)
                 if t_unit:
                     tdim.attrs['UNIT'] = t_unit
             else:
                 time_dim = time_pop.create_group(variable_name)
             for ii in range(len(dataset_names)):
                 name, data = dataset_names[ii], datalist[ii]
-                dataset = variable.create_dataset(name, data=data, dtype=np.float64)
+                dataset = variable.create_dataset(name, data=data, dtype=np.float64, **kwargs)
                 if unit:
                     dataset.attrs['UNIT'] = unit
                 if shared_t:
                     tdim =time_dim
                 else:
-                    tdim = time_dim.create_dataset(name, data=times[ii], dtype=np.float64)
+                    tdim = time_dim.create_dataset(name, data=times[ii], dtype=np.float64, **kwargs)
                     if t_unit:
                         tdim.attrs['UNIT'] = t_unit
                 dataset.dims.create_scale(tdim, 'time')
                 dataset.dims[0].attach_scale(tdim)            
 
-    def add_spiketrains(self, population_name, spiketrains,
-                        dataset_names=None,
-                        sourcelist=None, unit=None):
+    def add_spiketrains(self, population_name,
+                        spiketrains,
+                        **kwargs):
         """Add a list of spiketrains to the data.
 
         Add spiketrains listed in `spiketrains` under
@@ -453,7 +467,24 @@ class NSDFWriter(object):
 
             unit: (optional) string specifying the unit of time used
                 in the spiketrains.
+
+            Any additional kwyord arguments are passed to
+            h5py.create_dataset as is. These can include
+            `compression`, `compression_opts`, `shuffle` and
+            `fletcher32`.
+
+        Returns: None
+
+        Raises: 
+            ValueError: if number of sources do not match that of spiketrains.
+                        the group `/data/event/{population_name}/spie` alreadt exists.
+                        the dataset `/model/population/{population_name}` exists but has different length from the number of spiketrains.
+                        population `population_name` does not exist and no `sourcelist` was specified.
+        
         """
+        dataset_names = kwargs.pop('dataset_names', None)
+        sourcelist = kwargs.pop('sourcelist', None)
+        unit = kwargs.pop('unit', None)
         if sourcelist and (len(sourcelist) != len(spiketrains)):
             raise ValueError('number of sources must match rows in spiketrains')
         try:
@@ -488,13 +519,13 @@ class NSDFWriter(object):
         if dataset_names:
             spike = population.create_group('spike')
             for name, data, src in zip(dataset_names, spiketrains, sourcelist):
-                spiketrain = spike.create_dataset(name, data=data, dtype=np.float64)
+                spiketrain = spike.create_dataset(name, data=data, dtype=np.float64, **kwargs)
                 spiketrain.attrs['SOURCE'] = src
                 if unit is not None:
                     spiketrain.attrs['UNIT'] = unit
         else:
             dtype = h5.special_dtype(vlen='float32') # A bug in h5py prevents 64 bit float in vlen
-            spike = population.create_dataset('spike', shape=(len(spiketrains),), dtype=dtype)
+            spike = population.create_dataset('spike', shape=(len(spiketrains),), dtype=dtype, **kwargs)
             for ii, train in enumerate(spiketrains):
                 spike[ii] = train
         if unit is not None :
@@ -502,7 +533,7 @@ class NSDFWriter(object):
         if model is None:
             model = self.model_population.create_dataset(population_name,
                                                          dtype=h5.special_dtype(vlen=str),
-                                                         data=[str(src) for src in sourcelist])
+                                                         data=[str(src) for src in sourcelist], **kwargs)
         # TODO if spike is a group, we need to map the sources with
         # their spiketrain datasets. One possibility is name the
         # datasets with integers which represent the index of the
@@ -510,7 +541,8 @@ class NSDFWriter(object):
         if source_dim is None:
             source_dim = self.event_map.create_dataset(population_name,
                                                          dtype=h5.special_dtype(vlen=str),
-                                                         data=[str(src) for src in sourcelist])
+                                                         data=[str(src) for src in sourcelist],
+                                                       **kwargs)
             try:
                 spike.dims.create_scale(source_dim, 'source')
                 spike.dims[0].attach_scale(source_dim)

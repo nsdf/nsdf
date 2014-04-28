@@ -58,14 +58,26 @@ import h5py as h5
 sys.path.append('..')
 import nsdf
 
-
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print """Usage: %s sourcefile targetfile
+        print """Usage: %s sourcefile targetfile {vlen} {compress}
         convert sourcefile in dataviz format to targetfile in NSDF format.""" % (sys.argv[0])
         sys.exit(1)
     if len(sys.argv) > 3:
         vlen = eval(sys.argv[3])
+    else:
+        vlen = False
+    if (len(sys.argv) > 4) and eval(sys.argv[4]):
+        compression = 'gzip'
+        compression_opts = 6
+        fletcher32 = True
+        shuffle = True
+    else:
+        compression = None
+        compression_opts = None
+        fletcher32 = False
+        shuffle = False
+        
     fd = h5.File(sys.argv[1], 'r')
     vm_dict = defaultdict(dict)
     for cellname, vm_array in fd['/Vm'].items():
@@ -82,21 +94,34 @@ if __name__ == '__main__':
         data_array = np.vstack(celldict.values())
         nsdf_writer.add_uniform_dataset('%s_Vm' % (cellclass), data_array, 'Vm',
                                         sourcelist=celldict.keys(),
-                                        t_end=fd.attrs['simtime'])
+                                        t_end=fd.attrs['simtime'],
+                                        compression=compression,
+                                        compression_opts=compression_opts,
+                                        shuffle=shuffle,
+                                        fletcher32=fletcher32)
         # The following is a dummy case with separate time arrays for each dataset - as if it were nonuniform data
         dataset_names = None if vlen else celldict.keys()
         times = [np.linspace(0, float(fd.attrs['simtime']), data_array.shape[1])] * data_array.shape[1]
         nsdf_writer.add_nonuniform_dataset('%s_Vm' % (cellclass), data_array, 'Vm',
                                            times,
-                                           dataset_names=dataset_names)
+                                           dataset_names=dataset_names,
+                                        compression=compression,
+                                        compression_opts=compression_opts,
+                                        shuffle=shuffle,
+                                        fletcher32=fletcher32)
     for cellclass, celldict in spike_dict.items():
         # Here we try to name the datasets by the index of the source
         # so that there is a one-to-one mapping between sourcelist and
         # datasets.
         dataset_names = None if vlen else ['%d' % n for n in range(len(celldict))]
-        nsdf_writer.add_spiketrains(cellclass, celldict.values(),
-                                    dataset_names,
-                                    sourcelist=celldict.keys())
+        nsdf_writer.add_spiketrains(cellclass,
+                                    celldict.values(),
+                                    dataset_names=dataset_names,
+                                    sourcelist=celldict.keys(), 
+                                        compression=compression,
+                                        compression_opts=compression_opts,
+                                        shuffle=shuffle,
+                                        fletcher32=fletcher32)
     
     
 
