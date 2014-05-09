@@ -323,6 +323,7 @@ class NSDFWriter(object):
         N - 1D data arrays, 1 - 1D time array
         1 - 2D data array, 1 - 1D time array
         1 - 2D ragged data array, 1 - 2D ragged time array
+        1 - 2D data array with NaN filling the extra columns.
 
         TODO: This complicated design is to allow creating examples
         according to different proposals for NSDF. Once we settle on a
@@ -544,12 +545,10 @@ class NSDFWriter(object):
                     spiketrain.attrs['UNIT'] = unit
                 source_dim[ii] = (sourcelist[ii], spiketrain.name)
         else:
-            # dtype = h5.special_dtype(vlen='float32') # A bug in h5py prevents 64 bit float in vlen
-            dtype = 'float64'
-            spike = population.create_dataset('spike', shape=(len(spiketrains),max([len(train) for train in spiketrains])), dtype=dtype, **kwargs)
+            dtype = h5.special_dtype(vlen='float32') # A bug in h5py prevents 64 bit float in vlen
+            spike = population.create_dataset('spike', shape=(len(spiketrains),), dtype=dtype, **kwargs)
             for ii, train in enumerate(spiketrains):
-                spike[ii,:len(train)] = train[:]
-                spike[ii,len(train):] = np.nan
+                spike[ii,:] = train
         if unit is not None :
             spike.attrs['UNIT'] = unit
         if model is None:
