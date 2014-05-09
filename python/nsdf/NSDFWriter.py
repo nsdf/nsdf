@@ -544,10 +544,12 @@ class NSDFWriter(object):
                     spiketrain.attrs['UNIT'] = unit
                 source_dim[ii] = (sourcelist[ii], spiketrain.name)
         else:
-            dtype = h5.special_dtype(vlen='float32') # A bug in h5py prevents 64 bit float in vlen
-            spike = population.create_dataset('spike', shape=(len(spiketrains),), dtype=dtype, **kwargs)
+            # dtype = h5.special_dtype(vlen='float32') # A bug in h5py prevents 64 bit float in vlen
+            dtype = 'float64'
+            spike = population.create_dataset('spike', shape=(len(spiketrains),max([len(train) for train in spiketrains])), dtype=dtype, **kwargs)
             for ii, train in enumerate(spiketrains):
-                spike[ii] = train
+                spike[ii,:len(train)] = train[:]
+                spike[ii,len(train):] = np.nan
         if unit is not None :
             spike.attrs['UNIT'] = unit
         if model is None:
