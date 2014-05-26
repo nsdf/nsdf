@@ -63,13 +63,13 @@ if __name__ == '__main__':
     random.shuffle(seq)
     for ii in seq:
         if ii < 10:
-            subprocess.call(['python', '-m', 'cProfile', '-o', 'uncompressed_%d.prof' % (ii), 'test_nsdfwriter.py', sourcefile, os.path.join('/data', 'subha', 'tmp', 'nan_uncompressed_%d_%s' % (ii, targetfilebase)), 'False', 'False'])
+            subprocess.call(['python', '-m', 'cProfile', '-o', 'uncompressed_%d.prof' % (ii), 'test_nsdfwriter.py', sourcefile, os.path.join('/data', 'subha', 'tmp', 'uncompressed_%d_%s' % (ii, targetfilebase)), 'False', 'False'])
         elif ii < 20:
-            subprocess.call(['python', '-m', 'cProfile', '-o', 'compressed_%d.prof' % (ii-10), 'test_nsdfwriter.py', sourcefile, os.path.join('/data', 'subha', 'tmp', 'nan_compressed_%d_%s' % (ii-10, targetfilebase)), 'False', 'True'])
+            subprocess.call(['python', '-m', 'cProfile', '-o', 'compressed_%d.prof' % (ii-10), 'test_nsdfwriter.py', sourcefile, os.path.join('/data', 'subha', 'tmp', 'compressed_%d_%s' % (ii-10, targetfilebase)), 'False', 'True'])
         elif ii < 30:
-            subprocess.call(['python', '-m', 'cProfile', '-o', 'vlen_compressed_%d.prof' % (ii-10), 'test_nsdfwriter.py', sourcefile, os.path.join('/data', 'subha', 'tmp', 'nan_compressed_%d_%s' % (ii-10, targetfilebase)), 'True', 'True'])
+            subprocess.call(['python', '-m', 'cProfile', '-o', 'vlen_compressed_%d.prof' % (ii-10), 'test_nsdfwriter.py', sourcefile, os.path.join('/data', 'subha', 'tmp', 'vlen_compressed_%d_%s' % (ii-20, targetfilebase)), 'True', 'True'])
         else:
-            subprocess.call(['python', '-m', 'cProfile', '-o', 'vlen_compressed_%d.prof' % (ii-10), 'test_nsdfwriter.py', sourcefile, os.path.join('/data', 'subha', 'tmp', 'nan_compressed_%d_%s' % (ii-10, targetfilebase)), 'True', 'True'])
+            subprocess.call(['python', '-m', 'cProfile', '-o', 'vlen_compressed_%d.prof' % (ii-10), 'test_nsdfwriter.py', sourcefile, os.path.join('/data', 'subha', 'tmp', 'vlen_compressed_%d_%s' % (ii-30, targetfilebase)), 'True', 'True'])
 
 
 
