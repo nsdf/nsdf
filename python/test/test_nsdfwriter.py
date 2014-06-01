@@ -104,7 +104,7 @@ if __name__ == '__main__':
                                         shuffle=shuffle,
                                         fletcher32=fletcher32)
         # The following is a dummy case with separate time arrays for each dataset - as if it were nonuniform data
-        dataset_names = None if vlen else celldict.keys()
+        dataset_names = None if dialect != '1d' else celldict.keys()
         times = [np.linspace(0, float(fd.attrs['simtime']), data_array.shape[1])] * data_array.shape[1]
         nsdf_writer.add_nonuniform_dataset('%s_Vm' % (cellclass), data_array, 'Vm',
                                            times,
@@ -120,7 +120,7 @@ if __name__ == '__main__':
         # Here we try to name the datasets by the index of the source
         # so that there is a one-to-one mapping between sourcelist and
         # datasets.
-        dataset_names = None if vlen else ['%d' % n for n in range(len(celldict))]
+        dataset_names = None if dialect != '1d' else ['%d' % n for n in range(len(celldict))]
         nsdf_writer.add_spiketrains(cellclass,
                                     celldict.values(),
                                     dataset_names=dataset_names,
@@ -133,7 +133,7 @@ if __name__ == '__main__':
                                     fletcher32=fletcher32)
     tend = datetime.now()
     dt = tend - tstart
-    print 'time to write entire file: %d s', % (dt.days * 86400 + dt.seconds + 1e-6 * dt.microseconds)
+    print 'time to write entire file: %g s' % (dt.days * 86400 + dt.seconds + 1e-6 * dt.microseconds)
     
     
 

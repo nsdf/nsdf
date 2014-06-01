@@ -446,7 +446,7 @@ class NSDFWriter(object):
                                                      shape=(len(datalist),),
                                                      dtype=np.dtype([('source', 'S1024'), ('data', 'S1024')]),
                                                      **kwargs)
-            if dataset_name is None:
+            if dataset_names is None:
                 dataset_names = [str(ii) for ii in range(len(datalist))]
             for ii in range(len(datalist)):
                 name, data = dataset_names[ii], datalist[ii]
@@ -605,7 +605,7 @@ class NSDFWriter(object):
                                               shape=(len(spiketrains), max([len(train) for train in spiketrains])),
                                               dtype=dtype, **kwargs)
             for ii, train in enumerate(spiketrains):
-                spike[ii] = train
+                spike[ii, : len(train)] = train
                 spike[ii,len(train):] = np.nan
             
         else: # dialect == '1d':

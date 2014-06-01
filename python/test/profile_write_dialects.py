@@ -68,9 +68,9 @@ if __name__ == '__main__':
         elif ii < 40:
             subprocess.call(['python', '-m', 'cProfile', '-o', 'vlen_compressed_%d.prof' % (ii-30), 'test_nsdfwriter.py', sourcefile, os.path.join('/data', 'subha', 'tmp', 'vlen_compressed_%d_%s' % (ii-30, targetfilebase)), 'vlen', 'True'])
         elif ii < 50:
-            subprocess.call(['python', '-m', 'cProfile', '-o', 'nan_compressed_%d.prof' % (ii-30), 'test_nsdfwriter.py', sourcefile, os.path.join('/data', 'subha', 'tmp', 'nan_uncompressed_%d_%s' % (ii-30, targetfilebase)), 'nan', 'False'])
+            subprocess.call(['python', '-m', 'cProfile', '-o', 'nan_compressed_%d.prof' % (ii-40), 'test_nsdfwriter.py', sourcefile, os.path.join('/data', 'subha', 'tmp', 'nan_uncompressed_%d_%s' % (ii-30, targetfilebase)), 'nan', 'False'])
         else:
-            subprocess.call(['python', '-m', 'cProfile', '-o', 'nan_compressed_%d.prof' % (ii-30), 'test_nsdfwriter.py', sourcefile, os.path.join('/data', 'subha', 'tmp', 'nan_compressed_%d_%s' % (ii-30, targetfilebase)), 'nan', 'True'])
+            subprocess.call(['python', '-m', 'cProfile', '-o', 'nan_compressed_%d.prof' % (ii-50), 'test_nsdfwriter.py', sourcefile, os.path.join('/data', 'subha', 'tmp', 'nan_compressed_%d_%s' % (ii-30, targetfilebase)), 'nan', 'True'])
 
 
 
