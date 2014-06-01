@@ -55,19 +55,14 @@ sourcefile = '/data/subha/rsync_ghevar_cortical_data_clone/2012_05_22/data_20120
 targetfilebase = os.path.basename(sourcefile)
 repeats = 10
 
-# I have NaN in a separate branch - for a rough profile I am not
-# worrying about the sequence of execution between NaN and orther
-# variations
 if __name__ == '__main__':
     count_nan_uncompressed = 0
     count_nan_compressed = 0
-    seq = range(2 * repeats)
-    random.shuffle(seq)
-    for ii in seq:
+    for ii in random.shuffle(range(2*repeats)):
         if ii < 10:
-            subprocess.call(['python', '-m', 'cProfile', '-o', 'nan_uncompressed_%d.prof' % (ii), 'test_nsdfwriter.py', sourcefile, os.path.join('/data', 'subha', 'tmp', 'nan_uncompressed_%d_%s' % (ii, targetfilebase)), 'False', 'False'])
+            subprocess.call(['python', '-m', 'cProfile', '-o', 'nan_uncompressed_%d.prof' % (ii), 'test_nsdfwriter.py', sourcefile, os.path.join('/tmp', 'nan_uncompressed_%d_%s' % (ii, targetfilebase)), 'False', 'False'])
         else:
-            subprocess.call(['python', '-m', 'cProfile', '-o', 'nan_compressed_%d.prof' % (ii-10), 'test_nsdfwriter.py', sourcefile, os.path.join('/data', 'subha', 'tmp', 'nan_compressed_%d_%s' % (ii-10, targetfilebase)), 'False', 'True'])
+            subprocess.call(['python', '-m', 'cProfile', '-o', 'nan_compressed_%d.prof' % (ii-10), 'test_nsdfwriter.py', sourcefile, os.path.join('/tmp', 'nan_compressed_%d_%s' % (ii-10, targetfilebase)), 'False', 'True'])
 
 
 

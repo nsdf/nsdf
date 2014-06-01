@@ -57,16 +57,19 @@ import numpy as np
 import h5py as h5
 sys.path.append('..')
 import nsdf
+from datetime import datetime
+
+dtype=np.float32
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print """Usage: %s sourcefile targetfile {vlen} {compress}
+        print """Usage: %s sourcefile targetfile {dialect} {compress}
         convert sourcefile in dataviz format to targetfile in NSDF format.""" % (sys.argv[0])
         sys.exit(1)
     if len(sys.argv) > 3:
-        vlen = eval(sys.argv[3])
+        dialect = sys.argv[3]
     else:
-        vlen = False
+        dialect = '1d'
     if (len(sys.argv) > 4) and eval(sys.argv[4]):
         compression = 'gzip'
         compression_opts = 6
@@ -88,13 +91,14 @@ if __name__ == '__main__':
     for cellname, spiketrain in fd['/spikes'].items():
         cellclass = cellname.split('_')[0]
         spike_dict[cellclass][cellname] = spiketrain
-        
+    tstart = datetime.now()
     nsdf_writer = nsdf.writer(sys.argv[2])
     for cellclass, celldict in vm_dict.items():
         data_array = np.vstack(celldict.values())
         nsdf_writer.add_uniform_dataset('%s_Vm' % (cellclass), data_array, 'Vm',
                                         sourcelist=celldict.keys(),
                                         t_end=fd.attrs['simtime'],
+                                        dtype=dtype,
                                         compression=compression,
                                         compression_opts=compression_opts,
                                         shuffle=shuffle,
@@ -106,6 +110,8 @@ if __name__ == '__main__':
                                            times,
                                            dataset_names=dataset_names,
                                            sourcelist=celldict.keys(),
+                                           dialect=dialect,
+                                           dtype=dtype,
                                            compression=compression,
                                            compression_opts=compression_opts,
                                            shuffle=shuffle,
@@ -119,10 +125,15 @@ if __name__ == '__main__':
                                     celldict.values(),
                                     dataset_names=dataset_names,
                                     sourcelist=celldict.keys(), 
-                                        compression=compression,
-                                        compression_opts=compression_opts,
-                                        shuffle=shuffle,
-                                        fletcher32=fletcher32)
+                                    dialect=dialect,
+                                    dtype=dtype,
+                                    compression=compression,
+                                    compression_opts=compression_opts,
+                                    shuffle=shuffle,
+                                    fletcher32=fletcher32)
+    tend = datetime.now()
+    dt = tend - tstart
+    print 'time to write entire file: %d s', % (dt.days * 86400 + dt.seconds + 1e-6 * dt.microseconds)
     
     
 
