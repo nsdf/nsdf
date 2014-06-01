@@ -133,7 +133,7 @@ if __name__ == '__main__':
                                     fletcher32=fletcher32)
     tend = datetime.now()
     dt = tend - tstart
-    print 'time to write entire file: %g s' % (dt.days * 86400 + dt.seconds + 1e-6 * dt.microseconds)
+    print 'time to write entire file %s: %g s' % (sys.argv[1], dt.days * 86400 + dt.seconds + 1e-6 * dt.microseconds)
     
     
 

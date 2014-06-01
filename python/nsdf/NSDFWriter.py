@@ -564,6 +564,7 @@ class NSDFWriter(object):
         dtype = kwargs.pop('dtype', np.float64)
         dialect = kwargs.pop('dialect', '1d')
         dialect = dialect.lower()
+        source_dim = None
         if sourcelist and (len(sourcelist) != len(spiketrains)):
             raise ValueError('number of sources must match rows in spiketrains')
         try:
@@ -606,8 +607,7 @@ class NSDFWriter(object):
                                               dtype=dtype, **kwargs)
             for ii, train in enumerate(spiketrains):
                 spike[ii, : len(train)] = train
-                spike[ii,len(train):] = np.nan
-            
+                spike[ii,len(train):] = np.nan            
         else: # dialect == '1d':
             source_dim = source_group.create_dataset('spike',
                                                      shape=(len(dataset_names),),
@@ -635,7 +635,7 @@ class NSDFWriter(object):
         # sourcelist. Another, more general way is to create a 2 column
         # dataset mapping each source to its dataset.
         if source_dim is None:
-            source_dim = self.event_map.create_dataset(population_name,
+            source_dim = source_group.create_dataset('spike',
                                                          dtype=h5.special_dtype(vlen=str),
                                                          data=[str(src) for src in sourcelist],
                                                        **kwargs)
