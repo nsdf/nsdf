@@ -203,7 +203,7 @@ class NSDFWriter(object):
         if population is None:
             population = self.uniform_data.create_group(population_name)
             
-        dataset = population.create_dataset(dataset_name, data=datalist, dtype=np.float64, **kwargs)
+        dataset = population.create_dataset(dataset_name, data=datalist, dtype=dtype, **kwargs)
         if unit is not None:
             dataset.attrs['UNIT'] = unit
 
@@ -433,7 +433,7 @@ class NSDFWriter(object):
         if dialect == '1d':            
             if shared_t:
                 time_dim = time_pop.create_dataset(variable_name, data=times,
-                                                   dtype=np.float64, **kwargs)
+                                                   dtype=dtype, **kwargs)
                 if t_unit:
                     tdim.attrs['UNIT'] = t_unit
             else:
