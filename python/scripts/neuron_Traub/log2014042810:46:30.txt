@@ -1,0 +1,12 @@
+Ścieżka: .
+URL: https://xp-dev.com/svn/Thalamocortical_loop_based_on_Traub/nrntraub/mylib
+Katalog główny repozytorium: https://xp-dev.com/svn/Thalamocortical_loop_based_on_Traub
+UUID repozytorium: 22a9585f-5a33-420b-8c6d-1b27024e98c6
+Wersja: 68
+Rodzaj obiektu: katalog
+Zlecenie: normalne
+Autor ostatniej zmiany: hglabska
+Ostatnio zmieniona wersja: 68
+Data ostatniej zmiany: 2014-04-25 09:48:00 +0200 (pią)
+
+nrntraub_r7_01_04_2014/nrntraub/init.hoc
