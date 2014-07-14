@@ -1,3 +1,12 @@
+# This script was written by Chaitanya Chintaluri c.chinaluri@nencki.gov.pl
+# This software is available under GNU GPL3 License.
+
+# Uses brain simulator's default program to dump the data into NSDF file format
+# using h5py. This was used to benchmark performance of different flavours of 
+# storing the spike time information.
+
+# Use h5py >= 2.3
+
 import h5py
 import numpy as np
 from brian import *
@@ -105,3 +114,5 @@ def h5_cmpd():
 h5_vlen()
 h5_nan()
 h5_cmpd()
+
+# End of test_brian.py
