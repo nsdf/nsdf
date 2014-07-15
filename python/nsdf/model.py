@@ -55,18 +55,18 @@ class ModelComponent(object):
     """Tree node for model tree.
 
     Attributes:
-       parent (ModelComponent): parent of this component.
+        parent (ModelComponent): parent of this component.
 
-       children (list): list of child components.
+        children (list): list of child components.
 
-       attrs (dict): attributes of the component. These become HDF5
-           attributes when it is written to file.
+        attrs (dict): attributes of the component. These become HDF5
+            attributes when it is written to file.
 
-       hdfgroup (hdf5 Group): the group that this component corresponds
-           to in NSDF file.
+        hdfgroup (hdf5 Group): the group that this component corresponds
+            to in NSDF file.
 
     """
-    def __init__(self, name, uid=None, parent=None, attrs=None):
+    def __init__(self, name, uid=None, parent=None, attrs=None, hdfgroup=None):
         if uid is None:
             uid = name
         self.uid = uid
@@ -74,7 +74,7 @@ class ModelComponent(object):
         self.parent = parent
         self.children = []
         self.attrs = attrs
-        self.hdfgroup = None
+        self.hdfgroup = hdfgroup
         
     def add_child(self, child):
         """Add a child component under this model component.
@@ -176,8 +176,6 @@ class ModelComponent(object):
             child.check_uid(uid_dict)
                             
             
-                
-
 
 # 
 # model.py ends here
