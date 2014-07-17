@@ -98,7 +98,7 @@ def create_example():
                                      data=['{}/poolroom'.format(lc.name)],
                                      dtype=VLENSTR)
         lc_map = mgrp['static'].create_dataset('leisurecenter', shape=(1,1),
-                                               data =[0], dtype='u8')
+                                               data =[entities[0]], dtype=VLENSTR)
         # map -> model
         model_ref = np.empty((1,), dtype=OBJECTREF)
         model_ref[0] = lc.ref
@@ -120,7 +120,9 @@ def create_example():
                                      data=['{}/table0'.format(pr.name),
                                            '{}/table1'.format(pr.name)],
                                      dtype=VLENSTR)    
-        pr_map = mgrp['static'].create_dataset('poolroom', data=[0, 1], dtype='u8')
+        pr_map = mgrp['static'].create_dataset('poolroom',
+                                               data=[entity for entity in entities],
+                                               dtype=VLENSTR)
         # map -> model
         model_ref = np.empty((1,), dtype=OBJECTREF)
         model_ref[0] =  pr.ref
@@ -138,7 +140,9 @@ def create_example():
         height.dims[0].attach_scale(pr_map)
         height.dims[0].label = 'source'
 
-        pr_map = mgrp['nonuniform'].create_dataset('poolroom', data=[0, 1], dtype='u8')
+        pr_map = mgrp['nonuniform'].create_dataset('poolroom',
+                                                   data=[entity for entity in entities],
+                                                   dtype=VLENSTR)
         # map -> model
         model_ref = np.empty((1,), dtype=OBJECTREF)
         model_ref[0] =  pr.ref
@@ -173,8 +177,10 @@ def create_example():
         for entity in entities:
             print entity
             tab0.create_group(entity.rpartition('/')[-1])
-        tab0_map = mgrp['uniform'].create_dataset('table0', data=[0, 1, 2],
-                                                  dtype='u8')
+        tab0_map = mgrp['uniform'].create_dataset('table0',
+                                                  data=[entity
+                                                        for entity in entities],
+                                                  dtype=VLENSTR)
         # map -> model
         model_ref = np.empty((1,), dtype=OBJECTREF)
         model_ref[0] = tab0.ref
@@ -197,7 +203,7 @@ def create_example():
         x.dims[0].label = 'source'
 
         tab0_map = mgrp['event'].create_dataset('table0', shape=(3,),
-                                                  dtype=[('source', 'u8'), ('data', OBJECTREF)])
+                                                  dtype=[('source', VLENSTR), ('data', OBJECTREF)])
         # map -> model
         model_ref = np.empty((1,), dtype=OBJECTREF)
         model_ref[0] = tab0.ref
@@ -214,17 +220,17 @@ def create_example():
         b0_hit.attrs['field'] = 'hit'
         b0_hit.attrs['unit'] = 's'
         b0_hit.attrs['source'] = tab0_map.ref
-        tab0_map[0] = (0, b0_hit.ref)
+        tab0_map[0] = (entities[0], b0_hit.ref)
         b1_hit = hit.create_dataset('ball1', data=[0.7, 0.8, 1.4], dtype='f8')
         b1_hit.attrs['field'] = 'hit'
         b1_hit.attrs['unit'] = 's'
         b1_hit.attrs['source'] = tab0_map.ref
-        tab0_map[1] = (1, b1_hit.ref)
+        tab0_map[1] = (entities[1], b1_hit.ref)
         b2_hit = hit.create_dataset('ball2', data=[0.7, 0.8, 1.4], dtype='f8')
         b2_hit.attrs['field'] = 'hit'
         b2_hit.attrs['unit'] = 's'
         b2_hit.attrs['source'] = tab0_map.ref
-        tab0_map[2] = (2, b2_hit.ref)
+        tab0_map[2] = (entities[2], b2_hit.ref)
 
         tab1 = pr.create_group('table1')
         entities = tab1.create_dataset('entities', shape=(3,),
@@ -235,8 +241,9 @@ def create_example():
         for entity in entities:
             tab1.create_group(entity.rpartition('/')[-1])
 
-        tab1_map = mgrp['uniform'].create_dataset('tabl1', data=[0, 1, 2],
-                                                  dtype='u8')
+        tab1_map = mgrp['uniform'].create_dataset('tabl1',
+                                                  data=[entity for entity in entities],
+                                                  dtype=VLENSTR)
         # map -> model
         model_ref = np.empty((1,), dtype=OBJECTREF)
         model_ref[0] = tab1.ref
@@ -259,7 +266,7 @@ def create_example():
         x.dims[0].label = 'source'
 
         tab1_map = mgrp['event'].create_dataset('table1', shape=(3,),
-                                                  dtype=[('source', 'u8'),
+                                                  dtype=[('source', VLENSTR),
                                                          ('data', OBJECTREF)])
         # map -> model
         model_ref = np.empty((1,), dtype=OBJECTREF)
@@ -277,17 +284,17 @@ def create_example():
         b0_hit.attrs['field'] = 'hit'
         b0_hit.attrs['unit'] = 's'
         b0_hit.attrs['source'] = tab1_map.ref
-        tab1_map[0] = (0, b0_hit.ref)
+        tab1_map[0] = (entities[0], b0_hit.ref)
         b1_hit = hit.create_dataset('ball1', data=[0.7, 0.8, 1.4], dtype='f8')
         b1_hit.attrs['field'] = 'hit'
         b1_hit.attrs['unit'] = 's'
         b1_hit.attrs['source'] = tab1_map.ref
-        tab1_map[1] = (1, b1_hit.ref)
+        tab1_map[1] = (entities[1], b1_hit.ref)
         b2_hit = hit.create_dataset('ball2', data=[0.7, 0.8, 1.4], dtype='f8')
         b2_hit.attrs['field'] = 'hit'
         b2_hit.attrs['unit'] = 's'
         b2_hit.attrs['source'] = tab1_map.ref
-        tab1_map[2] = (2, b2_hit.ref)
+        tab1_map[2] = (entities[2], b2_hit.ref)
     
 if __name__ == '__main__':
     create_example()
