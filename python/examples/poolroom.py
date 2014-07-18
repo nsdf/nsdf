@@ -94,6 +94,7 @@ def create_example():
                                                 modeltree.name)],
                                             dtype=VLENSTR)
         lc = modeltree.create_group('leisurecenter')
+        lc.attrs['uid'] = lc.name
         entities = lc.create_dataset('entities', shape=(1,1),
                                      data=['{}/poolroom'.format(lc.name)],
                                      dtype=VLENSTR)
@@ -116,6 +117,7 @@ def create_example():
         area.dims[0].label = 'source'
 
         pr = lc.create_group('poolroom')
+        pr.attrs['uid'] = pr.name
         entities = pr.create_dataset('entities', shape=(2,1),
                                      data=['{}/table0'.format(pr.name),
                                            '{}/table1'.format(pr.name)],
@@ -169,14 +171,15 @@ def create_example():
         players.dims[1].label = 'time'
 
         tab0 = pr.create_group('table0')
+        tab0.attrs['uid'] = tab0.name
         entities = tab0.create_dataset('entities', shape=(3,),
                                        data=['{}/ball0'.format(tab0.name),
                                              '{}/ball1'.format(tab0.name),
                                              '{}/ball2'.format(tab0.name)],
                                        dtype=VLENSTR)
         for entity in entities:
-            print entity
-            tab0.create_group(entity.rpartition('/')[-1])
+            grp = tab0.create_group(entity.rpartition('/')[-1])
+            grp.attrs['uid'] = grp.name
         tab0_map = mgrp['uniform'].create_dataset('table0',
                                                   data=[entity
                                                         for entity in entities],
@@ -233,13 +236,15 @@ def create_example():
         tab0_map[2] = (entities[2], b2_hit.ref)
 
         tab1 = pr.create_group('table1')
+        tab1.attrs['uid'] = tab1.name
         entities = tab1.create_dataset('entities', shape=(3,),
                                        data=['{}/ball0'.format(tab1.name),
                                              '{}/ball1'.format(tab1.name),
                                              '{}/ball2'.format(tab1.name)],
                                        dtype=VLENSTR)
         for entity in entities:
-            tab1.create_group(entity.rpartition('/')[-1])
+            grp = tab1.create_group(entity.rpartition('/')[-1])
+            grp.attrs['uid'] = grp.name
 
         tab1_map = mgrp['uniform'].create_dataset('tabl1',
                                                   data=[entity for entity in entities],
@@ -298,6 +303,7 @@ def create_example():
     
 if __name__ == '__main__':
     create_example()
-
+    print 'Finished'
+    
 # 
 # poolroom.py ends here
