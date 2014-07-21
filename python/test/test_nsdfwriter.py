@@ -49,6 +49,7 @@
 import sys
 from collections import defaultdict
 import numpy as np
+from numpy import testing as nptest
 import h5py as h5
 from datetime import datetime
 import unittest
@@ -271,8 +272,7 @@ class TestNSDFWriter(unittest.TestCase):
         except KeyError:
             self.fail('`cells` group not created.')
         self.assertIsInstance(event_ds, h5.Group)
-        os.remove(tmp_file_path)
-                                
+        os.remove(tmp_file_path)                                
         
     def test_adding_ds_event_creates_event_group(self):
         """Check that adding nonuniform data sources creates the '/nonuniform'
@@ -288,6 +288,91 @@ class TestNSDFWriter(unittest.TestCase):
             self.fail('/map/event group does not exist after'
                       ' adding event data sources')
         os.remove(tmp_file_path)
+
+    def test_create_uniform_data(self):
+        """Create uniform data for the first time."""
+        tmp_file_path = 'test_create_uniform_data.h5'
+        writer = nsdf.NSDFWriter(tmp_file_path)
+        granule_somata = []
+        for cell in self.mdict['granule_cells']:
+            for name, comp in cell.children.items():
+                if name == 'gc_0':
+                    granule_somata.append(comp.uid)
+        ds = writer.add_uniform_ds('pop0',
+                              granule_somata)
+        datadict = {}
+        dlen = 1000
+        for uid in granule_somata:
+            datadict[uid] = np.random.uniform(-65, -55, size=dlen)
+        dt = 1e-4
+        field = 'Vm'
+        unit = 'mV'
+        tstart = 0.0
+        data = writer.add_uniform_data('Vm', ds, datadict,
+                                          field=field,
+                                          unit=unit,
+                                          tstart=tstart,
+                                          dt=dt)
+        for row, source in zip(data, data.dims[0]['source']):
+            nptest.assert_allclose(np.asarray(row), datadict[source])
+        self.assertEqual(data.attrs['field'], field)
+        self.assertEqual(data.attrs['unit'], unit)
+        self.assertAlmostEqual(data.attrs['dt'], dt)
+        self.assertAlmostEqual(data.attrs['tstart'], tstart)
+        os.remove(tmp_file_path)
+
+    def test_add_uniform_data(self):
+        """Create uniform data for the first time."""
+        tmp_file_path = 'test_add_uniform_data.h5'
+        writer = nsdf.NSDFWriter(tmp_file_path, mode='w')
+        granule_somata = []
+        for cell in self.mdict['granule_cells']:
+            for name, comp in cell.children.items():
+                if name == 'gc_0':
+                    granule_somata.append(comp.uid)
+        ds = writer.add_uniform_ds('pop0',
+                              granule_somata)
+        datadict = {}
+        dlen = 5
+        for uid in granule_somata:
+            datadict[uid] = np.random.uniform(-65, -55, size=dlen)
+        dt = 1e-4
+        field = 'Vm'
+        unit = 'mV'
+        tstart = 0.0
+        data = writer.add_uniform_data('Vm', ds, datadict,
+                                          field=field,
+                                          unit=unit,
+                                          tstart=tstart,
+                                          dt=dt)
+        del writer
+        # start over for appending data
+        writer = nsdf.NSDFWriter(tmp_file_path)
+        granule_somata = []
+        for cell in self.mdict['granule_cells']:
+            for name, comp in cell.children.items():
+                if name == 'gc_0':
+                    granule_somata.append(comp.uid)
+        ds = writer.mapping['uniform']['pop0']
+        datadict = {}
+        dlen = 5
+        for uid in granule_somata:            
+            datadict[uid] = np.random.uniform(-65, -55, size=dlen)
+            print 'uid', uid, '#', datadict[uid]
+        dt = 1e-4
+        field = 'Vm'
+        unit = 'mV'
+        tstart = 0.0
+        data = writer.add_uniform_data('Vm', ds, datadict,
+                                          field=field,
+                                          unit=unit,
+                                          tstart=tstart,
+                                          dt=dt)
+        for row, source in zip(data, data.dims[0]['source']):
+            print source, '$', row[-dlen:]
+            nptest.assert_allclose(np.asarray(row[-dlen:]), datadict[source])
+        os.remove(tmp_file_path)
+        
 def main():
     unittest.main()
 

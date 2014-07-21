@@ -80,17 +80,39 @@ class NSDFWriter(object):
             represents in the string attribute `uid`.
 
     """
-    def __init__(self, filename, compression='gzip', compression_opts=6,
+    def __init__(self, filename, mode='a', compression='gzip', compression_opts=6,
                  fletcher32=True, shuffle=True):
-        self._fd = h5.File(filename, 'w')
-        self.data = self._fd.create_group('/data')
-        self.model = self._fd.create_group('/model')
-        self.mapping = self._fd.create_group('/map')
+        self._fd = h5.File(filename, mode)
+        self.mode = mode
+        try:
+            self.data = self._fd['data']
+        except KeyError:
+            self.data = self._fd.create_group('/data')
+        try:
+            self.model = self._fd['model']
+        except KeyError:
+            self.model = self._fd.create_group('/model')
+        try:
+            self.mapping = self._fd['map']
+        except KeyError:
+            self.mapping = self._fd.create_group('/map')
+        try:
+            self.time_dim = self.mapping['time']
+        except KeyError:
+            self.time_dim = self.mapping.create_group('time')
+        try:
+            self.modeltree = self.model['modeltree']
+        except KeyError:
+            self.modeltree = self.model.create_group('modeltree')
         for stype in SAMPLING_TYPES:
-            self.data.create_group(stype)
-            self.mapping.create_group(stype)
-        self.time_dim = self.mapping.create_group('time')
-        self.modeltree = self.model.create_group('modeltree')
+            try:
+                grp = self.data[stype]
+            except KeyError:
+                self.data.create_group(stype)
+            try:
+                grp = self.mapping[stype]
+            except KeyError:
+                self.mapping.create_group(stype)
         self.modelroot = ModelComponent('modeltree', uid='/model/modeltree',
                                         hdfgroup = self.modeltree)
         self.compression = compression
@@ -282,7 +304,7 @@ class NSDFWriter(object):
         """
         popname = source_ds.name.rpartition('/')[-1]
         try:
-            ugrp = self.data[UNIFORM][popname]
+            ugrp = self.data[UNIFORM][popname]            
         except KeyError:
             ugrp = self.data[UNIFORM].create_group(popname)
         src_set = set([src for src in source_ds])
@@ -309,6 +331,7 @@ class NSDFWriter(object):
                 maxcol = data.shape[1]
             dataset = ugrp.create_dataset(name, shape=data.shape,
                                           dtype=data.dtype,
+                                          data=data,
                                           maxshape=(data.shape[0], maxcol),
                                           compression=self.compression,
                                           compression_opts=self.compression_opts,
@@ -320,7 +343,7 @@ class NSDFWriter(object):
             dataset.attrs['dt'] = dt
             dataset.attrs['field'] = field
             dataset.attrs['unit'] = unit
-            
+        return dataset
     
 
 # 
