@@ -372,6 +372,10 @@ class TestNSDFWriter(unittest.TestCase):
             print source, '$', row[-dlen:]
             nptest.assert_allclose(np.asarray(row[-dlen:]), datadict[source])
         os.remove(tmp_file_path)
+
+    def test_model_tree(self):
+        """Check if model tree is created properly."""
+        self.fail('Implement this function.')
         
 def main():
     unittest.main()
