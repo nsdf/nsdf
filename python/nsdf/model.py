@@ -57,7 +57,8 @@ class ModelComponent(object):
     Attributes:
         parent (ModelComponent): parent of this component.
 
-        children (list): list of child components.
+        children (dict): dict of child components - name is key and
+            ModelComponent is value.
 
         attrs (dict): attributes of the component. These become HDF5
             attributes when it is written to file.
@@ -72,7 +73,11 @@ class ModelComponent(object):
         self.uid = uid
         self.name = name
         self.parent = parent
-        self.children = []
+        if parent is not None:
+            parent.children[name] = self
+        self.children = {}
+        # store the order in which children were added
+        # self._birth_order = {} 
         self.attrs = attrs
         self.hdfgroup = hdfgroup
         
@@ -94,7 +99,7 @@ class ModelComponent(object):
         """
         if not isinstance(child, ModelComponent):
             raise TypeError('require a ModelComponent instance.')
-        self.children.append(child)
+        self.children[child.name] = child
         child.parent = self
 
     def add_children(self, children):
@@ -113,8 +118,29 @@ class ModelComponent(object):
         for child in children:
             if not isinstance(child, ModelComponent):
                 raise TypeError('require a ModelComponent instance.')
-            self.children.append(child)
+            self.children[child.name] = child
             child.parent = self
+
+    def get_node(self, path):
+        """Get node at `path` relative to this node.
+
+        Args: 
+            path (str): path obtained by concatenating component names
+                with `/` as separator.
+
+        Returns:
+            ModelComponent at the specified path
+
+        Raises:
+            KeyError if there is no element at the specified path.
+
+        """
+        node = self
+        for item in path.split('/'):
+            name = item.strip()
+            if name == '':
+                continue
+            node = node.children[name]
 
     def visit(self, function, *args, **kwargs):
         """Visit the subtree starting with `node` recursively, applying function
@@ -130,7 +156,7 @@ class ModelComponent(object):
 
         """
         function(self, *args, **kwargs)
-        for child in node.children:
+        for child in node.children.values():
             child.visit(function, *args, **kwargs)
                 
     def print_tree(self, indent=''):
@@ -144,7 +170,7 @@ class ModelComponent(object):
 
         """
         print '{}{}({})'.format(indent, self.name, self.uid)
-        for child in self.children:
+        for child in self.children.values():
             child.print_tree(child, indent * 2)
 
     def check_uid(self, uid_dict):
@@ -172,7 +198,7 @@ class ModelComponent(object):
             clashing.append(self)
         except KeyError:
             uid_dict[self.uid] = [self]
-        for child in self.children:
+        for child in self.children.values():
             child.check_uid(uid_dict)
                             
             

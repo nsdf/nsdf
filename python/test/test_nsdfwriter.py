@@ -4,7 +4,7 @@
 # Description: 
 # Author: Subhasis Ray
 # Maintainer: 
-# Created: Fri Apr 25 22:22:27 2014 (+0530)
+# Created: Mon Jul 21 15:00:04 2014 (+0530)
 # Version: 
 # Last-Updated: 
 #           By: 
@@ -44,98 +44,256 @@
 # 
 
 # Code:
-"""Test code for NSDFWriter.
-
-Using Subhasis' custom format used for saving Traub et al 2005 data
-and visualizing the same in dataviz.
-
-"""
+"""Tests for the NSDFWriter class."""
 
 import sys
 from collections import defaultdict
 import numpy as np
 import h5py as h5
+from datetime import datetime
+import unittest
+
 sys.path.append('..')
 import nsdf
-from datetime import datetime
 
-dtype=np.float32
+uid__ = 0
+def getuid():
+    """Increment the global uid tracker and return the value.
+
+    Returns:
+        str representation of the uid integer.
+    """
+    global uid__
+    uid__ += 1
+    return str(uid__)
+
+
+def create_ob_model_tree():
+        """This creates a model tree of the structure:
+
+        /model
+        |
+        |__Granule
+        |       |
+        |       |__granule_0
+        |       |       |__gc_0
+        |       |       |__...
+        |       |       |__gc_19
+         ... ... ...
+        |       |
+        |       |__granule_9
+        |               |__gc_0
+        |               |__...
+        |               |__gc_19 
+        |__Mitral
+        |       |
+        |       |__mitral_0
+        |       |       |__mc_0
+        |       |       |__...
+        |       |       |__mc_14
+         ... ... ...
+        |       |
+        |       |__mitral_9
+        |               |__mc_0
+        |               |__...
+        |               |__mc_19
+       
+
+        """
+        uid = 0
+        model_tree = nsdf.ModelComponent('model', uid=getuid())
+        granule = nsdf.ModelComponent('Granule', uid=getuid(),
+                                            parent=model_tree)
+        mitral = nsdf.ModelComponent('Mitral', uid=getuid(),
+                                           parent=model_tree)
+        granule_cells = [nsdf.ModelComponent('granule_{}'.format(ii),
+                                                 uid=getuid(),
+                                                 parent=granule)
+                                                 for ii in range(10)]
+        mitral_cells = [nsdf.ModelComponent('mitral_{}'.format(ii),
+                                                   uid=getuid(),
+                                                   parent=mitral)
+                                                 for ii in range(10)]
+        for cell in granule_cells:
+            cell.add_children([nsdf.ModelComponent('gc_{}'.format(ii),
+                                                uid=getuid())
+                               for ii in range(20)])
+        for cell in mitral_cells:
+            cell.add_children([nsdf.ModelComponent('mc_{}'.format(ii),
+                                                    uid=getuid())
+                               for ii in range(15)])
+        return {'model_tree': model_tree,
+                'granule_population': granule,
+                'mitral_population': mitral,
+                'granule_cells': granule_cells,
+                'mitral_cells': mitral_cells}
+    
+    
+class TestNSDFWriter(unittest.TestCase):
+    def setUp(self):
+        self.mdict = create_ob_model_tree()
+        
+    def test_add_uniform_ds(self):
+        """Add the soma (gc_0) all the granule cells in olfactory bulb model
+        as data sources for uniformly sampled data.
+
+        """
+        tmp_file_path = 'test_add_uniform_data_sources.h5'
+        writer = nsdf.NSDFWriter(tmp_file_path)
+        granule_somata = []
+        for cell in self.mdict['granule_cells']:
+            for name, comp in cell.children.items():
+                if name == 'gc_0':
+                    granule_somata.append(comp.uid)
+        writer.add_uniform_ds('pop0',
+                              granule_somata)
+        try:
+            uniform_ds = writer._fd['/map/uniform/pop0']
+            ds = set([uid for uid in uniform_ds])
+        except KeyError:
+            self.fail('pop0 not created.')
+        self.assertEqual(ds, set(granule_somata))
+        os.remove(tmp_file_path)
+            
+    def test_adding_ds_creates_uniform_group(self):
+        """Check that adding uniform data sources creates the '/uniform' group
+        under '/map'
+
+        """
+        tmp_file_path = 'test_add_uniform_data_sources.h5'
+        writer = nsdf.NSDFWriter(tmp_file_path)
+        granule_somata = []
+        for cell in self.mdict['granule_cells']:
+            for name, comp in cell.children.items():
+                if name == 'gc_0':
+                    granule_somata.append(comp.uid)
+        writer.add_uniform_ds('pop0', granule_somata)
+        try:
+            uniform_group = writer._fd['map']['uniform']
+        except KeyError:
+            self.fail('/map/uniform group does not exist after'
+                      ' adding uniform data sources')
+        os.remove(tmp_file_path)
+        
+    def test_add_nonuniform_ds_homogeneous(self):
+        """Add the soma (gc_0) all the granule cells in olfactory bulb model
+        as data sources for nonuniformly sampled data.
+
+        """
+        tmp_file_path = 'test_add_nonuniform_ds_h.h5'
+        writer = nsdf.NSDFWriter(tmp_file_path)
+        mitral_somata = []
+        for cell in self.mdict['mitral_cells']:
+            for name, comp in cell.children.items():
+                if name == 'mc_0':
+                    mitral_somata.append(comp.uid)
+        writer.add_nonuniform_ds('pop1', mitral_somata, True)
+        try:
+            nonuniform_ds = writer._fd['/map/nonuniform/pop1']
+            ds = set([uid for uid in nonuniform_ds])
+        except KeyError:
+            self.fail('pop1 not created.')
+        self.assertEqual(ds, set(mitral_somata))
+        os.remove(tmp_file_path)
+            
+    def test_adding_ds_homogeneous_creates_nonuniform_group(self):
+        """Check that adding nonuniform data sources creates the '/nonuniform'
+        group under '/map'
+
+        """
+        tmp_file_path = 'test_add_nonuniform_ds_h1.h5'
+        writer = nsdf.NSDFWriter(tmp_file_path)
+        mitral_somata = []
+        for cell in self.mdict['mitral_cells']:
+            for name, comp in cell.children.items():
+                if name == 'mc_0':
+                    mitral_somata.append(comp.uid)
+        writer.add_nonuniform_ds('pop1',
+                                mitral_somata, True)
+        try:
+            nonuniform_group = writer._fd['map']['nonuniform']
+        except KeyError:
+            self.fail('/map/nonuniform group does not exist after'
+                      ' adding nonuniform data sources')
+        os.remove(tmp_file_path)
+
+    def test_add_nonuniform_ds_nonhomogeneous(self):
+        """Add the soma (gc_0) all the granule cells in olfactory bulb model
+        as data sources for nonuniformly sampled data.
+
+        """
+        tmp_file_path = 'test_add_nonuniform_ds_nh.h5'
+        writer = nsdf.NSDFWriter(tmp_file_path)
+        mitral_somata = []
+        for cell in self.mdict['mitral_cells']:
+            for name, comp in cell.children.items():
+                if name == 'mc_0':
+                    mitral_somata.append(comp.uid)
+        writer.add_nonuniform_ds('pop1', mitral_somata, False)
+        try:
+            nonuniform_ds = writer._fd['/map/nonuniform/pop1']
+        except KeyError:
+            self.fail('pop1 not created.')
+        self.assertIsInstance(nonuniform_ds, h5.Group)
+        os.remove(tmp_file_path)
+            
+    def test_adding_ds_nonhomogeneous_creates_nonuniform_group(self):
+        """Check that adding nonuniform data sources creates the '/nonuniform'
+        group under '/map'
+
+        """
+        tmp_file_path = 'test_add_nonuniform_ds_nh1.h5'
+        writer = nsdf.NSDFWriter(tmp_file_path)
+        mitral_somata = []
+        for cell in self.mdict['mitral_cells']:
+            for name, comp in cell.children.items():
+                if name == 'mc_0':
+                    mitral_somata.append(comp.uid)
+        writer.add_nonuniform_ds('pop1',
+                                mitral_somata, False)
+        try:
+            nonuniform_group = writer._fd['map']['nonuniform']
+        except KeyError:
+            self.fail('/map/nonuniform group does not exist after'
+                      ' adding nonuniform data sources')
+        os.remove(tmp_file_path)
+        
+    def test_add_event_ds(self):
+        """Add all the cells in olfactory bulb model as data sources for event
+        data.
+
+        """
+        tmp_file_path = 'test_add_event_ds.h5'
+        writer = nsdf.NSDFWriter(tmp_file_path)
+        writer.add_event_ds('cells')
+        try:
+            event_ds = writer._fd['/map/event/cells']
+        except KeyError:
+            self.fail('`cells` group not created.')
+        self.assertIsInstance(event_ds, h5.Group)
+        os.remove(tmp_file_path)
+                                
+        
+    def test_adding_ds_event_creates_event_group(self):
+        """Check that adding nonuniform data sources creates the '/nonuniform'
+        group under '/map'
+
+        """
+        tmp_file_path = 'test_add_event_ds.h5'
+        writer = nsdf.NSDFWriter(tmp_file_path)
+        writer.add_event_ds('cells')
+        try:
+            nonuniform_group = writer._fd['map']['event']
+        except KeyError:
+            self.fail('/map/event group does not exist after'
+                      ' adding event data sources')
+        os.remove(tmp_file_path)
+def main():
+    unittest.main()
 
 if __name__ == '__main__':
-    if len(sys.argv) < 3:
-        print """Usage: %s sourcefile targetfile {dialect} {compress}
-        convert sourcefile in dataviz format to targetfile in NSDF format.""" % (sys.argv[0])
-        sys.exit(1)
-    if len(sys.argv) > 3:
-        dialect = sys.argv[3]
-    else:
-        dialect = '1d'
-    if (len(sys.argv) > 4) and eval(sys.argv[4]):
-        compression = 'gzip'
-        compression_opts = 6
-        fletcher32 = True
-        shuffle = True
-    else:
-        compression = None
-        compression_opts = None
-        fletcher32 = False
-        shuffle = False
-        
-    fd = h5.File(sys.argv[1], 'r')
-    vm_dict = defaultdict(dict)
-    for cellname, vm_array in fd['/Vm'].items():
-        cellclass = cellname.split('_')[0]
-        vm_dict[cellclass][cellname] = vm_array
+    main()
 
-    spike_dict = defaultdict(dict)
-    for cellname, spiketrain in fd['/spikes'].items():
-        cellclass = cellname.split('_')[0]
-        spike_dict[cellclass][cellname] = spiketrain
-    tstart = datetime.now()
-    nsdf_writer = nsdf.writer(sys.argv[2])
-    for cellclass, celldict in vm_dict.items():
-        data_array = np.vstack(celldict.values())
-        nsdf_writer.add_uniform_dataset('%s_Vm' % (cellclass), data_array, 'Vm',
-                                        sourcelist=celldict.keys(),
-                                        t_end=fd.attrs['simtime'],
-                                        dtype=dtype,
-                                        compression=compression,
-                                        compression_opts=compression_opts,
-                                        shuffle=shuffle,
-                                        fletcher32=fletcher32)
-        # The following is a dummy case with separate time arrays for each dataset - as if it were nonuniform data
-        dataset_names = None if dialect != '1d' else celldict.keys()
-        times = [np.linspace(0, float(fd.attrs['simtime']), data_array.shape[1])] * data_array.shape[1]
-        nsdf_writer.add_nonuniform_dataset('%s_Vm' % (cellclass), data_array, 'Vm',
-                                           times,
-                                           dataset_names=dataset_names,
-                                           sourcelist=celldict.keys(),
-                                           dialect=dialect,
-                                           dtype=dtype,
-                                           compression=compression,
-                                           compression_opts=compression_opts,
-                                           shuffle=shuffle,
-                                           fletcher32=fletcher32)
-    for cellclass, celldict in spike_dict.items():
-        # Here we try to name the datasets by the index of the source
-        # so that there is a one-to-one mapping between sourcelist and
-        # datasets.
-        dataset_names = None if dialect != '1d' else ['%d' % n for n in range(len(celldict))]
-        nsdf_writer.add_spiketrains(cellclass,
-                                    celldict.values(),
-                                    dataset_names=dataset_names,
-                                    sourcelist=celldict.keys(), 
-                                    dialect=dialect,
-                                    dtype=dtype,
-                                    compression=compression,
-                                    compression_opts=compression_opts,
-                                    shuffle=shuffle,
-                                    fletcher32=fletcher32)
-    tend = datetime.now()
-    dt = tend - tstart
-    print 'time to write entire file %s: %g s' % (sys.argv[2], dt.days * 86400 + dt.seconds + 1e-6 * dt.microseconds)
-    
-    
 
 # 
 # test_nsdfwriter.py ends here

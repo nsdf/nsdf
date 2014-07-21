@@ -246,7 +246,7 @@ def create_example():
             grp = tab1.create_group(entity.rpartition('/')[-1])
             grp.attrs['uid'] = grp.name
 
-        tab1_map = mgrp['uniform'].create_dataset('tabl1',
+        tab1_map = mgrp['uniform'].create_dataset('table1',
                                                   data=[entity for entity in entities],
                                                   dtype=VLENSTR)
         # map -> model
