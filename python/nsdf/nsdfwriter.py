@@ -56,12 +56,34 @@ import numpy as np
 from .model import ModelComponent
 from .constants import *
 
+
+def match_datasets(hdfds, pydata):
+    """Match entries in hdfds with those in pydata. Returns true if the
+    two sets are equal. False otherwise.
+
+    """
+    src_set = set([item for item in hdfds])
+    dsrc_set = set(pydata)
+    return src_set == dsrc_set
+    
+        
 class NSDFWriter(object):
     """Writer for NSDF files.
 
     An NSDF file has three main groups: `/model`, `/data` and `/map`.
 
-    Attributes:
+    Attributes: 
+        mode (str): File open mode. Defaults to append
+            ('a'). Can be 'w' or 'w+' also.
+
+        dialect (nsdf.dialect member): ONED for storing nonuniformly
+            sampled and event data in 1D arrays.
+
+            VLEN for storing such data in 2D VLEN datasets.
+
+            NANFILLED for storing such data in 2D homogeneous datasets
+            with NaN padding.
+
         model (h5.Group): /model group
 
         data (h5.Group): /data group
@@ -80,10 +102,11 @@ class NSDFWriter(object):
             represents in the string attribute `uid`.
 
     """
-    def __init__(self, filename, mode='a', compression='gzip', compression_opts=6,
+    def __init__(self, filename, dialect=dialect.ONED, mode='a', compression='gzip', compression_opts=6,
                  fletcher32=True, shuffle=True):
         self._fd = h5.File(filename, mode)
         self.mode = mode
+        self.dialect = dialect
         try:
             self.data = self._fd['data']
         except KeyError:
@@ -189,7 +212,7 @@ class NSDFWriter(object):
         ds = base.create_dataset(name, shape=(len(idlist),), dtype=VLENSTR, data=idlist)
         return ds
 
-    def add_nonuniform_ds(self, name, idlist, homogeneous, path_id_dict=None):
+    def add_nonuniform_ds(self, name, idlist, path_id_dict=None):
         """Add the sources listed in idlist under /map/nonuniform.
 
         Args: 
@@ -200,22 +223,16 @@ class NSDFWriter(object):
             idlist (list of str): list of unique identifiers of the
                 data sources. This becomes irrelevant if homogeneous=False.
 
-            homogeneous (bool): whether data from all the sources are
-                sampled at the same time. If so, we create a single
-                dataset for the entire population. Otherwise we create
-                a group for the population. The actual mapping tables
-                are created when the datasets are added.
-
             path_id_dict (dict): (optional) maps the path of the
                 source in model tree to the unique id of the source.
 
-        Returns: 
-            An HDF5 Dataset storing the source ids when
-            homogeneous=True. This is converted into a dimension scale
-            when actual data is added. If homogeneous=False, the group
-            /map/`name` is returned.
+        Returns:
+            An HDF5 Dataset storing the source ids when dialect
+            is VLEN or NANFILLED. This is converted into a dimension
+            scale when actual data is added. If homogeneous=False, the
+            group /map/nonuniform/`name` is returned.
 
-        Raises: 
+        Raises:
             ValueError if idlist is empty.
 
         """
@@ -226,10 +243,10 @@ class NSDFWriter(object):
             base = self.mapping[NONUNIFORM]
         except KeyError:
             base = self.mapping.create_group(NONUNIFORM)
-        if homogeneous:
-            ds = base.create_dataset(name, shape=(len(idlist),), dtype=VLENSTR, data=idlist)
-        else:
+        if self.dialect == dialect.ONED:
             ds = base.create_group(name)
+        else:
+            ds = base.create_dataset(name, shape=(len(idlist),), dtype=VLENSTR, data=idlist)
         return ds
 
     def add_event_ds(self, name, model_paths=None):
@@ -255,10 +272,9 @@ class NSDFWriter(object):
         grp = base.create_group(name)
         return grp
 
-    def add_uniform_data(self, name, 
-                         source_ds, source_data_dict,
-                         field=None, unit=None,
-                         tstart=0.0, dt=0.0, fixed=False):
+    def add_uniform_data(self, name, source_ds, source_data_dict,
+                         field=None, unit=None, tstart=0.0, dt=0.0,
+                         tunit=None, dtype=np.float64, fixed=False):
         """Append uniformly sampled `variable` values from `sources` to
         `data`.
 
@@ -274,6 +290,101 @@ class NSDFWriter(object):
 
             source_data_dict (dict): a dict mapping source ids to data
                 arrays. The data arrays are numpy arrays.
+
+            field (str): name of the recorded variable. Not required
+                when appending to existing data.
+        
+            unit (str): unit of the variable quantity being saved. Not
+                required when appending to existing data.
+
+            tstart (double): (optional) start time of this dataset
+                recording. Defaults to 0.
+
+            dt (double): (required only for creating new dataset)
+                sampling interval.
+
+            tunit (str): (required only for creating new dataset) unit
+                of sampling time.
+
+            dtype (numpy.dtype): type of data (default 64 bit float)
+            
+            fixed (bool): if True, the data cannot grow. Default: False
+
+        Returns:
+            HDF5 dataset storing the data
+
+        Raises:
+            KeyError if the sources in `source_data_dict` do not match
+            those in `source_ds`.
+        
+            ValueError if dt is not specified or <= 0 when inserting
+            data for the first time.
+
+        """
+        popname = source_ds.name.rpartition('/')[-1]
+        try:
+            ugrp = self.data[UNIFORM][popname]            
+        except KeyError:
+            ugrp = self.data[UNIFORM].create_group(popname)
+        if not match_datasets(source_ds, source_data_dict.keys()):
+            raise KeyError('members of `source_ds` must match keys of'
+                           ' `source_data_dict`.')
+        ordered_data = [source_data_dict[src] for src in source_ds]
+        data = np.vstack(ordered_data)
+        try:
+            dataset = ugrp[name]
+            oldcolcount = dataset.shape[1]
+            dataset.resize(oldcolcount + data.shape[1], axis=1)
+            dataset[:, oldcolcount:] = data
+        except KeyError:
+            if dt <= 0.0:
+                raise ValueError('`dt` must be > 0.0 for creating dataset.')
+            if field is None:
+                raise ValueError('`field` is required for creating dataset.')
+            if unit is None:
+                raise ValueError('`unit` is required for creating dataset.')
+            if tunit is None:
+                raise ValueError('`tunit` is required for creating dataset.')
+            maxcol = None
+            if fixed:
+                maxcol = data.shape[1]
+            dataset = ugrp.create_dataset(
+                name, shape=data.shape,
+                dtype=dtype,
+                data=data,
+                maxshape=(data.shape[0], maxcol),
+                compression=self.compression,
+                compression_opts=self.compression_opts,
+                fletcher32=self.fletcher32,
+                shuffle=self.shuffle)
+            dataset.dims.create_scale(source_ds, 'source')
+            dataset.dims[0].attach_scale(source_ds)
+            dataset.attrs['tstart'] = tstart
+            dataset.attrs['dt'] = dt
+            dataset.attrs['field'] = field
+            dataset.attrs['unit'] = unit
+            dataset.attrs['timeunit'] = tunit
+        return dataset
+
+    def add_nonuniform_data(self, name, source_ds, source_data_dict,
+                            ts, field=None, unit=None,
+                            dtype=np.float64, fixed=False):
+        """Append nonuniformly sampled `variable` values from `sources` to
+        `data`.
+
+        Args: 
+            name (str): name under which this data should be
+                stored. Using the variable name whenever possible is
+                recommended.
+
+            source_ds (HDF5 Dataset): the dataset storing the source
+                ids under map. This is attached to the stored data as
+                a dimension scale called `source` on the row
+                dimension.
+
+            source_data_dict (dict): a dict mapping source ids to data
+                arrays. The data arrays are numpy arrays.
+            
 
             field (str): name of the recorded variable. Not required
                 when appending to existing data.
@@ -307,9 +418,7 @@ class NSDFWriter(object):
             ugrp = self.data[UNIFORM][popname]            
         except KeyError:
             ugrp = self.data[UNIFORM].create_group(popname)
-        src_set = set([src for src in source_ds])
-        dsrc_set = set(source_data_dict.keys())
-        if src_set != dsrc_set:
+        if not match_datasets(source_ds, source_data_dict.keys()):
             raise IndexError('members of `source_ds` must match keys of'
                            ' `source_data_dict`.')
         ordered_data = [source_data_dict[src] for src in source_ds]
@@ -329,14 +438,15 @@ class NSDFWriter(object):
             maxcol = None
             if fixed:
                 maxcol = data.shape[1]
-            dataset = ugrp.create_dataset(name, shape=data.shape,
-                                          dtype=data.dtype,
-                                          data=data,
-                                          maxshape=(data.shape[0], maxcol),
-                                          compression=self.compression,
-                                          compression_opts=self.compression_opts,
-                                          fletcher32=self.fletcher32,
-                                          shuffle=self.shuffle)
+            dataset = ugrp.create_dataset(
+                name, shape=data.shape,
+                dtype=data.dtype,
+                data=data,
+                maxshape=(data.shape[0], maxcol),
+                compression=self.compression,
+                compression_opts=self.compression_opts,
+                fletcher32=self.fletcher32,
+                shuffle=self.shuffle)
             dataset.dims.create_scale(source_ds, 'source')
             dataset.dims[0].attach_scale(source_ds)
             dataset.attrs['tstart'] = tstart
@@ -344,6 +454,135 @@ class NSDFWriter(object):
             dataset.attrs['field'] = field
             dataset.attrs['unit'] = unit
         return dataset
+
+    def add_nonuniform_1d(self, name, source_ds, source_name_dict,
+                           datalist, field=None, unit=None,
+                           tunit=None, dtype=np.float64, fixed=False):):
+        """Add nonuniform data when data from each source is in a separate 1D
+        dataset.
+
+        For a population of sources called {population}, a group
+        `/map/nonuniform/{population}` must be first created (using
+        add_nonuniform_ds). This is passed as `source_ds` argument.
+        
+        When adding the data, the uid of the sources and the names for
+        the corresponding datasets must be specified and this function
+        will create one dataset for each source under
+        `/data/nonuniform/{population}/{name}` where {name} is the
+        first argument, preferably the name of the field being
+        recorded.
+        
+        This function can be used when different sources in a
+        population are sampled at different time points for a field
+        value. Such case may arise when each member of the population
+        is simulated using a variable timestep method like CVODE and
+        this timestep is not global.
+
+        Args: 
+            name (str): name of the group under which data should be
+                stored. It is simpler to keep this same as the
+                recorded field.
+
+            source_ds (HDF5 Group): the group under `/map/nonuniform`
+                created for this population of sources (created by
+                add_nonunifrom_ds). The name of this group reflects
+                that of the group under `/data/nonuniform` which
+                stores the datasets.
+
+            source_name_dict (dict): mapping from source id to dataset
+                name.
+
+            datalist (sequence): each entry in this sequence is a
+                three-tuple (source-id, data, time) where data
+                contains the recorded data points and time contains
+                the sampling times for these data points.
+
+            field (str): name of the recorded field. If None, `name`
+                is used as the field name.
+
+            unit (str): unit of the data.
+
+            tunit (str): time unit (for the sampling times)
+
+            dtype (numpy.dtype): type of data (default 64 bit float).
+
+            fixed (bool): if True, the data cannot grow. Default:
+                False
+
+        Returns:
+            dict mapping source ids to datasets.
+
+        """
+        if self.dialect != dialect.ONED:
+            raise Exception('add 1D dataset under nonuniform'
+                            ' only for dialect=ONED')
+        popname = source_ds.name.rpartition('/')[-1]
+        try:
+            nugrp = self.data[NONUNIFORM][popname]        
+        except KeyError:
+            nugrp = self.data[NONUNIFORM].create_group(popname)
+        assert(len(source_name_dict) == len(data),
+               'number of sources do not match number of datasets')
+        try:
+            datagrp = nugrp[name]
+        except KeyError:
+            datagrp = ngrp.create_group(name)            
+        try:
+            map_pop = self.mapping[NONUNIFORM][popname]
+        except KeyError:
+            map_pop = self.mapping[NONUNIFORM].create_group(popname)
+        try:
+            mapping = map_pop[name]
+        except KeyError:
+            mapping = map_pop.create_dataset(name,
+                                             shape=(len(source_name_dict),)
+                                             dtype=SRCDATAMAPTYPE)
+            
+        for ii, (source, data, time) in enumerate(datalist):
+            dsetname = source_name_dict[source]
+            try:
+                dset = datagrp[dsetname]
+                oldlen = dset.shape[0]
+                ts = dset.dims[0]['time']
+                dset.resize(oldlen + data.len())
+                dset[oldlen:] = data
+                ts.resize(oldlen + data.len())
+                ts[oldlen:] = time
+            except KeyError:
+                if field is None:
+                    raise ValueError('`field` is required for creating dataset.')
+                if unit is None:
+                    raise ValueError('`unit` is required for creating dataset.')
+                if tunit is None:
+                    raise ValueError('`tunit` is required for creating dataset.')
+                maxcol = len(data) if fixed else None
+                dset = datagrp.create_dataset(dsetname,
+                                              shape=(data.len(),),
+                                              dtype=dtype, data=data,
+                                              maxshape=(maxcol,),
+                                              compression=self.compression,
+                                              compression_opts=self.compression_opts,
+                                              fletcher32=self.fletcher32,
+                                              shuffle=self.shuffle)
+                dset.attrs['unit'] = unit
+                dset.attrs['field'] = field
+                dset.attrs['source'] = source
+                mapping[ii]['source'] = source
+                mapping[ii]['data'] = dset.ref
+                tsname = '{}_{}'.format(popname, name)
+                ts = self.time_dim.create_dataset(tsname,
+                                                  shape=(data.len(),),
+                                                  dtype=np.float64,
+                                                  data=time,
+                                                  compression=self.compression,
+                                                  compression_opts=self.compression_opts,
+                                                  fletcher32=self.fletcher32,
+                                                  shuffle=self.shuffle)
+                dset.dims.create_scale(ts, 'time')
+                dset.dims[0].attach_scale(ts, 'time')
+                ts['unit'] = tunit
+            ret[source] = (dset, ts)
+        return ret
     
 
 # 
