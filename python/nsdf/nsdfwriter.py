@@ -237,7 +237,7 @@ class NSDFWriter(object):
 
         """
         base = None
-        if homogeneous and (len(idlist) == 0):
+        if (self.dialect == ONEDEVENT) and (len(idlist) == 0):
             raise ValueError('idlist must be nonempty for homogeneously sampled population.')
         try:
             base = self.mapping[NONUNIFORM]
@@ -457,7 +457,7 @@ class NSDFWriter(object):
 
     def add_nonuniform_1d(self, name, source_ds, source_name_dict,
                            datalist, field=None, unit=None,
-                           tunit=None, dtype=np.float64, fixed=False):):
+                           tunit=None, dtype=np.float64, fixed=False):
         """Add nonuniform data when data from each source is in a separate 1D
         dataset.
 
@@ -535,7 +535,7 @@ class NSDFWriter(object):
             mapping = map_pop[name]
         except KeyError:
             mapping = map_pop.create_dataset(name,
-                                             shape=(len(source_name_dict),)
+                                             shape=(len(source_name_dict),),
                                              dtype=SRCDATAMAPTYPE)
             
         for ii, (source, data, time) in enumerate(datalist):

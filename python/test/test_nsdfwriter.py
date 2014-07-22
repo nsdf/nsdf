@@ -312,7 +312,7 @@ class TestNSDFWriter(unittest.TestCase):
                                           field=field,
                                           unit=unit,
                                           tstart=tstart,
-                                          dt=dt)
+                                          dt=dt, tunit='s')
         for row, source in zip(data, data.dims[0]['source']):
             nptest.assert_allclose(np.asarray(row), datadict[source])
         self.assertEqual(data.attrs['field'], field)
@@ -341,10 +341,9 @@ class TestNSDFWriter(unittest.TestCase):
         unit = 'mV'
         tstart = 0.0
         data = writer.add_uniform_data('Vm', ds, datadict,
-                                          field=field,
-                                          unit=unit,
-                                          tstart=tstart,
-                                          dt=dt)
+                                       field=field, unit=unit,
+                                       tstart=tstart, dt=dt,
+                                       tunit='s')
         del writer
         # start over for appending data
         writer = nsdf.NSDFWriter(tmp_file_path)
@@ -367,7 +366,7 @@ class TestNSDFWriter(unittest.TestCase):
                                           field=field,
                                           unit=unit,
                                           tstart=tstart,
-                                          dt=dt)
+                                          dt=dt, tunit='s')
         for row, source in zip(data, data.dims[0]['source']):
             print source, '$', row[-dlen:]
             nptest.assert_allclose(np.asarray(row[-dlen:]), datadict[source])
@@ -375,7 +374,25 @@ class TestNSDFWriter(unittest.TestCase):
 
     def test_model_tree(self):
         """Check if model tree is created properly."""
-        self.fail('Implement this function.')
+        self.fail('Fix me.')
+
+    def test_add_nonuniform_1d(self):
+        self.fail('Fix me')
+
+    def test_add_nonuniform_vlen(self):
+        self.fail('Fix me')
+
+    def test_add_nonuniform_nan(self):
+        self.fail('Fix me')
+
+    def test_add_event_1d(self):
+        self.fail('Fix me')
+
+    def test_add_event_vlen(self):
+        self.fail('Fix me')
+        
+    def test_add_event_nan(self):
+        self.fail('Fix me')
         
 def main():
     unittest.main()
