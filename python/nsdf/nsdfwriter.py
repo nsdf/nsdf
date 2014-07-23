@@ -102,7 +102,8 @@ class NSDFWriter(object):
             represents in the string attribute `uid`.
 
     """
-    def __init__(self, filename, dialect=dialect.ONED, mode='a', compression='gzip', compression_opts=6,
+    def __init__(self, filename, dialect=dialect.ONED, mode='a',
+                 compression='gzip', compression_opts=6,
                  fletcher32=True, shuffle=True):
         self._fd = h5.File(filename, mode)
         self.mode = mode
@@ -237,7 +238,7 @@ class NSDFWriter(object):
 
         """
         base = None
-        if (self.dialect == ONEDEVENT) and (len(idlist) == 0):
+        if (self.dialect == dialect.ONEDEVENT) and (len(idlist) == 0):
             raise ValueError('idlist must be nonempty for homogeneously sampled population.')
         try:
             base = self.mapping[NONUNIFORM]
@@ -246,7 +247,8 @@ class NSDFWriter(object):
         if self.dialect == dialect.ONED:
             ds = base.create_group(name)
         else:
-            ds = base.create_dataset(name, shape=(len(idlist),), dtype=VLENSTR, data=idlist)
+            ds = base.create_dataset(name, shape=(len(idlist),),
+                                     dtype=VLENSTR, data=idlist)
         return ds
 
     def add_event_ds(self, name, model_paths=None):
@@ -510,7 +512,7 @@ class NSDFWriter(object):
                 False
 
         Returns:
-            dict mapping source ids to datasets.
+            dict mapping source ids to the tuple (dataset, time).
 
         """
         if self.dialect != dialect.ONED:
@@ -518,13 +520,13 @@ class NSDFWriter(object):
                             ' only for dialect=ONED')
         popname = source_ds.name.rpartition('/')[-1]
         try:
-            nugrp = self.data[NONUNIFORM][popname]        
+            ngrp = self.data[NONUNIFORM][popname]        
         except KeyError:
-            nugrp = self.data[NONUNIFORM].create_group(popname)
-        assert(len(source_name_dict) == len(data),
+            ngrp = self.data[NONUNIFORM].create_group(popname)
+        assert(len(source_name_dict) == len(datalist),
                'number of sources do not match number of datasets')
         try:
-            datagrp = nugrp[name]
+            datagrp = ngrp[name]
         except KeyError:
             datagrp = ngrp.create_group(name)            
         try:
@@ -537,7 +539,7 @@ class NSDFWriter(object):
             mapping = map_pop.create_dataset(name,
                                              shape=(len(source_name_dict),),
                                              dtype=SRCDATAMAPTYPE)
-            
+        ret = {}
         for ii, (source, data, time) in enumerate(datalist):
             dsetname = source_name_dict[source]
             try:
@@ -557,7 +559,7 @@ class NSDFWriter(object):
                     raise ValueError('`tunit` is required for creating dataset.')
                 maxcol = len(data) if fixed else None
                 dset = datagrp.create_dataset(dsetname,
-                                              shape=(data.len(),),
+                                              shape=(len(data),),
                                               dtype=dtype, data=data,
                                               maxshape=(maxcol,),
                                               compression=self.compression,
@@ -569,9 +571,11 @@ class NSDFWriter(object):
                 dset.attrs['source'] = source
                 mapping[ii]['source'] = source
                 mapping[ii]['data'] = dset.ref
-                tsname = '{}_{}'.format(popname, name)
+                # Using {popname}_{variablename}_{dsetname} for
+                # simplicity. What about creating a hierarchy?
+                tsname = '{}_{}_{}'.format(popname, name, dsetname)
                 ts = self.time_dim.create_dataset(tsname,
-                                                  shape=(data.len(),),
+                                                  shape=(len(data),),
                                                   dtype=np.float64,
                                                   data=time,
                                                   compression=self.compression,
@@ -579,8 +583,9 @@ class NSDFWriter(object):
                                                   fletcher32=self.fletcher32,
                                                   shuffle=self.shuffle)
                 dset.dims.create_scale(ts, 'time')
-                dset.dims[0].attach_scale(ts, 'time')
-                ts['unit'] = tunit
+                dset.dims[0].label = 'time'
+                dset.dims[0].attach_scale(ts)
+                ts.attrs['unit'] = tunit
             ret[source] = (dset, ts)
         return ret
     

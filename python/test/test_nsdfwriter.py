@@ -181,6 +181,7 @@ class TestNSDFWriter(unittest.TestCase):
         as data sources for nonuniformly sampled data.
 
         """
+        self.fail('Refactor this')
         tmp_file_path = 'test_add_nonuniform_ds_h.h5'
         writer = nsdf.NSDFWriter(tmp_file_path)
         mitral_somata = []
@@ -357,7 +358,6 @@ class TestNSDFWriter(unittest.TestCase):
         dlen = 5
         for uid in granule_somata:            
             datadict[uid] = np.random.uniform(-65, -55, size=dlen)
-            print 'uid', uid, '#', datadict[uid]
         dt = 1e-4
         field = 'Vm'
         unit = 'mV'
@@ -368,7 +368,6 @@ class TestNSDFWriter(unittest.TestCase):
                                           tstart=tstart,
                                           dt=dt, tunit='s')
         for row, source in zip(data, data.dims[0]['source']):
-            print source, '$', row[-dlen:]
             nptest.assert_allclose(np.asarray(row[-dlen:]), datadict[source])
         os.remove(tmp_file_path)
 
@@ -376,8 +375,38 @@ class TestNSDFWriter(unittest.TestCase):
         """Check if model tree is created properly."""
         self.fail('Fix me.')
 
-    def test_add_nonuniform_1d(self):
-        self.fail('Fix me')
+    def test_create_nonuniform_1d(self):
+        """Check adding nonuniformly sampled data using 1D datasets for the
+        first time"""
+        tmp_file_path = 'test_create_nonuniform_1d.h5'
+        writer = nsdf.NSDFWriter(tmp_file_path)
+        mitral_somata = []
+        for cell in self.mdict['mitral_cells']:
+            for name, comp in cell.children.items():
+                if name == 'mc_0':
+                    mitral_somata.append(comp.uid)
+        ds = writer.add_nonuniform_ds('pop1',
+                              mitral_somata)
+        datadict = {}
+        dlen = 1000
+        datalist = []
+        src_name_dict = {}
+        for ii, uid in enumerate(mitral_somata):
+            data = np.random.uniform(-65, -55, size=dlen)
+            times = np.cumsum(np.random.exponential(scale=0.01, size=dlen))
+            datalist.append((uid, data, times))
+            src_name_dict[uid] = str('vm_{}'.format(ii))
+        field = 'Vm'
+        unit = 'mV'
+        tunit = 's'
+        tstart = 0.0
+        datadict = writer.add_nonuniform_1d('Vm', ds,src_name_dict,
+                                        datalist, field=field,
+                                        unit=unit, tunit=tunit)
+        del writer
+        os.remove(tmp_file_path)
+        
+        
 
     def test_add_nonuniform_vlen(self):
         self.fail('Fix me')
@@ -393,9 +422,85 @@ class TestNSDFWriter(unittest.TestCase):
         
     def test_add_event_nan(self):
         self.fail('Fix me')
+
+class TestNSDFWriterNonuniform1D(unittest.TestCase):
+    """Test case for writing nonuniformly sampled data in 1D arrays"""
+    def setUp(self):
+        self.mdict = create_ob_model_tree()
+        self.filepath = 'test_nsdfwriter_nonuniform_1d.h5'
+        self.writer = nsdf.NSDFWriter(self.filepath,
+                                 dialect=nsdf.dialect.ONED)
+        mitral_somata = []
+        for cell in self.mdict['mitral_cells']:
+            for name, comp in cell.children.items():
+                if name == 'mc_0':
+                    mitral_somata.append(comp.uid)
+                    
+        self.popname = 'pop1'
+        ds = self.writer.add_nonuniform_ds(self.popname, mitral_somata)
+        self.dlen = 1000
+        self.datalist = []
+        self.src_name_dict = {}
+        self.src_data_dict = {}
+        self.src_ts_dict = {}
+        for ii, uid in enumerate(mitral_somata):
+            data = np.random.uniform(-65, -55, size=self.dlen)
+            times = np.cumsum(np.random.exponential(scale=0.01, size=self.dlen))
+            self.datalist.append((uid, data, times))            
+            self.src_name_dict[uid] = str('vm_{}'.format(ii))
+            self.src_data_dict[uid] = data
+            self.src_ts_dict[uid] = times
+        self.field = 'Vm'
+        self.unit = 'mV'
+        self.tunit = 's'
+        self.varname = 'Vm'
+        dd = self.writer.add_nonuniform_1d(self.varname,
+                                           ds,self.src_name_dict,
+                                           self.datalist,
+                                           field=self.field,
+                                           unit=self.unit,
+                                           tunit=self.tunit)
+        del self.writer # ensure the file is closed
+
+    def tearDown(self):        
+        os.remove(self.filepath)
+                                 
+    def test_data(self):
+        """Check the data is correctly written."""
+        with h5.File(self.filepath, 'r') as fd:
+            data_grp_name = '/data/{}/{}/{}'.format(nsdf.NONUNIFORM,
+                                               self.popname,
+                                               self.varname)            
+            data_grp = fd[data_grp_name]
+            for dataset_name in data_grp:
+                dataset = data_grp[dataset_name]
+                srcuid = dataset.attrs['source']
+                nptest.assert_allclose(np.asarray(self.src_data_dict[srcuid]),
+                                       np.asarray(dataset))
+                self.assertEqual(dataset.attrs['unit'], self.unit)
+                self.assertEqual(dataset.attrs['field'], self.field)
+
+    def test_ts(self):
+        with h5.File(self.filepath, 'r') as fd:
+            data_grp_name = '/data/{}/{}/{}'.format(nsdf.NONUNIFORM,
+                                               self.popname,
+                                               self.varname)
+            data_grp = fd[data_grp_name]
+            for dataset_name in data_grp:
+                dataset = data_grp[dataset_name]
+                srcuid = dataset.attrs['source']
+                ts = dataset.dims[0]['time']
+                nptest.assert_allclose(np.asarray(self.src_ts_dict[srcuid]),
+                                       np.asarray(ts))
+                self.assertEqual(ts.attrs['unit'], self.tunit)
+
+        
+
         
 def main():
     unittest.main()
+
+import subprocess
 
 if __name__ == '__main__':
     main()
