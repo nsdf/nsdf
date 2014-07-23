@@ -64,6 +64,7 @@ from numpy import testing as nptest
 import h5py as h5
 from datetime import datetime
 import unittest
+import uuid
 
 sys.path.append('..')
 import nsdf
@@ -469,13 +470,14 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
                                            field=self.field,
                                            unit=self.unit,
                                            tunit=self.tunit)
-        del self.writer # ensure the file is closed
 
     def tearDown(self):        
+        del self.writer # ensure the file is closed
         os.remove(self.filepath)
                                  
     def test_data(self):
         """Check the data is correctly written."""
+        self.writer.set_title('TestNSDFWriterNonuniform1D.test_data')
         with h5.File(self.filepath, 'r') as fd:
             data_grp_name = '/data/{}/{}/{}'.format(nsdf.NONUNIFORM,
                                                self.popname,
@@ -490,6 +492,7 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
                 self.assertEqual(dataset.attrs['field'], self.field)
 
     def test_ts(self):
+        self.writer.set_title('TestNSDFWriterNonuniform1D.test_ts')
         with h5.File(self.filepath, 'r') as fd:
             data_grp_name = '/data/{}/{}/{}'.format(nsdf.NONUNIFORM,
                                                self.popname,
@@ -508,10 +511,12 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
     """Test case for writing nonuniformly sampled data in 2D ragged
     arrays"""
     def setUp(self):
+        self.test_id = uuid.uuid1().hex
         self.mdict = create_ob_model_tree()
-        self.filepath = 'test_nsdfwriter_nonuniform_vlen.h5'
+        self.filepath = 'test_{}.h5'.format(self.test_id)
         self.writer = nsdf.NSDFWriter(self.filepath,
                                       dialect=nsdf.dialect.VLEN)
+        print 'Filename:', self.filepath
         mitral_somata = []
         for cell in self.mdict['mitral_cells']:
             for name, comp in cell.children.items():
@@ -536,44 +541,60 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
                                              field=self.field,
                                              unit=self.unit,
                                              tunit=self.tunit)
+    def tearDown(self):
         del self.writer # ensure the file is closed
+        # os.remove(self.filepath)
 
-    def tearDown(self):        
-        os.remove(self.filepath)
-    
+    def test_source_ds(self):
+        self.writer.set_title('TestNSDFWriterNonuniformVlen.test_source_ds')
+        with h5.File(self.filepath, 'r') as fd:
+            source_ds_name = '/map/{}/{}'.format(nsdf.NONUNIFORM,
+                                                 self.popname,
+                                                 self.varname)
+            source_ds = fd[source_ds_name]            
+            self.assertTrue(nsdf.match_datasets(source_ds,
+                                                self.src_data_dict.keys()))            
+
     def test_data(self):
         """Check the data is correctly written."""
+        self.writer.set_title('TestNSDFWriterNonuniformVlen.test_data')
         with h5.File(self.filepath, 'r') as fd:
             dataset_name = '/data/{}/{}/{}'.format(nsdf.NONUNIFORM,
                                                    self.popname,
                                                    self.varname)            
             dataset = fd[dataset_name]
-            src_ds_name = '/map/{}/{}/{}'.format(nsdf.NONUNIFORM,
-                                                self.popname,
-                                                self.varname)
+            self.assertIsInstance(dataset, h5.Dataset)
+            src_ds_name = '/map/{}/{}'.format(nsdf.NONUNIFORM,
+                                              self.popname)
             src_ds = fd[src_ds_name]            
-            self.assertEqual(src_ds, fd[dataset.attrs['source']])
+            self.assertIsInstance(src_ds, h5.Dataset)
+            attached_src_ds = dataset.dims[0]['source']          
+            self.assertEqual(src_ds, attached_src_ds)
             self.assertEqual(dataset.attrs['unit'], self.unit)
             self.assertEqual(dataset.attrs['field'], self.field)    
             for ii in range(src_ds.len()):
                 srcuid = src_ds[ii]                
                 nptest.assert_allclose(np.asarray(self.src_data_dict[srcuid][0]),
                                        np.asarray(dataset[ii]))
+        os.remove(self.filepath)
 
     def test_ts(self):
+        self.writer.set_title('TestNSDFWriterNonuniformVlen.test_ts')        
         with h5.File(self.filepath, 'r') as fd:
             dataset_name = '/data/{}/{}/{}'.format(nsdf.NONUNIFORM,
                                                self.popname,
                                                self.varname)
             dataset = fd[dataset_name]
-            src_ds = fd[dataset.attrs['source']]
-            time_ds = dataset.dims[1]['time']
+            self.assertIsInstance(dataset, h5.Dataset)            
+            src_ds = dataset.dims[0]['source']
+            time_ds = dataset.dims[0]['time']
             self.assertEqual(time_ds.attrs['unit'], self.tunit)
             self.assertEqual(time_ds.shape, dataset.shape)
             for ii in range(src_ds.len()):
                 srcuid = src_ds[ii]                
                 nptest.assert_allclose(np.asarray(self.src_data_dict[srcuid][1]),
                                        np.asarray(time_ds[ii]))
+        os.remove(self.filepath)
         
 def main():
     unittest.main()

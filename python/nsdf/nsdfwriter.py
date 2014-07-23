@@ -55,7 +55,7 @@ import numpy as np
 
 from .model import ModelComponent
 from .constants import *
-
+from datetime import datetime
 
 def match_datasets(hdfds, pydata):
     """Match entries in hdfds with those in pydata. Returns true if the
@@ -106,6 +106,9 @@ class NSDFWriter(object):
                  compression='gzip', compression_opts=6,
                  fletcher32=True, shuffle=True):
         self._fd = h5.File(filename, mode)
+        self.timestamp = datetime.utcnow()
+        self._fd.attrs['timestamp'] = self.timestamp.isoformat()
+        self._fd.attrs['version'] = '0.1'
         self.mode = mode
         self.dialect = dialect
         try:
@@ -146,6 +149,24 @@ class NSDFWriter(object):
 
     def __del__(self):
         self._fd.close()
+
+    def set_title(self, title):
+        self._fd.attrs['title'] = title
+
+    def set_creator(self, creator):
+        self._fd.attrs['creator'] = creator
+
+    def set_license(self, text):
+        self._fd.attrs['license'] = text
+
+    def set_software(self, software_list):       
+        self._fd.attrs['software'] = software_list
+
+    def set_method(self, method_list):
+        self._fd.attrs['method'] = method_list
+
+    def set_description(self, description):
+        self._fd.attrs['description'] = description
 
     def add_model_component(self, name, uid=None, parent=None,
                             attrs=None):
@@ -592,7 +613,7 @@ class NSDFWriter(object):
     
     def add_nonuniform_vlen(self, name, source_ds, source_data_dict,
                             field=None, unit=None, tunit=None,
-                            dtype=np.float64, fixed=False):
+                            dtype=np.float32, fixed=False):
         """Add nonuniform data when data from all sources in a population is
         stored in a 2D ragged array.
 
@@ -629,7 +650,7 @@ class NSDFWriter(object):
 
             tunit (str): time unit (for the sampling times)
 
-            dtype (numpy.dtype): type of data (default 64 bit float).
+            dtype (numpy.dtype): type of data (default 32 bit float).
 
             fixed (bool): if True, this is a one-time write and the
                 data cannot grow. Default: False
@@ -644,15 +665,19 @@ class NSDFWriter(object):
             appending data to rows of vlen datasets. If that is not
             possible, vlen dataset is a technically poor choice.
 
+            h5py does not support vlen datasets with float64
+            elements. Change dtype to np.float64 once that is
+            developed.
+
         """
         if self.dialect != dialect.VLEN:
             raise Exception('add 2D vlen dataset under nonuniform'
                             ' only for dialect=VLEN')
         popname = source_ds.name.rpartition('/')[-1]
         try:
-            ngrp = self.data[UNIFORM][popname]            
+            ngrp = self.data[NONUNIFORM][popname]            
         except KeyError:
-            ngrp = self.data[UNIFORM].create_group(popname)
+            ngrp = self.data[NONUNIFORM].create_group(popname)
         if not match_datasets(source_ds, source_data_dict.keys()):
             raise KeyError('members of `source_ds` must match keys of'
                            ' `source_data_dict`.')
