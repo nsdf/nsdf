@@ -458,7 +458,7 @@ class NSDFWriter(object):
         return dataset
 
     def add_nonuniform_1d(self, name, source_ds, source_name_dict,
-                           datalist, field=None, unit=None,
+                           source_data_dict, field=None, unit=None,
                            tunit=None, dtype=np.float64, fixed=False):
         """Add nonuniform data when data from each source is in a separate 1D
         dataset.
@@ -494,10 +494,10 @@ class NSDFWriter(object):
             source_name_dict (dict): mapping from source id to dataset
                 name.
 
-            datalist (sequence): each entry in this sequence is a
-                three-tuple (source-id, data, time) where data
-                contains the recorded data points and time contains
-                the sampling times for these data points.
+            source_data_dict (dict): mapping from source id to the
+                tuple (data, time) where data contains the recorded
+                data points and time contains the sampling times for
+                these data points.
 
             field (str): name of the recorded field. If None, `name`
                 is used as the field name.
@@ -523,7 +523,7 @@ class NSDFWriter(object):
             ngrp = self.data[NONUNIFORM][popname]        
         except KeyError:
             ngrp = self.data[NONUNIFORM].create_group(popname)
-        assert(len(source_name_dict) == len(datalist),
+        assert(len(source_name_dict) == len(source_data_dict),
                'number of sources do not match number of datasets')
         try:
             datagrp = ngrp[name]
@@ -540,15 +540,16 @@ class NSDFWriter(object):
                                              shape=(len(source_name_dict),),
                                              dtype=SRCDATAMAPTYPE)
         ret = {}
-        for ii, (source, data, time) in enumerate(datalist):
+        for ii, source in enumerate(source_data_dict.keys()):
+            data, time = source_data_dict[source]
             dsetname = source_name_dict[source]
             try:
                 dset = datagrp[dsetname]
                 oldlen = dset.shape[0]
                 ts = dset.dims[0]['time']
-                dset.resize(oldlen + data.len())
+                dset.resize(oldlen + len(data))
                 dset[oldlen:] = data
-                ts.resize(oldlen + data.len())
+                ts.resize(oldlen + len(data))
                 ts[oldlen:] = time
             except KeyError:
                 if field is None:
@@ -589,6 +590,116 @@ class NSDFWriter(object):
             ret[source] = (dset, ts)
         return ret
     
+    def add_nonuniform_vlen(self, name, source_ds, source_data_dict,
+                            field=None, unit=None, tunit=None,
+                            dtype=np.float64, fixed=False):
+        """Add nonuniform data when data from all sources in a population is
+        stored in a 2D ragged array.
 
+        When adding the data, the uid of the sources and the names for
+        the corresponding datasets must be specified and this function
+        will create the dataset `/data/nonuniform/{population}/{name}`
+        where {name} is the first argument, preferably the name of the
+        field being recorded.
+        
+        This function can be used when different sources in a
+        population are sampled at different time points for a field
+        value. Such case may arise when each member of the population
+        is simulated using a variable timestep method like CVODE and
+        this timestep is not global.
+
+        Args: 
+            name (str): name of the group under which data should be
+                stored. It is simpler to keep this same as the
+                recorded field.
+
+            source_ds (HDF5 dataset): the dataset under
+                `/map/nonuniform` created for this population of
+                sources (created by add_nonunifrom_ds).
+
+            source_data_dict (dict): mapping from source id to the
+                tuple (data, time) where data contains the recorded
+                data points and time contains the sampling times for
+                these data points.
+
+            field (str): name of the recorded field. If None, `name`
+                is used as the field name.
+
+            unit (str): unit of the data.
+
+            tunit (str): time unit (for the sampling times)
+
+            dtype (numpy.dtype): type of data (default 64 bit float).
+
+            fixed (bool): if True, this is a one-time write and the
+                data cannot grow. Default: False
+
+        Returns:
+            tuple containing HDF5 Datasets for the data and sampling
+            times.
+
+        TODO: 
+            Concatenating old data with new data and reassigning is a poor
+            choice. waiting for response from h5py mailing list about
+            appending data to rows of vlen datasets. If that is not
+            possible, vlen dataset is a technically poor choice.
+
+        """
+        if self.dialect != dialect.VLEN:
+            raise Exception('add 2D vlen dataset under nonuniform'
+                            ' only for dialect=VLEN')
+        popname = source_ds.name.rpartition('/')[-1]
+        try:
+            ngrp = self.data[UNIFORM][popname]            
+        except KeyError:
+            ngrp = self.data[UNIFORM].create_group(popname)
+        if not match_datasets(source_ds, source_data_dict.keys()):
+            raise KeyError('members of `source_ds` must match keys of'
+                           ' `source_data_dict`.')
+        try:
+            dataset = ngrp[name]
+        except KeyError:
+            if field is None:
+                raise ValueError('`field` is required for creating dataset.')
+            if unit is None:
+                raise ValueError('`unit` is required for creating dataset.')
+            if tunit is None:
+                raise ValueError('`tunit` is required for creating dataset.')
+            vlentype = h5.special_dtype(vlen=dtype)
+            # Fix me: is there any point of keeping the compression
+            # and shuffle options?
+            dataset = ngrp.create_dataset(name, shape=source_ds.shape,
+                                          dtype=vlentype,
+                                          compression=self.compression,
+                                          compression_opts=self.compression_opts,
+                                          fletcher32=self.fletcher32,
+                                          shuffle=self.shuffle)
+            dataset.attrs['field'] = field
+            dataset.attrs['unit'] = unit
+            dataset.dims.create_scale(source_ds, 'source')
+            dataset.dims[0].attach_scale(source_ds)
+            # Using {popname}_{variablename} for simplicity. What
+            # about creating a hierarchy?
+            tsname = '{}_{}'.format(popname, name)
+            # fixme: VLENFLOAT should be made VLENDOUBLE whenever h5py
+            # fixes it
+            time_ds = self.time_dim.create_dataset(tsname,
+                                                  shape=dataset.shape,
+                                                  dtype=VLENFLOAT,      
+                                                  compression=self.compression,
+                                                  compression_opts=self.compression_opts,
+                                                  fletcher32=self.fletcher32,
+                                                  shuffle=self.shuffle)
+            dataset.dims.create_scale(time_ds, 'time')
+            dataset.dims[0].attach_scale(time_ds)
+            time_ds.attrs['unit'] = tunit
+        for ii, source in enumerate(source_ds):
+            data, time = source_data_dict[source]
+            dataset[ii] = np.concatenate((dataset[ii], data))
+            time_ds[ii] = np.concatenate((time_ds[ii], time))            
+        return dataset, time_ds
+
+
+    
 # 
 # nsdfwriter.py ends here
