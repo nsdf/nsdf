@@ -420,15 +420,7 @@ class TestNSDFWriter(unittest.TestCase):
         del writer
         os.remove(tmp_file_path)
         
-        
-
-    def test_add_nonuniform_vlen(self):
-        self.fail('Fix me')
-
     def test_add_nonuniform_nan(self):
-        self.fail('Fix me')
-
-    def test_add_event_1d(self):
         self.fail('Fix me')
 
     def test_add_event_vlen(self):
@@ -471,9 +463,10 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
                                            unit=self.unit,
                                            tunit=self.tunit)
 
-    def tearDown(self):        
-        del self.writer # ensure the file is closed
-        os.remove(self.filepath)
+    def tearDown(self):
+        if hasattr(self, 'writer'):
+            del self.writer # ensure the file is closed
+        
                                  
     def test_data(self):
         """Check the data is correctly written."""
@@ -490,6 +483,8 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
                                        np.asarray(dataset))
                 self.assertEqual(dataset.attrs['unit'], self.unit)
                 self.assertEqual(dataset.attrs['field'], self.field)
+        del self.writer
+        os.remove(self.filepath)
 
     def test_ts(self):
         self.writer.set_title('TestNSDFWriterNonuniform1D.test_ts')
@@ -505,6 +500,8 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
                 nptest.assert_allclose(np.asarray(self.src_data_dict[srcuid][1]),
                                        np.asarray(ts))
                 self.assertEqual(ts.attrs['unit'], self.tunit)
+        del self.writer
+        os.remove(self.filepath)
 
                 
 class TestNSDFWriterNonuniformVlen(unittest.TestCase):
@@ -594,6 +591,56 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
                 srcuid = src_ds[ii]                
                 nptest.assert_allclose(np.asarray(self.src_data_dict[srcuid][1]),
                                        np.asarray(time_ds[ii]))
+        os.remove(self.filepath)
+
+class TestNSDFWriterEvent1D(unittest.TestCase):
+    def setUp(self):
+        """Create a poisson spike train for each cell in mitral population and
+        save the data as 1D event data"""
+        self.test_id = uuid.uuid1().hex
+        self.mdict = create_ob_model_tree()
+        self.filepath = 'test_{}.h5'.format(self.test_id)
+        self.writer = nsdf.NSDFWriter(self.filepath,
+                                      dialect=nsdf.dialect.ONED)
+        self.sources = [cell.uid for cell in self.mdict['mitral_cells']]
+        self.popname = 'pop1'
+        ds = self.writer.add_event_ds(self.popname, self.sources)
+        self.src_data_dict = {}
+        self.src_name_dict = {}
+        rate = 100.0
+        dlen = np.random.poisson(lam=rate, size=len(self.sources))
+        for ii, cell in enumerate(self.mdict['mitral_cells']):
+            uid = cell.uid
+            data = np.cumsum(np.random.exponential(scale=1.0/rate, size=dlen[ii]))
+            self.src_data_dict[uid] = data
+            # this is not required to be cell.name, any valid hdf5
+            # name will do
+            self.src_name_dict[uid] = cell.name    
+        self.field = 'spike'
+        self.unit = 's'
+        self.varname = 'spike'
+        dd = self.writer.add_event_1d(self.varname, ds,
+                                      self.src_name_dict,
+                                      self.src_data_dict,
+                                      field=self.field,
+                                      unit=self.unit)
+
+    def test_data(self):
+        """Check the data is correctly written."""
+        self.writer.set_title('TestNSDFWriterEvent1D.test_data')
+        with h5.File(self.filepath, 'r') as fd:
+            data_grp_name = '/data/{}/{}/{}'.format(nsdf.EVENT,
+                                               self.popname,
+                                               self.varname)            
+            data_grp = fd[data_grp_name]
+            for dataset_name in data_grp:
+                dataset = data_grp[dataset_name]
+                srcuid = dataset.attrs['source']
+                nptest.assert_allclose(np.asarray(self.src_data_dict[srcuid]),
+                                       np.asarray(dataset))
+                self.assertEqual(dataset.attrs['unit'], self.unit)
+                self.assertEqual(dataset.attrs['field'], self.field)
+        del self.writer
         os.remove(self.filepath)
         
 def main():

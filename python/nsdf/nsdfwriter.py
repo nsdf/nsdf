@@ -724,6 +724,109 @@ class NSDFWriter(object):
             time_ds[ii] = np.concatenate((time_ds[ii], time))            
         return dataset, time_ds
 
+    def add_event_1d(self, name, source_ds, source_name_dict,
+                           source_data_dict, field=None, unit=None,
+                           tunit=None, dtype=np.float64, fixed=False):
+        """Add event time data when data from each source is in a separate 1D
+        dataset.
+
+        For a population of sources called {population}, a group
+        `/map/event/{population}` must be first created (using
+        add_event_ds). This is passed as `source_ds` argument.
+        
+        When adding the data, the uid of the sources and the names for
+        the corresponding datasets must be specified in
+        `source_name_dict` and this function will create one dataset
+        for each source under `/data/event/{population}/{name}` where
+        {name} is preferably the name of the field being recorded.
+        
+        Args: 
+            name (str): name of the group under which data should be
+                stored. It is simpler to keep this same as the
+                recorded field.
+
+            source_ds (HDF5 Group): the group under `/map/event`
+                created for this population of sources (created by
+                add_nonunifrom_ds). The name of this group reflects
+                that of the group under `/data/event` which
+                stores the datasets.
+
+            source_name_dict (dict): mapping from source id to dataset
+                name.
+
+            source_data_dict (dict): mapping from source id to the
+                data containing the event time data.
+
+            field (str): name of the recorded field. If None, `name`
+                is used as the field name.
+
+            unit (str): unit of the data.
+
+            dtype (numpy.dtype): type of data (default 64 bit float).
+
+            fixed (bool): if True, the data cannot grow. Default:
+                False
+
+        Returns:
+            dict mapping source ids to datasets.
+
+        """
+        if ((self.dialect != dialect.ONED) and
+            (self.dialect != dialect.ONEDEVENT)):
+            raise Exception('add 1D dataset under event'
+                            ' only for dialect=ONED or ONEDEVENT')
+        popname = source_ds.name.rpartition('/')[-1]
+        try:
+            ngrp = self.data[EVENT][popname]        
+        except KeyError:
+            ngrp = self.data[EVENT].create_group(popname)
+        assert(len(source_name_dict) == len(source_data_dict),
+               'number of sources do not match number of datasets')
+        try:
+            datagrp = ngrp[name]
+        except KeyError:
+            datagrp = ngrp.create_group(name)            
+        try:
+            map_pop = self.mapping[EVENT][popname]
+        except KeyError:
+            map_pop = self.mapping[EVENT].create_group(popname)
+        try:
+            mapping = map_pop[name]
+        except KeyError:
+            mapping = map_pop.create_dataset(name,
+                                             shape=(len(source_name_dict),),
+                                             dtype=SRCDATAMAPTYPE)
+        ret = {}
+        for ii, source in enumerate(source_data_dict.keys()):
+            data = source_data_dict[source]
+            dsetname = source_name_dict[source]
+            try:
+                dset = datagrp[dsetname]
+                oldlen = dset.shape[0]
+                dset.resize(oldlen + len(data))
+                dset[oldlen:] = data
+            except KeyError:
+                if field is None:
+                    raise ValueError('`field` is required for creating dataset.')
+                if unit is None:
+                    raise ValueError('`unit` is required for creating dataset.')
+                maxcol = len(data) if fixed else None
+                dset = datagrp.create_dataset(dsetname,
+                                              shape=(len(data),),
+                                              dtype=dtype, data=data,
+                                              maxshape=(maxcol,),
+                                              compression=self.compression,
+                                              compression_opts=self.compression_opts,
+                                              fletcher32=self.fletcher32,
+                                              shuffle=self.shuffle)
+                dset.attrs['unit'] = unit
+                dset.attrs['field'] = field
+                dset.attrs['source'] = source
+                mapping[ii]['source'] = source
+                mapping[ii]['data'] = dset.ref
+            ret[source] = dset
+        return ret
+    
 
     
 # 
