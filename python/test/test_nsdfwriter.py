@@ -140,53 +140,119 @@ def create_ob_model_tree():
                 'mitral_population': mitral,
                 'granule_cells': granule_cells,
                 'mitral_cells': mitral_cells}
-    
-    
-class TestNSDFWriter(unittest.TestCase):
+
+class TestNSDFWriterUniform(unittest.TestCase):
+    """Unit tests for check if adding data sources is working properly"""
     def setUp(self):
+        self.test_id = uuid.uuid1().hex
         self.mdict = create_ob_model_tree()
+        self.filepath = 'test_{}.h5'.format(self.test_id)
+        self.granule_somata = []
+        self.popname = 'pop0'
+        for cell in self.mdict['granule_cells']:
+            for name, comp in cell.children.items():
+                if name == 'gc_0':
+                    self.granule_somata.append(comp.uid)
+        
         
     def test_add_uniform_ds(self):
         """Add the soma (gc_0) all the granule cells in olfactory bulb model
         as data sources for uniformly sampled data.
 
         """
-        tmp_file_path = 'test_add_uniform_data_sources.h5'
-        writer = nsdf.NSDFWriter(tmp_file_path)
-        granule_somata = []
-        for cell in self.mdict['granule_cells']:
-            for name, comp in cell.children.items():
-                if name == 'gc_0':
-                    granule_somata.append(comp.uid)
-        writer.add_uniform_ds('pop0',
-                              granule_somata)
-        try:
-            uniform_ds = writer._fd['/map/uniform/pop0']
-            ds = set([uid for uid in uniform_ds])
-        except KeyError:
-            self.fail('pop0 not created.')
-        self.assertEqual(ds, set(granule_somata))
-        os.remove(tmp_file_path)
-            
-    def test_adding_ds_creates_uniform_group(self):
-        """Check that adding uniform data sources creates the '/uniform' group
-        under '/map'
+        writer = nsdf.NSDFWriter(self.filepath)
+        writer.add_uniform_ds(self.popname,
+                              self.granule_somata)
+        del writer
+        with h5.File(self.filepath, 'r') as fd:
+            try:
+                uniform_group = fd['map']['uniform']
+            except KeyError:
+                self.fail('/map/uniform group does not exist after'
+                          ' adding uniform data sources')
+            try:
+                uniform_ds = fd['/map/uniform/pop0']
+            except KeyError:
+                self.fail('pop0 not created.')
+            self.assertTrue(nsdf.match_datasets(uniform_ds, self.granule_somata))
+        os.remove(self.filepath)
 
-        """
-        tmp_file_path = 'test_add_uniform_data_sources.h5'
-        writer = nsdf.NSDFWriter(tmp_file_path)
-        granule_somata = []
-        for cell in self.mdict['granule_cells']:
-            for name, comp in cell.children.items():
-                if name == 'gc_0':
-                    granule_somata.append(comp.uid)
-        writer.add_uniform_ds('pop0', granule_somata)
-        try:
-            uniform_group = writer._fd['map']['uniform']
-        except KeyError:
-            self.fail('/map/uniform group does not exist after'
-                      ' adding uniform data sources')
-        os.remove(tmp_file_path)
+    def test_create_uniform_data(self):
+        """Create uniform data for the first time."""
+        writer = nsdf.NSDFWriter(self.filepath)
+        ds = writer.add_uniform_ds(self.popname,
+                              self.granule_somata)
+        datadict = {}
+        dlen = 1000
+        for uid in self.granule_somata:
+            datadict[uid] = np.random.uniform(-65, -55, size=dlen)
+        dt = 1e-4
+        field = 'Vm'
+        unit = 'mV'
+        tstart = 0.0
+        data = writer.add_uniform_data(field, ds, datadict,
+                                          field=field,
+                                          unit=unit,
+                                          tstart=tstart,
+                                          dt=dt, tunit='s')
+        del writer
+        with h5.File(self.filepath, 'r') as fd:
+            data = fd['/data'][nsdf.UNIFORM][self.popname][field]
+            for row, source in zip(data, data.dims[0]['source']):
+                nptest.assert_allclose(np.asarray(row), datadict[source])
+            self.assertEqual(data.attrs['field'], field)
+            self.assertEqual(data.attrs['unit'], unit)
+            self.assertAlmostEqual(data.attrs['dt'], dt)
+            self.assertAlmostEqual(data.attrs['tstart'], tstart)
+        os.remove(self.filepath)
+
+    def test_append_uniform_data(self):
+        """Try appending data to existing uniformly sampled dataset"""
+        writer = nsdf.NSDFWriter(self.filepath, mode='w')
+        ds = writer.add_uniform_ds(self.popname,
+                              self.granule_somata)
+        datadict = {}
+        dlen = 5
+        for uid in self.granule_somata:
+            datadict[uid] = np.random.uniform(-65, -55, size=dlen)
+        dt = 1e-4
+        name = 'Vm'
+        field = 'Vm'
+        unit = 'mV'
+        tunit = 's'
+        tstart = 0.0
+        data = writer.add_uniform_data(name, ds, datadict,
+                                       field=field, unit=unit,
+                                       tstart=tstart, dt=dt,
+                                       tunit=tunit)
+        del writer
+        # start over for appending data
+        writer = nsdf.NSDFWriter(self.filepath)
+        ds = writer.mapping['uniform'][self.popname]
+        datadict = {}
+        dlen = 5
+        for uid in self.granule_somata:            
+            datadict[uid] = np.random.uniform(-65, -55, size=dlen)
+        dt = 1e-4
+        field = 'Vm'
+        unit = 'mV'
+        tstart = 0.0
+        data = writer.add_uniform_data('Vm', ds, datadict,
+                                          field=field,
+                                          unit=unit,
+                                          tstart=tstart,
+                                          dt=dt, tunit='s')
+        del writer
+        with h5.File(self.filepath, 'r') as fd:
+            data = fd['data'][nsdf.UNIFORM][self.popname][name]
+            for row, source in zip(data, data.dims[0]['source']):
+                nptest.assert_allclose(row[-dlen:], datadict[source])
+        os.remove(self.filepath)
+        
+    
+class TestNSDFWriter(unittest.TestCase):
+    def setUp(self):
+        self.mdict = create_ob_model_tree()
         
     def test_add_nonuniform_ds_homogeneous(self):
         """Add the soma (gc_0) all the granule cells in olfactory bulb model
@@ -201,7 +267,7 @@ class TestNSDFWriter(unittest.TestCase):
             for name, comp in cell.children.items():
                 if name == 'mc_0':
                     mitral_somata.append(comp.uid)
-        writer.add_nonuniform_ds('pop1', mitral_somata, True)
+        writer.add_nonuniform_ds('pop1', mitral_somata)
         try:
             nonuniform_ds = writer._fd['/map/nonuniform/pop1']
             ds = set([uid for uid in nonuniform_ds])
@@ -223,7 +289,7 @@ class TestNSDFWriter(unittest.TestCase):
                 if name == 'mc_0':
                     mitral_somata.append(comp.uid)
         writer.add_nonuniform_ds('pop1',
-                                mitral_somata, True)
+                                mitral_somata)
         try:
             nonuniform_group = writer._fd['map']['nonuniform']
         except KeyError:
@@ -243,7 +309,7 @@ class TestNSDFWriter(unittest.TestCase):
             for name, comp in cell.children.items():
                 if name == 'mc_0':
                     mitral_somata.append(comp.uid)
-        writer.add_nonuniform_ds('pop1', mitral_somata, False)
+        writer.add_nonuniform_ds('pop1', mitral_somata)
         try:
             nonuniform_ds = writer._fd['/map/nonuniform/pop1']
         except KeyError:
@@ -264,7 +330,7 @@ class TestNSDFWriter(unittest.TestCase):
                 if name == 'mc_0':
                     mitral_somata.append(comp.uid)
         writer.add_nonuniform_ds('pop1',
-                                mitral_somata, False)
+                                mitral_somata)
         try:
             nonuniform_group = writer._fd['map']['nonuniform']
         except KeyError:
@@ -302,124 +368,11 @@ class TestNSDFWriter(unittest.TestCase):
                       ' adding event data sources')
         os.remove(tmp_file_path)
 
-    def test_create_uniform_data(self):
-        """Create uniform data for the first time."""
-        tmp_file_path = 'test_create_uniform_data.h5'
-        writer = nsdf.NSDFWriter(tmp_file_path)
-        granule_somata = []
-        for cell in self.mdict['granule_cells']:
-            for name, comp in cell.children.items():
-                if name == 'gc_0':
-                    granule_somata.append(comp.uid)
-        ds = writer.add_uniform_ds('pop0',
-                              granule_somata)
-        datadict = {}
-        dlen = 1000
-        for uid in granule_somata:
-            datadict[uid] = np.random.uniform(-65, -55, size=dlen)
-        dt = 1e-4
-        field = 'Vm'
-        unit = 'mV'
-        tstart = 0.0
-        data = writer.add_uniform_data('Vm', ds, datadict,
-                                          field=field,
-                                          unit=unit,
-                                          tstart=tstart,
-                                          dt=dt, tunit='s')
-        for row, source in zip(data, data.dims[0]['source']):
-            nptest.assert_allclose(np.asarray(row), datadict[source])
-        self.assertEqual(data.attrs['field'], field)
-        self.assertEqual(data.attrs['unit'], unit)
-        self.assertAlmostEqual(data.attrs['dt'], dt)
-        self.assertAlmostEqual(data.attrs['tstart'], tstart)
-        os.remove(tmp_file_path)
-
-    def test_add_uniform_data(self):
-        """Create uniform data for the first time."""
-        tmp_file_path = 'test_add_uniform_data.h5'
-        writer = nsdf.NSDFWriter(tmp_file_path, mode='w')
-        granule_somata = []
-        for cell in self.mdict['granule_cells']:
-            for name, comp in cell.children.items():
-                if name == 'gc_0':
-                    granule_somata.append(comp.uid)
-        ds = writer.add_uniform_ds('pop0',
-                              granule_somata)
-        datadict = {}
-        dlen = 5
-        for uid in granule_somata:
-            datadict[uid] = np.random.uniform(-65, -55, size=dlen)
-        dt = 1e-4
-        name = 'Vm'
-        field = 'Vm'
-        unit = 'mV'
-        tunit = 's'
-        tstart = 0.0
-        data = writer.add_uniform_data(name, ds, datadict,
-                                       field=field, unit=unit,
-                                       tstart=tstart, dt=dt,
-                                       tunit=tunit)
-        del writer
-        # start over for appending data
-        writer = nsdf.NSDFWriter(tmp_file_path)
-        granule_somata = []
-        for cell in self.mdict['granule_cells']:
-            for name, comp in cell.children.items():
-                if name == 'gc_0':
-                    granule_somata.append(comp.uid)
-        ds = writer.mapping['uniform']['pop0']
-        datadict = {}
-        dlen = 5
-        for uid in granule_somata:            
-            datadict[uid] = np.random.uniform(-65, -55, size=dlen)
-        dt = 1e-4
-        field = 'Vm'
-        unit = 'mV'
-        tstart = 0.0
-        data = writer.add_uniform_data('Vm', ds, datadict,
-                                          field=field,
-                                          unit=unit,
-                                          tstart=tstart,
-                                          dt=dt, tunit='s')
-        for row, source in zip(data, data.dims[0]['source']):
-            nptest.assert_allclose(np.asarray(row[-dlen:]), datadict[source])
-        os.remove(tmp_file_path)
 
     def test_model_tree(self):
         """Check if model tree is created properly."""
         self.fail('Fix me.')
 
-    def test_create_nonuniform_1d(self):
-        """Check adding nonuniformly sampled data using 1D datasets for the
-        first time"""
-        tmp_file_path = 'test_create_nonuniform_1d.h5'
-        writer = nsdf.NSDFWriter(tmp_file_path)
-        mitral_somata = []
-        for cell in self.mdict['mitral_cells']:
-            for name, comp in cell.children.items():
-                if name == 'mc_0':
-                    mitral_somata.append(comp.uid)
-        ds = writer.add_nonuniform_ds('pop1',
-                              mitral_somata)
-        datadict = {}
-        dlen = 1000
-        src_data_dict = {}
-        src_name_dict = {}
-        for ii, uid in enumerate(mitral_somata):
-            data = np.random.uniform(-65, -55, size=dlen)
-            times = np.cumsum(np.random.exponential(scale=0.01, size=dlen))
-            src_data_dict[uid] = (data, times)
-            src_name_dict[uid] = str('vm_{}'.format(ii))
-        field = 'Vm'
-        unit = 'mV'
-        tunit = 's'
-        tstart = 0.0
-        datadict = writer.add_nonuniform_1d('Vm', ds,src_name_dict,
-                                        src_data_dict, field=field,
-                                        unit=unit, tunit=tunit)
-        del writer
-        os.remove(tmp_file_path)
-        
     def test_add_nonuniform_nan(self):
         self.fail('Fix me')
 
@@ -549,6 +502,8 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
             source_ds = fd[source_ds_name]            
             self.assertTrue(nsdf.match_datasets(source_ds,
                                                 self.src_data_dict.keys()))            
+        del self.writer
+        os.remove(self.filepath)
 
     def test_data(self):
         """Check the data is correctly written."""
@@ -571,6 +526,7 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
                 srcuid = src_ds[ii]                
                 nptest.assert_allclose(np.asarray(self.src_data_dict[srcuid][0]),
                                        np.asarray(dataset[ii]))
+        del self.writer
         os.remove(self.filepath)
 
     def test_ts(self):
@@ -591,6 +547,102 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
                                        np.asarray(time_ds[ii]))
         os.remove(self.filepath)
 
+
+class TestNSDFWriterNonuniformRegular(unittest.TestCase):
+    """Test case for writing nonuniformly sampled data in homogeneous 2D
+    arrays
+
+    """
+    def setUp(self):
+        self.test_id = uuid.uuid1().hex
+        self.mdict = create_ob_model_tree()
+        self.filepath = 'test_{}.h5'.format(self.test_id)
+        self.writer = nsdf.NSDFWriter(self.filepath,
+                                      dialect=nsdf.dialect.NUREGULAR)
+        print 'Filename:', self.filepath
+        mitral_somata = []
+        for cell in self.mdict['mitral_cells']:
+            for name, comp in cell.children.items():
+                if name == 'mc_0':
+                    mitral_somata.append(comp.uid)
+                    
+        self.popname = 'pop1'
+        ds = self.writer.add_nonuniform_ds(self.popname, mitral_somata)
+        self.dlen = 1000
+        self.src_data_dict = {}
+        self.src_name_dict = {}
+        self.times = np.random.uniform(0, 1, size=self.dlen)
+        for ii, uid in enumerate(mitral_somata):
+            data = np.random.uniform(-65, -55, size=self.dlen)
+            self.src_data_dict[uid] = data
+        self.field = 'Vm'
+        self.unit = 'mV'
+        self.tunit = 's'
+        self.varname = 'Vm'
+        dd = self.writer.add_nonuniform_regular(self.varname, ds,
+                                             self.src_data_dict,
+                                             self.times,
+                                             field=self.field,
+                                             unit=self.unit,
+                                             tunit=self.tunit)
+    def tearDown(self):
+        if hasattr(self, 'writer'):
+            del self.writer # ensure the file is closed
+        # os.remove(self.filepath)
+
+    def test_source_ds(self):
+        self.writer.set_title('TestNSDFWriterNonuniformRegular.test_source_ds')
+        with h5.File(self.filepath, 'r') as fd:
+            source_ds_name = '/map/{}/{}'.format(nsdf.NONUNIFORM,
+                                                 self.popname,
+                                                 self.varname)
+            source_ds = fd[source_ds_name]            
+            self.assertTrue(nsdf.match_datasets(source_ds,
+                                                self.src_data_dict.keys()))
+        del self.writer
+        os.remove(self.filepath)
+
+    def test_data(self):
+        """Check the data is correctly written."""
+        self.writer.set_title('TestNSDFWriterNonuniformRegular.test_data')
+        del self.writer
+        with h5.File(self.filepath, 'r') as fd:
+            dataset_name = '/data/{}/{}/{}'.format(nsdf.NONUNIFORM,
+                                                   self.popname,
+                                                   self.varname)            
+            dataset = fd[dataset_name]
+            self.assertIsInstance(dataset, h5.Dataset)
+            src_ds_name = '/map/{}/{}'.format(nsdf.NONUNIFORM,
+                                              self.popname)
+            src_ds = fd[src_ds_name]            
+            self.assertIsInstance(src_ds, h5.Dataset)
+            attached_src_ds = dataset.dims[0]['source']          
+            self.assertEqual(src_ds, attached_src_ds)
+            self.assertEqual(dataset.attrs['unit'], self.unit)
+            self.assertEqual(dataset.attrs['field'], self.field)    
+            for ii in range(src_ds.len()):
+                srcuid = src_ds[ii]                
+                nptest.assert_allclose(self.src_data_dict[srcuid],
+                                       dataset[ii])
+        os.remove(self.filepath)
+
+    def test_ts(self):
+        self.writer.set_title('TestNSDFWriterNonuniformRegular.test_ts')        
+        del self.writer
+        with h5.File(self.filepath, 'r') as fd:
+            dataset_name = '/data/{}/{}/{}'.format(nsdf.NONUNIFORM,
+                                               self.popname,
+                                               self.varname)
+            dataset = fd[dataset_name]
+            self.assertIsInstance(dataset, h5.Dataset)            
+            src_ds = dataset.dims[0]['source']
+            time_ds = dataset.dims[1]['time']
+            self.assertEqual(time_ds.attrs['unit'], self.tunit)
+            self.assertEqual(time_ds.shape, self.times.shape)
+            nptest.assert_allclose(self.times, time_ds)
+        os.remove(self.filepath)
+
+        
 class TestNSDFWriterEvent1D(unittest.TestCase):
     def setUp(self):
         """Create a poisson spike train for each cell in mitral population and
@@ -626,6 +678,7 @@ class TestNSDFWriterEvent1D(unittest.TestCase):
     def test_data(self):
         """Check the data is correctly written."""
         self.writer.set_title('TestNSDFWriterEvent1D.test_data')
+        del self.writer
         with h5.File(self.filepath, 'r') as fd:
             data_grp_name = '/data/{}/{}/{}'.format(nsdf.EVENT,
                                                self.popname,
@@ -638,7 +691,6 @@ class TestNSDFWriterEvent1D(unittest.TestCase):
                                        np.asarray(dataset))
                 self.assertEqual(dataset.attrs['unit'], self.unit)
                 self.assertEqual(dataset.attrs['field'], self.field)
-        del self.writer
         os.remove(self.filepath)
 
 
@@ -671,8 +723,6 @@ class TestNSDFWriterEventVlen(unittest.TestCase):
             # this is not required to be cell.name, any valid hdf5
             # name will do
             self.src_name_dict[uid] = cell.name
-        print '#### 0', ds
-        print '#### 1', self.src_data_dict.keys()
         self.field = 'spike'
         self.unit = 's'
         self.varname = 'spike'
@@ -688,17 +738,21 @@ class TestNSDFWriterEventVlen(unittest.TestCase):
 
     def test_source_ds(self):
         self.writer.set_title('TestNSDFWriterEventVlen.test_source_ds')
+        del self.writer
         with h5.File(self.filepath, 'r') as fd:
             source_ds_name = '/map/{}/{}'.format(nsdf.EVENT,
                                                  self.popname,
                                                  self.varname)
             source_ds = fd[source_ds_name]            
             self.assertTrue(nsdf.match_datasets(source_ds,
-                                                self.src_data_dict.keys()))            
+                                                self.src_data_dict.keys()))
+        os.remove(self.filepath)
+          
 
     def test_data(self):
         """Check the data is correctly written."""
         self.writer.set_title('TestNSDFWriterEventVlen.test_data')
+        del self.writer
         with h5.File(self.filepath, 'r') as fd:
             dataset_name = '/data/{}/{}/{}'.format(nsdf.EVENT,
                                                    self.popname,
@@ -717,7 +771,6 @@ class TestNSDFWriterEventVlen(unittest.TestCase):
                 srcuid = src_ds[ii]                
                 nptest.assert_allclose(self.src_data_dict[srcuid],
                                        dataset[ii])
-        del self.writer
         os.remove(self.filepath)
 
 

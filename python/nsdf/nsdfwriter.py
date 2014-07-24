@@ -231,7 +231,8 @@ class NSDFWriter(object):
             base = self.mapping[UNIFORM]
         except KeyError:
             base = self.mapping.create_group(UNIFORM)
-        ds = base.create_dataset(name, shape=(len(idlist),), dtype=VLENSTR, data=idlist)
+        ds = base.create_dataset(name, shape=(len(idlist),),
+                                 dtype=VLENSTR, data=idlist)
         return ds
 
     def add_nonuniform_ds(self, name, idlist=[], path_id_dict=None):
@@ -292,7 +293,7 @@ class NSDFWriter(object):
         except KeyError:
             base = self.mapping.create_group(EVENT)
         if ((self.dialect == dialect.ONED) or
-            (self.dialect == dialect.ONEDEVENT)):
+            (self.dialect == dialect.NUREGULAR)):
             ds = base.create_group(name)
         else:
             assert(len(idlist) > 0)
@@ -394,11 +395,13 @@ class NSDFWriter(object):
             dataset.attrs['timeunit'] = tunit
         return dataset
 
-    def add_nonuniform_data(self, name, source_ds, source_data_dict,
-                            ts, field=None, unit=None,
-                            dtype=np.float64, fixed=False):
+    def add_nonuniform_regular(self, name, source_ds,
+                                   source_data_dict, ts, field=None,
+                                   unit=None, tunit=None,
+                                   dtype=np.float64, fixed=False):
         """Append nonuniformly sampled `variable` values from `sources` to
-        `data`.
+        `data`. In this case sampling times of all the sources are
+        same and the data is stored in a 2D dataset.
 
         Args: 
             name (str): name under which this data should be
@@ -413,6 +416,7 @@ class NSDFWriter(object):
             source_data_dict (dict): a dict mapping source ids to data
                 arrays. The data arrays are numpy arrays.
             
+            ts (sequence of floats): list of sampling times. 
 
             field (str): name of the recorded variable. Not required
                 when appending to existing data.
@@ -420,12 +424,10 @@ class NSDFWriter(object):
             unit (str): unit of the variable quantity being saved. Not
                 required when appending to existing data.
 
-            tstart (double): (optional) start time of this dataset
-                recording. Defaults to 0.
+            tunit (str): unit of sampling time in ts.
+        
+            dtype (numpy.dtype): type of data (default 64 bit float).
 
-            dt (double): (required only for creating new dataset)
-                sampling interval.
-            
             fixed (bool): if True, the data cannot grow. Default: False
 
         Returns:
@@ -435,7 +437,7 @@ class NSDFWriter(object):
             KeyError if the sources in `source_data_dict` do not match
             those in `source_ds`.
         
-            IndexError if the data arrays are not all equal in length.
+            ValueError if the data arrays are not all equal in length.
 
             ValueError if dt is not specified or <= 0 when inserting
             data for the first time.
@@ -443,30 +445,33 @@ class NSDFWriter(object):
         """
         popname = source_ds.name.rpartition('/')[-1]
         try:
-            ugrp = self.data[UNIFORM][popname]            
+            ngrp = self.data[NONUNIFORM][popname]            
         except KeyError:
-            ugrp = self.data[UNIFORM].create_group(popname)
+            ngrp = self.data[NONUNIFORM].create_group(popname)
         if not match_datasets(source_ds, source_data_dict.keys()):
-            raise IndexError('members of `source_ds` must match keys of'
+            raise KeyError('members of `source_ds` must match keys of'
                            ' `source_data_dict`.')
         ordered_data = [source_data_dict[src] for src in source_ds]
         data = np.vstack(ordered_data)
+        if data.shape[1] != len(ts):
+            raise ValueError('number sampling times must be '
+                             'same as the number of data points')
         try:
-            dataset = ugrp[name]
+            dataset = ngrp[name]
             oldcolcount = dataset.shape[1]
             dataset.resize(oldcolcount + data.shape[1], axis=1)
             dataset[:, oldcolcount:] = data
         except KeyError:
-            if dt <= 0.0:
-                raise ValueError('`dt` must be > 0.0 for creating dataset.')
             if field is None:
                 raise ValueError('`field` is required for creating dataset.')
             if unit is None:
                 raise ValueError('`unit` is required for creating dataset.')
+            if tunit is None:
+                raise ValueError('`tunit` is required for creating dataset.')
             maxcol = None
             if fixed:
                 maxcol = data.shape[1]
-            dataset = ugrp.create_dataset(
+            dataset = ngrp.create_dataset(
                 name, shape=data.shape,
                 dtype=data.dtype,
                 data=data,
@@ -477,15 +482,27 @@ class NSDFWriter(object):
                 shuffle=self.shuffle)
             dataset.dims.create_scale(source_ds, 'source')
             dataset.dims[0].attach_scale(source_ds)
-            dataset.attrs['tstart'] = tstart
-            dataset.attrs['dt'] = dt
             dataset.attrs['field'] = field
             dataset.attrs['unit'] = unit
+            tsname = '{}_{}'.format(popname, name)
+            ts = self.time_dim.create_dataset(
+                tsname,
+                shape=(len(ts),),
+                dtype=np.float64,
+                data=ts,
+                compression=self.compression,
+                compression_opts=self.compression_opts,
+                fletcher32=self.fletcher32,
+                shuffle=self.shuffle)
+            dataset.dims.create_scale(ts, 'time')
+            dataset.dims[1].label = 'time'
+            dataset.dims[1].attach_scale(ts)
+            ts.attrs['unit'] = tunit
         return dataset
 
     def add_nonuniform_1d(self, name, source_ds, source_name_dict,
-                           source_data_dict, field=None, unit=None,
-                           tunit=None, dtype=np.float64, fixed=False):
+                          source_data_dict, field=None, unit=None,
+                          tunit=None, dtype=np.float64, fixed=False):
         """Add nonuniform data when data from each source is in a separate 1D
         dataset.
 
@@ -585,14 +602,15 @@ class NSDFWriter(object):
                 if tunit is None:
                     raise ValueError('`tunit` is required for creating dataset.')
                 maxcol = len(data) if fixed else None
-                dset = datagrp.create_dataset(dsetname,
-                                              shape=(len(data),),
-                                              dtype=dtype, data=data,
-                                              maxshape=(maxcol,),
-                                              compression=self.compression,
-                                              compression_opts=self.compression_opts,
-                                              fletcher32=self.fletcher32,
-                                              shuffle=self.shuffle)
+                dset = datagrp.create_dataset(
+                    dsetname,
+                    shape=(len(data),),
+                    dtype=dtype, data=data,
+                    maxshape=(maxcol,),
+                    compression=self.compression,
+                    compression_opts=self.compression_opts,
+                    fletcher32=self.fletcher32,
+                    shuffle=self.shuffle)
                 dset.attrs['unit'] = unit
                 dset.attrs['field'] = field
                 dset.attrs['source'] = source
@@ -601,14 +619,15 @@ class NSDFWriter(object):
                 # Using {popname}_{variablename}_{dsetname} for
                 # simplicity. What about creating a hierarchy?
                 tsname = '{}_{}_{}'.format(popname, name, dsetname)
-                ts = self.time_dim.create_dataset(tsname,
-                                                  shape=(len(data),),
-                                                  dtype=np.float64,
-                                                  data=time,
-                                                  compression=self.compression,
-                                                  compression_opts=self.compression_opts,
-                                                  fletcher32=self.fletcher32,
-                                                  shuffle=self.shuffle)
+                ts = self.time_dim.create_dataset(
+                    tsname,
+                    shape=(len(data),),
+                    dtype=np.float64,
+                    data=time,
+                    compression=self.compression,
+                    compression_opts=self.compression_opts,
+                    fletcher32=self.fletcher32,
+                    shuffle=self.shuffle)
                 dset.dims.create_scale(ts, 'time')
                 dset.dims[0].label = 'time'
                 dset.dims[0].attach_scale(ts)
@@ -699,12 +718,13 @@ class NSDFWriter(object):
             maxrows = dataset.shape[0] if fixed else None
             # Fix me: is there any point of keeping the compression
             # and shuffle options?
-            dataset = ngrp.create_dataset(name, shape=source_ds.shape,
-                                          dtype=vlentype,
-                                          compression=self.compression,
-                                          compression_opts=self.compression_opts,
-                                          fletcher32=self.fletcher32,
-                                          shuffle=self.shuffle)
+            dataset = ngrp.create_dataset(
+                name, shape=source_ds.shape,
+                dtype=vlentype,
+                compression=self.compression,
+                compression_opts=self.compression_opts,
+                fletcher32=self.fletcher32,
+                shuffle=self.shuffle)
             dataset.attrs['field'] = field
             dataset.attrs['unit'] = unit
             dataset.dims.create_scale(source_ds, 'source')
@@ -714,14 +734,15 @@ class NSDFWriter(object):
             tsname = '{}_{}'.format(popname, name)
             # fixme: VLENFLOAT should be made VLENDOUBLE whenever h5py
             # fixes it
-            time_ds = self.time_dim.create_dataset(tsname,
-                                                   shape=dataset.shape,
-                                                   maxshape=(maxrows,),
-                                                   dtype=VLENFLOAT,
-                                                   compression=self.compression,
-                                                   compression_opts=self.compression_opts,
-                                                   fletcher32=self.fletcher32,
-                                                   shuffle=self.shuffle)
+            time_ds = self.time_dim.create_dataset(
+                tsname,
+                shape=dataset.shape,
+                maxshape=(maxrows,),
+                dtype=VLENFLOAT,
+                compression=self.compression,
+                compression_opts=self.compression_opts,
+                fletcher32=self.fletcher32,
+                shuffle=self.shuffle)
             dataset.dims.create_scale(time_ds, 'time')
             dataset.dims[0].attach_scale(time_ds)
             time_ds.attrs['unit'] = tunit
@@ -779,9 +800,9 @@ class NSDFWriter(object):
 
         """
         if ((self.dialect != dialect.ONED) and
-            (self.dialect != dialect.ONEDEVENT)):
+            (self.dialect != dialect.NUREGULAR)):
             raise Exception('add 1D dataset under event'
-                            ' only for dialect=ONED or ONEDEVENT')
+                            ' only for dialect=ONED or NUREGULAR')
         popname = source_ds.name.rpartition('/')[-1]
         try:
             ngrp = self.data[EVENT][popname]        
@@ -818,14 +839,15 @@ class NSDFWriter(object):
                 if unit is None:
                     raise ValueError('`unit` is required for creating dataset.')
                 maxrows = len(data) if fixed else None
-                dset = datagrp.create_dataset(dsetname,
-                                              shape=(len(data),),
-                                              dtype=dtype, data=data,
-                                              maxshape=(maxrows,),
-                                              compression=self.compression,
-                                              compression_opts=self.compression_opts,
-                                              fletcher32=self.fletcher32,
-                                              shuffle=self.shuffle)
+                dset = datagrp.create_dataset(
+                    dsetname,
+                    shape=(len(data),),
+                    dtype=dtype, data=data,
+                    maxshape=(maxrows,),
+                    compression=self.compression,
+                    compression_opts=self.compression_opts,
+                    fletcher32=self.fletcher32,
+                    shuffle=self.shuffle)
                 dset.attrs['unit'] = unit
                 dset.attrs['field'] = field
                 dset.attrs['source'] = source
@@ -910,13 +932,14 @@ class NSDFWriter(object):
             maxrows = len(source_ds) if fixed else None
             # Fix me: is there any point of keeping the compression
             # and shuffle options?
-            dataset = ngrp.create_dataset(name, shape=source_ds.shape,
-                                          maxshape=(maxrows,),
-                                          dtype=vlentype,
-                                          compression=self.compression,
-                                          compression_opts=self.compression_opts,
-                                          fletcher32=self.fletcher32,
-                                          shuffle=self.shuffle)
+            dataset = ngrp.create_dataset(
+                name, shape=source_ds.shape,
+                maxshape=(maxrows,),
+                dtype=vlentype,
+                compression=self.compression,
+                compression_opts=self.compression_opts,
+                fletcher32=self.fletcher32,
+                shuffle=self.shuffle)
             dataset.attrs['field'] = field
             dataset.attrs['unit'] = unit
             dataset.dims.create_scale(source_ds, 'source')
