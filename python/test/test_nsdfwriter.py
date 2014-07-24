@@ -423,9 +423,6 @@ class TestNSDFWriter(unittest.TestCase):
     def test_add_nonuniform_nan(self):
         self.fail('Fix me')
 
-    def test_add_event_vlen(self):
-        self.fail('Fix me')
-        
     def test_add_event_nan(self):
         self.fail('Fix me')
 
@@ -539,7 +536,8 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
                                              unit=self.unit,
                                              tunit=self.tunit)
     def tearDown(self):
-        del self.writer # ensure the file is closed
+        if hasattr(self, 'writer'):
+            del self.writer # ensure the file is closed
         # os.remove(self.filepath)
 
     def test_source_ds(self):
@@ -642,6 +640,87 @@ class TestNSDFWriterEvent1D(unittest.TestCase):
                 self.assertEqual(dataset.attrs['field'], self.field)
         del self.writer
         os.remove(self.filepath)
+
+
+class TestNSDFWriterEventVlen(unittest.TestCase):
+    """Test case for writing event data in 2D ragged arrays
+
+    """
+    def setUp(self):
+        """Create a poisson spike train for each cell in mitral population and
+        save the data as 1D event data
+
+        """
+        self.test_id = uuid.uuid1().hex
+        self.mdict = create_ob_model_tree()
+        self.filepath = 'test_{}.h5'.format(self.test_id)
+        self.writer = nsdf.NSDFWriter(self.filepath,
+                                      dialect=nsdf.dialect.VLEN)
+        self.sources = [cell.uid for cell in self.mdict['mitral_cells']]
+        self.popname = 'pop1'
+        ds = self.writer.add_event_ds(self.popname, self.sources)
+        self.src_data_dict = {}
+        self.src_name_dict = {}
+        rate = 100.0
+        dlen = np.random.poisson(lam=rate, size=len(self.sources))
+        for ii, cell in enumerate(self.mdict['mitral_cells']):
+            uid = cell.uid
+            data = np.cumsum(np.random.exponential(scale=1.0/rate,
+                                                   size=dlen[ii]))
+            self.src_data_dict[uid] = data
+            # this is not required to be cell.name, any valid hdf5
+            # name will do
+            self.src_name_dict[uid] = cell.name
+        print '#### 0', ds
+        print '#### 1', self.src_data_dict.keys()
+        self.field = 'spike'
+        self.unit = 's'
+        self.varname = 'spike'
+        dd = self.writer.add_event_vlen(self.varname, ds,
+                                      self.src_data_dict,
+                                      field=self.field,
+                                      unit=self.unit)
+        
+    def tearDown(self):
+        if hasattr(self, 'writer'):
+            del self.writer # ensure the file is closed
+        # os.remove(self.filepath)
+
+    def test_source_ds(self):
+        self.writer.set_title('TestNSDFWriterEventVlen.test_source_ds')
+        with h5.File(self.filepath, 'r') as fd:
+            source_ds_name = '/map/{}/{}'.format(nsdf.EVENT,
+                                                 self.popname,
+                                                 self.varname)
+            source_ds = fd[source_ds_name]            
+            self.assertTrue(nsdf.match_datasets(source_ds,
+                                                self.src_data_dict.keys()))            
+
+    def test_data(self):
+        """Check the data is correctly written."""
+        self.writer.set_title('TestNSDFWriterEventVlen.test_data')
+        with h5.File(self.filepath, 'r') as fd:
+            dataset_name = '/data/{}/{}/{}'.format(nsdf.EVENT,
+                                                   self.popname,
+                                                   self.varname)            
+            dataset = fd[dataset_name]
+            self.assertIsInstance(dataset, h5.Dataset)
+            src_ds_name = '/map/{}/{}'.format(nsdf.EVENT,
+                                              self.popname)
+            src_ds = fd[src_ds_name]            
+            self.assertIsInstance(src_ds, h5.Dataset)
+            attached_src_ds = dataset.dims[0]['source']          
+            self.assertEqual(src_ds, attached_src_ds)
+            self.assertEqual(dataset.attrs['unit'], self.unit)
+            self.assertEqual(dataset.attrs['field'], self.field)    
+            for ii in range(src_ds.len()):
+                srcuid = src_ds[ii]                
+                nptest.assert_allclose(self.src_data_dict[srcuid],
+                                       dataset[ii])
+        del self.writer
+        os.remove(self.filepath)
+
+
         
 def main():
     unittest.main()

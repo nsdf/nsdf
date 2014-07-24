@@ -234,7 +234,7 @@ class NSDFWriter(object):
         ds = base.create_dataset(name, shape=(len(idlist),), dtype=VLENSTR, data=idlist)
         return ds
 
-    def add_nonuniform_ds(self, name, idlist, path_id_dict=None):
+    def add_nonuniform_ds(self, name, idlist=[], path_id_dict=None):
         """Add the sources listed in idlist under /map/nonuniform.
 
         Args: 
@@ -259,8 +259,6 @@ class NSDFWriter(object):
 
         """
         base = None
-        if (self.dialect == dialect.ONEDEVENT) and (len(idlist) == 0):
-            raise ValueError('idlist must be nonempty for homogeneously sampled population.')
         try:
             base = self.mapping[NONUNIFORM]
         except KeyError:
@@ -268,11 +266,12 @@ class NSDFWriter(object):
         if self.dialect == dialect.ONED:
             ds = base.create_group(name)
         else:
+            assert(len(idlist) > 0)
             ds = base.create_dataset(name, shape=(len(idlist),),
                                      dtype=VLENSTR, data=idlist)
         return ds
 
-    def add_event_ds(self, name, model_paths=None):
+    def add_event_ds(self, name, idlist=[], model_paths=None):
         """Create a group under `/map/event` with name `name` to store mapping
         between the datasources and event data.
 
@@ -292,8 +291,14 @@ class NSDFWriter(object):
             base = self.mapping[EVENT]
         except KeyError:
             base = self.mapping.create_group(EVENT)
-        grp = base.create_group(name)
-        return grp
+        if ((self.dialect == dialect.ONED) or
+            (self.dialect == dialect.ONEDEVENT)):
+            ds = base.create_group(name)
+        else:
+            assert(len(idlist) > 0)
+            ds = base.create_dataset(name, shape=(len(idlist),),
+                                     dtype=VLENSTR, data=idlist)
+        return ds
 
     def add_uniform_data(self, name, source_ds, source_data_dict,
                          field=None, unit=None, tstart=0.0, dt=0.0,
@@ -691,6 +696,7 @@ class NSDFWriter(object):
             if tunit is None:
                 raise ValueError('`tunit` is required for creating dataset.')
             vlentype = h5.special_dtype(vlen=dtype)
+            maxrows = dataset.shape[0] if fixed else None
             # Fix me: is there any point of keeping the compression
             # and shuffle options?
             dataset = ngrp.create_dataset(name, shape=source_ds.shape,
@@ -709,12 +715,13 @@ class NSDFWriter(object):
             # fixme: VLENFLOAT should be made VLENDOUBLE whenever h5py
             # fixes it
             time_ds = self.time_dim.create_dataset(tsname,
-                                                  shape=dataset.shape,
-                                                  dtype=VLENFLOAT,      
-                                                  compression=self.compression,
-                                                  compression_opts=self.compression_opts,
-                                                  fletcher32=self.fletcher32,
-                                                  shuffle=self.shuffle)
+                                                   shape=dataset.shape,
+                                                   maxshape=(maxrows,),
+                                                   dtype=VLENFLOAT,
+                                                   compression=self.compression,
+                                                   compression_opts=self.compression_opts,
+                                                   fletcher32=self.fletcher32,
+                                                   shuffle=self.shuffle)
             dataset.dims.create_scale(time_ds, 'time')
             dataset.dims[0].attach_scale(time_ds)
             time_ds.attrs['unit'] = tunit
@@ -755,7 +762,7 @@ class NSDFWriter(object):
                 name.
 
             source_data_dict (dict): mapping from source id to the
-                data containing the event time data.
+                event time data.
 
             field (str): name of the recorded field. If None, `name`
                 is used as the field name.
@@ -810,11 +817,11 @@ class NSDFWriter(object):
                     raise ValueError('`field` is required for creating dataset.')
                 if unit is None:
                     raise ValueError('`unit` is required for creating dataset.')
-                maxcol = len(data) if fixed else None
+                maxrows = len(data) if fixed else None
                 dset = datagrp.create_dataset(dsetname,
                                               shape=(len(data),),
                                               dtype=dtype, data=data,
-                                              maxshape=(maxcol,),
+                                              maxshape=(maxrows,),
                                               compression=self.compression,
                                               compression_opts=self.compression_opts,
                                               fletcher32=self.fletcher32,
@@ -827,6 +834,97 @@ class NSDFWriter(object):
             ret[source] = dset
         return ret
     
+    def add_event_vlen(self, name, source_ds, source_data_dict,
+                       field=None, unit=None, dtype=np.float32,
+                       fixed=False):
+        """Add event data when data from all sources in a population is
+        stored in a 2D ragged array.
+
+        When adding the data, the uid of the sources and the names for
+        the corresponding datasets must be specified and this function
+        will create the dataset `/data/event/{population}/{name}`
+        where {name} is the first argument, preferably the name of the
+        field being recorded.
+        
+        This function can be used when different sources in a
+        population are sampled at different time points for a field
+        value. Such case may arise when each member of the population
+        is simulated using a variable timestep method like CVODE and
+        this timestep is not global.
+
+        Args: 
+            name (str): name of the group under which data should be
+                stored. It is simpler to keep this same as the
+                recorded field.
+
+            source_ds (HDF5 dataset): the dataset under
+                `/map/event` created for this population of
+                sources (created by add_nonunifrom_ds).
+
+            source_data_dict (dict): mapping from source id to the
+                event time data.
+
+            field (str): name of the recorded field. If None, `name`
+                is used as the field name.
+
+            unit (str): unit of the data.
+
+            dtype (numpy.dtype): type of data (default 32 bit float).
+
+            fixed (bool): if True, this is a one-time write and the
+                data cannot grow. Default: False
+
+        Returns:
+            HDF5 Dataset containing the data.
+
+        TODO: 
+            Concatenating old data with new data and reassigning is a poor
+            choice. waiting for response from h5py mailing list about
+            appending data to rows of vlen datasets. If that is not
+            possible, vlen dataset is a technically poor choice.
+
+            h5py does not support vlen datasets with float64
+            elements. Change dtype to np.float64 once that is
+            developed.
+
+        """
+        if self.dialect != dialect.VLEN:
+            raise Exception('add 2D vlen dataset under event'
+                            ' only for dialect=VLEN')
+        popname = source_ds.name.rpartition('/')[-1]
+        try:
+            ngrp = self.data[EVENT][popname]            
+        except KeyError:
+            ngrp = self.data[EVENT].create_group(popname)
+        if not match_datasets(source_ds, source_data_dict.keys()):
+            raise KeyError('members of `source_ds` must match keys of'
+                           ' `source_data_dict`.')        
+        try:
+            dataset = ngrp[name]
+        except KeyError:
+            if field is None:
+                raise ValueError('`field` is required for creating dataset.')
+            if unit is None:
+                raise ValueError('`unit` is required for creating dataset.')
+            vlentype = h5.special_dtype(vlen=dtype)
+            maxrows = len(source_ds) if fixed else None
+            # Fix me: is there any point of keeping the compression
+            # and shuffle options?
+            dataset = ngrp.create_dataset(name, shape=source_ds.shape,
+                                          maxshape=(maxrows,),
+                                          dtype=vlentype,
+                                          compression=self.compression,
+                                          compression_opts=self.compression_opts,
+                                          fletcher32=self.fletcher32,
+                                          shuffle=self.shuffle)
+            dataset.attrs['field'] = field
+            dataset.attrs['unit'] = unit
+            dataset.dims.create_scale(source_ds, 'source')
+            dataset.dims[0].attach_scale(source_ds)
+        for ii, source in enumerate(source_ds):
+            data = source_data_dict[source]
+            dataset[ii] = np.concatenate((dataset[ii], data))
+        return dataset
 
     
 # 
