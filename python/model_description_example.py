@@ -44,6 +44,12 @@
 # 
 
 # Code:
+
+"""This is outdated.
+
+TODO: update this example once the NSDF structure is fixed.
+
+"""
 __author__ = 'Subhasis Ray'
 
 import numpy as np
@@ -59,14 +65,16 @@ def create_example_model_0(filename='model0.h5'):
     data_group = fd.create_group('/data')
     map_group = fd.create_group('/map')
     model_group = fd.create_group('/model')
-    population = model_group.create_group('population')
+    population = model_group.create_group('modeltree')
+    
     cell_model = population.create_group('cell')
     cell_data = data_group.create_group('uniform')
     cell_data_pop = cell_data.create_group('cell')
     cell_data_pop['Vm'] = np.asarray(np.random.rand(1, datalen), dtype='f8')
     map_src = map_group.create_group('source')
     uniform_src  = map_src.create_group('uniform')
-    map_uniform_cell_pop = uniform_src.create_dataset('cell', data=[['cell']])
+    map_uniform_cell_pop = uniform_src.create_dataset('cell', data=['cell'])
+    map_uniform_cell_pop.attrs['model'] = 
     cell_data_pop['Vm'].dims.create_scale(map_uniform_cell_pop, 'source')
     cell_data_pop['Vm'].dims[0].attach_scale(map_uniform_cell_pop)
     dtype = h5.special_dtype(ref=h5.Reference)
