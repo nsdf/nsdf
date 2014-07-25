@@ -168,41 +168,61 @@ class NSDFWriter(object):
     def set_description(self, description):
         self._fd.attrs['description'] = description
 
-    def add_model_component(self, name, uid=None, parent=None,
-                            attrs=None):
+    def add_model_component(self, component, parentgroup=None):
         """Add a model component to NSDF writer.
 
-        Args:
-            name (str): name of the component.
- 
-            uid (str): unique identifier of the model component. If
-                None (default), it uses the full path of the component
-                group.
- 
-            parent (str): path of the group under which to create this
-                model component.
- 
-            attrs (dict): dictionary of attribute names and values.
- 
-        Returns:
-            None
+        Args: 
 
-        Raises:
-            ValueError
+            component (ModelComponent): model component object to be
+                written to NSDF file.
+               
+            parentgroup (HDF Group): group under which this
+                component's group should be created. If None, it is
+                created at the path of the component relative to the
+                roort `/model/modeltree`.
+
+        Returns:
+            HDF Group created for this model component.
+
+        Raises: 
+            KeyError if the parentgroup is None and no group
+            corresponding to the component's parent exists.
 
         """
-        pass
+        if parentgroup is None:
+            parentgroup = self.modeltree
+        print '#### 1.', parentgroup
+        print '#### 2.', component.name
+        grp = parentgroup.create_group(component.name)
+        component.hdfgroup = grp
+        for key, value in component.attrs.items():
+            grp.attrs[key] = value
+            if component.uid is not None:
+                grp.attrs['uid'] = component.uid
+            else:
+                grp.attrs['uid'] = component.path
+        return grp
 
-    def add_model_tree(self, root, target='/model/modeltree'):
+    def add_modeltree(self, root, target=None):
         """Add an entire model tree.
 
         Args:
             root (ModelComponent): root of the source tree.
 
-            target (str): target node path in NSDF file. `root` and
-                its children are added under this group.
+            target (str): target node path in NSDF file with respect
+                to '/model/modeltree'. `root` and its children are
+                added under this group.
         """
-        pass
+        def write_absolute(node, rootgroup):
+            if node.parent is None:
+                parentgroup = rootgroup
+            else:
+                parentpath = node.parent.path[1:] 
+                parentgroup = rootgroup[parentpath]
+            self.add_model_component(node, parentgroup)
+        if target is None:
+            target = self.modeltree
+        root.visit(write_absolute, target)        
 
     def add_uniform_ds(self, name, idlist, path_id_dict=None):
         """Add the sources listed in idlist under /map/uniform.

@@ -653,10 +653,26 @@ class TestNSDFWriterModelTree(unittest.TestCase):
 
     """
     def setUp(self):
+        self.mdict = create_ob_model_tree()
+        self.mdict['model_tree'].print_tree()
         self.filepath = '{}.h5'.format(self.id())
         writer = nsdf.NSDFWriter(self.filepath,
                                  dialect=nsdf.dialect.ONED)
-
+        writer.add_modeltree(self.mdict['model_tree'])
+        
+    def test_add_modeltree(self):
+        """For each node in model tree see if the corresponding group
+        has been created."""
+        def nodes_match(node, hdfroot):
+            try:
+                grp = hdfroot[node.path[1:]]
+            except KeyError:
+                self.fail('{} does not exist in nsdf file'.format(node.path))
+        with h5.File(self.filepath, 'r') as fd:
+            hdfroot = fd['/model/modeltree']
+            self.mdict['model_tree'].visit(nodes_match, hdfroot)
+            
+    
 
         
 def main():

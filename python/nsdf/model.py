@@ -78,7 +78,7 @@ class ModelComponent(object):
         self.children = {}
         # store the order in which children were added
         # self._birth_order = {} 
-        self.attrs = attrs
+        self.attrs = attrs if attrs is not None else {}
         self.hdfgroup = hdfgroup
         
     def add_child(self, child):
@@ -156,7 +156,7 @@ class ModelComponent(object):
 
         """
         function(self, *args, **kwargs)
-        for child in node.children.values():
+        for child in self.children.values():
             child.visit(function, *args, **kwargs)
                 
     def print_tree(self, indent=''):
@@ -171,7 +171,7 @@ class ModelComponent(object):
         """
         print '{}{}({})'.format(indent, self.name, self.uid)
         for child in self.children.values():
-            child.print_tree(child, indent * 2)
+            child.print_tree(indent + '  ')
 
     def check_uid(self, uid_dict):
         """Check that uid are indeed unique.
