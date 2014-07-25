@@ -193,14 +193,14 @@ class NSDFWriter(object):
         """
         pass
 
-    def add_model_tree(self, root, target):
+    def add_model_tree(self, root, target='/model/modeltree'):
         """Add an entire model tree.
 
         Args:
             root (ModelComponent): root of the source tree.
 
-            target (ModelComponent): target node for the subtree.
-
+            target (str): target node path in NSDF file. `root` and
+                its children are added under this group.
         """
         pass
 
@@ -566,8 +566,8 @@ class NSDFWriter(object):
             ngrp = self.data[NONUNIFORM][popname]        
         except KeyError:
             ngrp = self.data[NONUNIFORM].create_group(popname)
-        assert(len(source_name_dict) == len(source_data_dict),
-               'number of sources do not match number of datasets')
+        assert len(source_name_dict) == len(source_data_dict),\
+               'number of sources do not match number of datasets'
         try:
             datagrp = ngrp[name]
         except KeyError:
@@ -807,8 +807,8 @@ class NSDFWriter(object):
             ngrp = self.data[EVENT][popname]        
         except KeyError:
             ngrp = self.data[EVENT].create_group(popname)
-        assert(len(source_name_dict) == len(source_data_dict),
-               'number of sources do not match number of datasets')
+        assert len(source_name_dict) == len(source_data_dict),  \
+               'number of sources do not match number of datasets'
         try:
             datagrp = ngrp[name]
         except KeyError:

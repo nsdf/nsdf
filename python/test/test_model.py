@@ -46,8 +46,82 @@
 # Code:
 
 import unittest
+import sys
+sys.path.append('..')
 
 from nsdf import model
+
+uid__ = 0
+def getuid():
+    """Increment the global uid tracker and return the value.
+
+    Returns:
+        str representation of the uid integer.
+    """
+    global uid__
+    uid__ += 1
+    return str(uid__)
+
+
+def create_ob_model_tree():
+        """This creates a model tree of the structure:
+
+        /model
+        |
+        |__Granule
+        |       |
+        |       |__granule_0
+        |       |       |__gc_0
+        |       |       |__...
+        |       |       |__gc_19
+         ... ... ...
+        |       |
+        |       |__granule_9
+        |               |__gc_0
+        |               |__...
+        |               |__gc_19 
+        |__Mitral
+        |       |
+        |       |__mitral_0
+        |       |       |__mc_0
+        |       |       |__...
+        |       |       |__mc_14
+         ... ... ...
+        |       |
+        |       |__mitral_9
+        |               |__mc_0
+        |               |__...
+        |               |__mc_19
+       
+
+        """
+        uid = 0
+        model_tree = model.ModelComponent('model', uid=getuid())
+        granule = model.ModelComponent('Granule', uid=getuid(),
+                                            parent=model_tree)
+        mitral = model.ModelComponent('Mitral', uid=getuid(),
+                                           parent=model_tree)
+        granule_cells = [model.ModelComponent('granule_{}'.format(ii),
+                                                 uid=getuid(),
+                                                 parent=granule)
+                                                 for ii in range(10)]
+        mitral_cells = [model.ModelComponent('mitral_{}'.format(ii),
+                                                   uid=getuid(),
+                                                   parent=mitral)
+                                                 for ii in range(10)]
+        for cell in granule_cells:
+            cell.add_children([model.ModelComponent('gc_{}'.format(ii),
+                                                uid=getuid())
+                               for ii in range(20)])
+        for cell in mitral_cells:
+            cell.add_children([model.ModelComponent('mc_{}'.format(ii),
+                                                    uid=getuid())
+                               for ii in range(15)])
+        return {'model_tree': model_tree,
+                'granule_population': granule,
+                'mitral_population': mitral,
+                'granule_cells': granule_cells,
+                'mitral_cells': mitral_cells}
 
 class TestModel(unittest.TestCase):
     """Test model and modeltree."""
@@ -62,7 +136,7 @@ class TestModel(unittest.TestCase):
         self.assertEqual(comp.uid, uid)
         self.root.add_child(comp)
         self.assertEqual(len(self.root.children), 1)
-        self.assertEqual(self.root.children[0], comp)
+        self.assertEqual(self.root.children[name], comp)
         self.assertEqual(comp.parent, self.root)
 
     def test_add_children(self):
@@ -75,6 +149,14 @@ class TestModel(unittest.TestCase):
 
     def test_add_child_exception(self):
         self.assertRaises(TypeError, self.root.add_child, 'hello')
+        
+    def test_path(self):
+        self.mdict = create_ob_model_tree()
+        for cell in self.mdict['granule_cells']:
+            self.assertTrue(cell.path.startswith('/model/Granule/granule_'))
+            for name, component in cell.children.items():                
+                self.assertEqual(component.path, 
+                                 '{}/{}'.format(cell.path, name))
 
 if __name__ == '__main__':
     unittest.main()

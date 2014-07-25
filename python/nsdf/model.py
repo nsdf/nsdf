@@ -200,8 +200,14 @@ class ModelComponent(object):
             uid_dict[self.uid] = [self]
         for child in self.children.values():
             child.check_uid(uid_dict)
-                            
             
-
+    @property
+    def path(self):
+        pth = self.name
+        node = self.parent
+        while node is not None:
+            pth = node.name + '/' + pth
+            node = node.parent
+        return '/' + pth
 # 
 # model.py ends here
