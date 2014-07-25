@@ -64,6 +64,7 @@ from numpy import testing as nptest
 import h5py as h5
 from datetime import datetime
 import unittest
+import os
 
 sys.path.append('..')
 import nsdf
@@ -618,8 +619,7 @@ class TestNSDFWriterEventVlen(unittest.TestCase):
             source_ds = fd[source_ds_name]            
             self.assertTrue(nsdf.match_datasets(source_ds,
                                                 self.src_data_dict.keys()))
-        os.remove(self.filepath)
-          
+        os.remove(self.filepath)          
 
     def test_data(self):
         """Check the data is correctly written."""
@@ -643,6 +643,21 @@ class TestNSDFWriterEventVlen(unittest.TestCase):
                                        dataset[ii])
         os.remove(self.filepath)
 
+
+class TestNSDFWriterModelTree(unittest.TestCase):
+    """Test the structure of model tree saved in `/model/modeltree` of the
+    NSDF file.
+    
+    The goups in the model tree should get linked to source dimension
+    scales in `/map`
+
+    """
+    def setUp(self):
+        self.filepath = '{}.h5'.format(self.id())
+        writer = nsdf.NSDFWriter(self.filepath,
+                                 dialect=nsdf.dialect.ONED)
+
+    def 
 
         
 def main():
