@@ -218,143 +218,14 @@ class TestNSDFWriterUniform(unittest.TestCase):
         os.remove(self.filepath)
         
     
-class TestNSDFWriter(unittest.TestCase):
-    def setUp(self):
-        self.mdict = create_ob_model_tree()
-        
-    def test_add_nonuniform_ds_homogeneous(self):
-        """Add the soma (gc_0) all the granule cells in olfactory bulb model
-        as data sources for nonuniformly sampled data.
-
-        """
-        self.fail('Refactor this')
-        tmp_file_path = 'test_add_nonuniform_ds_h.h5'
-        writer = nsdf.NSDFWriter(tmp_file_path)
-        mitral_somata = []
-        for cell in self.mdict['mitral_cells']:
-            for name, comp in cell.children.items():
-                if name == 'mc_0':
-                    mitral_somata.append(comp.uid)
-        writer.add_nonuniform_ds('pop1', mitral_somata)
-        try:
-            nonuniform_ds = writer._fd['/map/nonuniform/pop1']
-            ds = set([uid for uid in nonuniform_ds])
-        except KeyError:
-            self.fail('pop1 not created.')
-        self.assertEqual(ds, set(mitral_somata))
-        os.remove(tmp_file_path)
-            
-    def test_adding_ds_homogeneous_creates_nonuniform_group(self):
-        """Check that adding nonuniform data sources creates the '/nonuniform'
-        group under '/map'
-
-        """
-        tmp_file_path = 'test_add_nonuniform_ds_h1.h5'
-        writer = nsdf.NSDFWriter(tmp_file_path)
-        mitral_somata = []
-        for cell in self.mdict['mitral_cells']:
-            for name, comp in cell.children.items():
-                if name == 'mc_0':
-                    mitral_somata.append(comp.uid)
-        writer.add_nonuniform_ds('pop1',
-                                mitral_somata)
-        try:
-            nonuniform_group = writer._fd['map']['nonuniform']
-        except KeyError:
-            self.fail('/map/nonuniform group does not exist after'
-                      ' adding nonuniform data sources')
-        os.remove(tmp_file_path)
-
-    def test_add_nonuniform_ds_nonhomogeneous(self):
-        """Add the soma (gc_0) all the granule cells in olfactory bulb model
-        as data sources for nonuniformly sampled data.
-
-        """
-        tmp_file_path = 'test_add_nonuniform_ds_nh.h5'
-        writer = nsdf.NSDFWriter(tmp_file_path)
-        mitral_somata = []
-        for cell in self.mdict['mitral_cells']:
-            for name, comp in cell.children.items():
-                if name == 'mc_0':
-                    mitral_somata.append(comp.uid)
-        writer.add_nonuniform_ds('pop1', mitral_somata)
-        try:
-            nonuniform_ds = writer._fd['/map/nonuniform/pop1']
-        except KeyError:
-            self.fail('pop1 not created.')
-        self.assertIsInstance(nonuniform_ds, h5.Group)
-        os.remove(tmp_file_path)
-            
-    def test_adding_ds_nonhomogeneous_creates_nonuniform_group(self):
-        """Check that adding nonuniform data sources creates the '/nonuniform'
-        group under '/map'
-
-        """
-        tmp_file_path = 'test_add_nonuniform_ds_nh1.h5'
-        writer = nsdf.NSDFWriter(tmp_file_path)
-        mitral_somata = []
-        for cell in self.mdict['mitral_cells']:
-            for name, comp in cell.children.items():
-                if name == 'mc_0':
-                    mitral_somata.append(comp.uid)
-        writer.add_nonuniform_ds('pop1',
-                                mitral_somata)
-        try:
-            nonuniform_group = writer._fd['map']['nonuniform']
-        except KeyError:
-            self.fail('/map/nonuniform group does not exist after'
-                      ' adding nonuniform data sources')
-        os.remove(tmp_file_path)
-        
-    def test_add_event_ds(self):
-        """Add all the cells in olfactory bulb model as data sources for event
-        data.
-
-        """
-        tmp_file_path = 'test_add_event_ds.h5'
-        writer = nsdf.NSDFWriter(tmp_file_path)
-        writer.add_event_ds('cells')
-        try:
-            event_ds = writer._fd['/map/event/cells']
-        except KeyError:
-            self.fail('`cells` group not created.')
-        self.assertIsInstance(event_ds, h5.Group)
-        os.remove(tmp_file_path)                                
-        
-    def test_adding_ds_event_creates_event_group(self):
-        """Check that adding nonuniform data sources creates the '/nonuniform'
-        group under '/map'
-
-        """
-        tmp_file_path = 'test_add_event_ds.h5'
-        writer = nsdf.NSDFWriter(tmp_file_path)
-        writer.add_event_ds('cells')
-        try:
-            nonuniform_group = writer._fd['map']['event']
-        except KeyError:
-            self.fail('/map/event group does not exist after'
-                      ' adding event data sources')
-        os.remove(tmp_file_path)
-
-
-    def test_model_tree(self):
-        """Check if model tree is created properly."""
-        self.fail('Fix me.')
-
-    def test_add_nonuniform_nan(self):
-        self.fail('Fix me')
-
-    def test_add_event_nan(self):
-        self.fail('Fix me')
-
 class TestNSDFWriterNonuniform1D(unittest.TestCase):
     """Test case for writing nonuniformly sampled data in 1D arrays"""
     def setUp(self):
         self.mdict = create_ob_model_tree()
         self.filepath = 'test_nsdfwriter_nonuniform_1d.h5'
-        self.writer = nsdf.NSDFWriter(self.filepath,
+        writer = nsdf.NSDFWriter(self.filepath,
                                  dialect=nsdf.dialect.ONED)
-        self.writer.set_title(self.id())
+        writer.set_title(self.id())
         mitral_somata = []
         for cell in self.mdict['mitral_cells']:
             for name, comp in cell.children.items():
@@ -362,7 +233,7 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
                     mitral_somata.append(comp.uid)
                     
         self.popname = 'pop1'
-        ds = self.writer.add_nonuniform_ds(self.popname, mitral_somata)
+        ds = writer.add_nonuniform_ds(self.popname, mitral_somata)
         self.dlen = 1000
         self.src_name_dict = {}
         self.src_data_dict = {}
@@ -375,14 +246,43 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
         self.unit = 'mV'
         self.tunit = 's'
         self.varname = 'Vm'
-        dd = self.writer.add_nonuniform_1d(self.varname,
+        dd = writer.add_nonuniform_1d(self.varname,
                                            ds,self.src_name_dict,
                                            self.src_data_dict,
                                            field=self.field,
                                            unit=self.unit,
                                            tunit=self.tunit)
-        del self.writer
 
+    def test_source_ds_group(self):
+        """Verify that the group for containing source-data mapping dataset
+        has been created.
+
+        """
+        with h5.File(self.filepath, 'r') as fd:
+            try:
+                nonuniform_ds = fd['/map'][nsdf.NONUNIFORM][self.popname]
+            except KeyError:
+                self.fail('{} not created.'.format(self.popname))
+            self.assertIsInstance(nonuniform_ds, h5.Group)
+        os.remove(self.filepath)
+
+    def test_source_ds(self):
+        """Add the soma (gc_0) all the granule cells in olfactory bulb model
+        as data sources for nonuniformly sampled data.
+
+        """
+        with h5.File(self.filepath, 'r') as fd:
+            try:
+                source_ds_path = '/map/{}/{}/{}'.format(
+                    nsdf.NONUNIFORM,
+                    self.popname, self.varname)
+                source_ds = fd[source_ds_path]
+            except KeyError:
+                self.fail('{} not created.'.format(source_ds_path))
+            self.assertTrue(nsdf.match_datasets(source_ds['source'],
+                                                self.src_data_dict.keys()))
+        os.remove(self.filepath)
+        
     def test_data(self):
         """Check the data is correctly written."""
         with h5.File(self.filepath, 'r') as fd:
@@ -421,10 +321,9 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
     def setUp(self):
         self.mdict = create_ob_model_tree()
         self.filepath = '{}.h5'.format(self.id())
-        self.writer = nsdf.NSDFWriter(self.filepath,
+        writer = nsdf.NSDFWriter(self.filepath,
                                       dialect=nsdf.dialect.VLEN)
-        self.writer.set_title(self.id())
-        print 'Filename:', self.filepath
+        writer.set_title(self.id())
         mitral_somata = []
         for cell in self.mdict['mitral_cells']:
             for name, comp in cell.children.items():
@@ -432,7 +331,7 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
                     mitral_somata.append(comp.uid)
                     
         self.popname = 'pop1'
-        ds = self.writer.add_nonuniform_ds(self.popname, mitral_somata)
+        ds = writer.add_nonuniform_ds(self.popname, mitral_somata)
         self.dlen = 1000
         self.src_data_dict = {}
         self.src_name_dict = {}
@@ -444,17 +343,11 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
         self.unit = 'mV'
         self.tunit = 's'
         self.varname = 'Vm'
-        dd = self.writer.add_nonuniform_vlen(self.varname, ds,
+        dd = writer.add_nonuniform_vlen(self.varname, ds,
                                              self.src_data_dict,
                                              field=self.field,
                                              unit=self.unit,
                                              tunit=self.tunit)
-        del self.writer
-        
-    def tearDown(self):
-        if hasattr(self, 'writer'):
-            del self.writer # ensure the file is closed
-        # os.remove(self.filepath)
 
     def test_source_ds(self):
         with h5.File(self.filepath, 'r') as fd:
@@ -484,8 +377,8 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
             self.assertEqual(dataset.attrs['field'], self.field)    
             for ii in range(src_ds.len()):
                 srcuid = src_ds[ii]                
-                nptest.assert_allclose(np.asarray(self.src_data_dict[srcuid][0]),
-                                       np.asarray(dataset[ii]))
+                nptest.assert_allclose(self.src_data_dict[srcuid][0],
+                                       dataset[ii])
         os.remove(self.filepath)
 
     def test_ts(self):
@@ -501,8 +394,8 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
             self.assertEqual(time_ds.shape, dataset.shape)
             for ii in range(src_ds.len()):
                 srcuid = src_ds[ii]                
-                nptest.assert_allclose(np.asarray(self.src_data_dict[srcuid][1]),
-                                       np.asarray(time_ds[ii]))
+                nptest.assert_allclose(self.src_data_dict[srcuid][1],
+                                       time_ds[ii])
         os.remove(self.filepath)
 
 
@@ -514,10 +407,9 @@ class TestNSDFWriterNonuniformRegular(unittest.TestCase):
     def setUp(self):
         self.mdict = create_ob_model_tree()
         self.filepath = '{}.h5'.format(self.id())
-        self.writer = nsdf.NSDFWriter(self.filepath,
+        writer = nsdf.NSDFWriter(self.filepath,
                                       dialect=nsdf.dialect.NUREGULAR)
-        self.writer.set_title(self.id())
-        print 'Filename:', self.filepath
+        writer.set_title(self.id())
         mitral_somata = []
         for cell in self.mdict['mitral_cells']:
             for name, comp in cell.children.items():
@@ -525,7 +417,7 @@ class TestNSDFWriterNonuniformRegular(unittest.TestCase):
                     mitral_somata.append(comp.uid)
                     
         self.popname = 'pop1'
-        ds = self.writer.add_nonuniform_ds(self.popname, mitral_somata)
+        ds = writer.add_nonuniform_ds(self.popname, mitral_somata)
         self.dlen = 1000
         self.src_data_dict = {}
         self.src_name_dict = {}
@@ -537,13 +429,26 @@ class TestNSDFWriterNonuniformRegular(unittest.TestCase):
         self.unit = 'mV'
         self.tunit = 's'
         self.varname = 'Vm'
-        dd = self.writer.add_nonuniform_regular(self.varname, ds,
+        dd = writer.add_nonuniform_regular(self.varname, ds,
                                              self.src_data_dict,
                                              self.times,
                                              field=self.field,
                                              unit=self.unit,
-                                             tunit=self.tunit)
+                                             tunit=self.tunit)        
 
+    def test_adding_ds_creates_group(self):
+        """Check that adding nonuniform data sources creates the 'nonuniform'
+        group under '/map'
+
+        """
+        with h5.File(self.filepath, 'r') as fd:
+            try:
+                nonuniform_group = fd['map']['nonuniform']
+            except KeyError:
+                self.fail('/map/nonuniform group does not exist after'
+                          ' adding nonuniform data sources')
+        os.remove(self.filepath)
+                    
     def test_source_ds(self):
         with h5.File(self.filepath, 'r') as fd:
             source_ds_name = '/map/{}/{}'.format(nsdf.NONUNIFORM,
@@ -597,19 +502,20 @@ class TestNSDFWriterEvent1D(unittest.TestCase):
         save the data as 1D event data"""
         self.mdict = create_ob_model_tree()
         self.filepath = '{}.h5'.format(self.id())
-        self.writer = nsdf.NSDFWriter(self.filepath,
+        writer = nsdf.NSDFWriter(self.filepath,
                                       dialect=nsdf.dialect.ONED)
-        self.writer.set_title(self.id())
+        writer.set_title(self.id())
         self.sources = [cell.uid for cell in self.mdict['mitral_cells']]
         self.popname = 'pop1'
-        ds = self.writer.add_event_ds(self.popname, self.sources)
+        ds = writer.add_event_ds(self.popname, self.sources)
         self.src_data_dict = {}
         self.src_name_dict = {}
         rate = 100.0
         dlen = np.random.poisson(lam=rate, size=len(self.sources))
         for ii, cell in enumerate(self.mdict['mitral_cells']):
             uid = cell.uid
-            data = np.cumsum(np.random.exponential(scale=1.0/rate, size=dlen[ii]))
+            data = np.cumsum(np.random.exponential(scale=1.0/rate,
+                                                   size=dlen[ii]))
             self.src_data_dict[uid] = data
             # this is not required to be cell.name, any valid hdf5
             # name will do
@@ -617,13 +523,38 @@ class TestNSDFWriterEvent1D(unittest.TestCase):
         self.field = 'spike'
         self.unit = 's'
         self.varname = 'spike'
-        dd = self.writer.add_event_1d(self.varname, ds,
-                                      self.src_name_dict,
-                                      self.src_data_dict,
-                                      field=self.field,
-                                      unit=self.unit)
-        del self.writer
+        dd = writer.add_event_1d(self.varname, ds, self.src_name_dict,
+                                 self.src_data_dict,
+                                 field=self.field,
+                                 unit=self.unit)
 
+    def test_adding_ds_event_creates_event_group(self):
+        """Check that adding nonuniform data sources creates the '/nonuniform'
+        group under '/map'
+
+        """
+        with h5.File(self.filepath, 'r') as fd:
+            try:
+                nonuniform_group = fd['map']['event']
+            except KeyError:
+                self.fail('/map/event group does not exist after'
+                          ' adding event data sources')
+        os.remove(self.filepath)
+
+    def test_source_ds(self):
+        with h5.File(self.filepath, 'r') as fd:
+            try:
+                source_ds_path = 'map/{}/{}/{}'.format(nsdf.EVENT,
+                                                         self.popname,
+                                                         self.varname)
+                source_ds = fd[source_ds_path]
+            except KeyError:
+                self.fail('{} does not exist after'
+                          ' adding event data sources'.source_ds_path)
+            self.assertTrue(nsdf.match_datasets(source_ds['source'],
+                                                self.sources))
+        os.remove(self.filepath)                                       
+                                       
     def test_data(self):
         """Check the data is correctly written."""
         with h5.File(self.filepath, 'r') as fd:

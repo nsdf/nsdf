@@ -614,8 +614,7 @@ class NSDFWriter(object):
                 dset.attrs['unit'] = unit
                 dset.attrs['field'] = field
                 dset.attrs['source'] = source
-                mapping[ii]['source'] = source
-                mapping[ii]['data'] = dset.ref
+                mapping[ii] = (source, dset.ref)
                 # Using {popname}_{variablename}_{dsetname} for
                 # simplicity. What about creating a hierarchy?
                 tsname = '{}_{}_{}'.format(popname, name, dsetname)
@@ -851,8 +850,7 @@ class NSDFWriter(object):
                 dset.attrs['unit'] = unit
                 dset.attrs['field'] = field
                 dset.attrs['source'] = source
-                mapping[ii]['source'] = source
-                mapping[ii]['data'] = dset.ref
+                mapping[ii] = (source, dset.ref)
             ret[source] = dset
         return ret
     
