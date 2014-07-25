@@ -657,7 +657,6 @@ class TestNSDFWriterModelTree(unittest.TestCase):
         writer = nsdf.NSDFWriter(self.filepath,
                                  dialect=nsdf.dialect.ONED)
 
-    def 
 
         
 def main():
