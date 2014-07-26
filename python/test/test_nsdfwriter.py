@@ -234,7 +234,13 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
                     mitral_somata.append(comp.uid)
                     
         self.popname = 'pop1'
-        ds = writer.add_nonuniform_ds(self.popname, mitral_somata)
+        self.field = 'Vm'
+        self.unit = 'mV'
+        self.tunit = 's'
+        self.varname = 'Vm'
+        
+        ds = writer.add_nonuniform_ds_1d(self.popname, self.varname,
+                                         mitral_somata)
         self.dlen = 1000
         self.src_name_dict = {}
         self.src_data_dict = {}
@@ -243,10 +249,6 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
             times = np.cumsum(np.random.exponential(scale=0.01, size=self.dlen))
             self.src_data_dict[uid] = (data, times)
             self.src_name_dict[uid] = str('vm_{}'.format(ii))
-        self.field = 'Vm'
-        self.unit = 'mV'
-        self.tunit = 's'
-        self.varname = 'Vm'
         dd = writer.add_nonuniform_1d(self.varname,
                                            ds,self.src_name_dict,
                                            self.src_data_dict,
@@ -508,7 +510,10 @@ class TestNSDFWriterEvent1D(unittest.TestCase):
         writer.set_title(self.id())
         self.sources = [cell.uid for cell in self.mdict['mitral_cells']]
         self.popname = 'pop1'
-        ds = writer.add_event_ds(self.popname, self.sources)
+        self.field = 'spike'
+        self.unit = 's'
+        self.varname = 'spike'
+        ds = writer.add_event_ds_1d(self.popname, self.varname, self.sources)
         self.src_data_dict = {}
         self.src_name_dict = {}
         rate = 100.0
@@ -521,9 +526,6 @@ class TestNSDFWriterEvent1D(unittest.TestCase):
             # this is not required to be cell.name, any valid hdf5
             # name will do
             self.src_name_dict[uid] = cell.name    
-        self.field = 'spike'
-        self.unit = 's'
-        self.varname = 'spike'
         dd = writer.add_event_1d(self.varname, ds, self.src_name_dict,
                                  self.src_data_dict,
                                  field=self.field,
@@ -668,10 +670,58 @@ class TestNSDFWriterModelTree(unittest.TestCase):
                 grp = hdfroot[node.path[1:]]
             except KeyError:
                 self.fail('{} does not exist in nsdf file'.format(node.path))
+                
         with h5.File(self.filepath, 'r') as fd:
             hdfroot = fd['/model/modeltree']
             self.mdict['model_tree'].visit(nodes_match, hdfroot)
+        os.remove(self.filepath)
+
+    def test_model_map_linking(self):
+        """Check if each group in the model is linked to the source maps of
+        which its children are members.
+
+        """
+        source_ds_dict = {}
+        def ds_collector(name, obj):
+            """Collect all datasets under `/map`"""
+            if isinstance(obj, h5.Dataset):
+                print name
+                source_ds_dict[obj] = name
+            return None
+        
+        def check_map_in_ds(node, obj):
+            """Check that the references in `map` attribute are part of the
+            datasets under `/map`."""
+            try:
+                for ref in obj.attrs['map']:
+                    self.asssertTrue(obj.file[ref].name.startswith('/map'))
+            except KeyError:
+                pass
+            return None
+        
+        def check_child_in_map(name, obj):
+            if not isinstance(obj, h5.Group):
+                return
+            fd = obj.file
+            children = set([obj[chname].attrs['uid'] for chname in obj])
+            try:
+                for ref in obj.attrs['map']:
+                    if fd[ref].dtype.fields is None:
+                        map_ = set(fd[ref])
+                    else:
+                        map_ = set(fd[ref]['source'])
+                    self.assertFalse(map_.intersection(children).empty())
+            except KeyError:
+                pass
+
+        with h5.File(self.filepath, 'r') as fd:
+            fd['/map'].visititems(ds_collector)
+            fd['/model/modeltree/model'].visititems(check_map_in_ds)
+            fd['/model/modeltree/model'].visititems(check_child_in_map)
             
+        os.remove(self.filepath)
+
+                
     
 
         

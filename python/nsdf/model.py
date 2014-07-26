@@ -80,6 +80,7 @@ class ModelComponent(object):
         # self._birth_order = {} 
         self.attrs = attrs if attrs is not None else {}
         self.hdfgroup = hdfgroup
+        self._id_path_dict = None
         
     def add_child(self, child):
         """Add a child component under this model component.
@@ -209,5 +210,38 @@ class ModelComponent(object):
             pth = node.name + '/' + pth
             node = node.parent
         return '/' + pth
+
+    def update_id_path_dict(self):
+        if self._id_path_dict is None:
+            self._id_path_dict = {}
+        def update_dict(node, dictobj):
+            dictobj[node.uid] = node.path
+        self.visit(update_dict, self._id_path_dict)
+
+    def get_id_path_dict(self):
+        if (self._id_path_dict is None) or (len(self._id_path_dict) == 0):
+            self.update_id_path_dict()
+        return self._id_path_dict
+
+    
+def common_prefix(paths, sep='/'):
+    """Find the common prefix of paths."""
+    tokens_list = [path.split(sep) for path in paths]
+    endmatch = False
+    common = ''
+    ii = 0
+    while not endmatch:
+        tmp = [tokens[ii] for tokens in tokens_list]
+        for jj in range(1, len(tmp)):
+            if tmp[jj] != tmp[0]:
+                endmatch = True
+                break
+        if not endmatch:
+            common = common + sep + tmp[0]
+    return common
+            
+        
+            
+
 # 
 # model.py ends here

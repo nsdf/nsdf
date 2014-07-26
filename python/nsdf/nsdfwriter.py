@@ -191,16 +191,14 @@ class NSDFWriter(object):
         """
         if parentgroup is None:
             parentgroup = self.modeltree
-        print '#### 1.', parentgroup
-        print '#### 2.', component.name
         grp = parentgroup.create_group(component.name)
         component.hdfgroup = grp
+        if component.uid is not None:
+            grp.attrs['uid'] = component.uid
+        else:
+            grp.attrs['uid'] = component.path
         for key, value in component.attrs.items():
             grp.attrs[key] = value
-            if component.uid is not None:
-                grp.attrs['uid'] = component.uid
-            else:
-                grp.attrs['uid'] = component.path
         return grp
 
     def add_modeltree(self, root, target=None):
@@ -224,7 +222,7 @@ class NSDFWriter(object):
             target = self.modeltree
         root.visit(write_absolute, target)        
 
-    def add_uniform_ds(self, name, idlist, path_id_dict=None):
+    def add_uniform_ds(self, name, idlist):
         """Add the sources listed in idlist under /map/uniform.
 
         Args: 
@@ -234,9 +232,6 @@ class NSDFWriter(object):
 
             idlist (list of str): list of unique identifiers of the
                 data sources.
-
-            path_id_dict (dict): (optional) maps the path of the
-                source in model tree to the unique id of the source.
 
         Returns: 
             An HDF5 Dataset storing the source ids. This is
@@ -253,13 +248,14 @@ class NSDFWriter(object):
             base = self.mapping.create_group(UNIFORM)
         ds = base.create_dataset(name, shape=(len(idlist),),
                                  dtype=VLENSTR, data=idlist)
+        # id_path_dict = self.modelroot.get_id_path_dict()
         return ds
 
-    def add_nonuniform_ds(self, name, idlist=[], path_id_dict=None):
-        """Add the sources listed in idlist under /map/nonuniform.
+    def add_nonuniform_ds(self, popname, idlist):
+        """Add the sources listed in idlist under /map/nonuniform/{popname}.
 
         Args: 
-            name (str): name with which the datasource list
+            popname (str): name with which the datasource list
                 should be stored. This will represent a population of
                 data sources.
 
@@ -272,27 +268,61 @@ class NSDFWriter(object):
         Returns:
             An HDF5 Dataset storing the source ids when dialect
             is VLEN or NANFILLED. This is converted into a dimension
-            scale when actual data is added. If homogeneous=False, the
-            group /map/nonuniform/`name` is returned.
+            scale when actual data is added.
 
         Raises:
-            ValueError if idlist is empty.
+            AssertionError if idlist is empty or dialect is ONED.
 
         """
         base = None
-        try:
-            base = self.mapping[NONUNIFORM]
-        except KeyError:
-            base = self.mapping.create_group(NONUNIFORM)
-        if self.dialect == dialect.ONED:
-            ds = base.create_group(name)
-        else:
-            assert(len(idlist) > 0)
-            ds = base.create_dataset(name, shape=(len(idlist),),
-                                     dtype=VLENSTR, data=idlist)
+        base = self.mapping.require_group(NONUNIFORM)
+        assert self.dialect != dialect.ONED
+        assert len(idlist) > 0
+        ds = base.create_dataset(popname, shape=(len(idlist),),
+                                 dtype=VLENSTR, data=idlist)
+        return ds
+    
+    def add_nonuniform_ds_1d(self, popname, varname, idlist):
+        """Add the sources listed in idlist under
+        /map/nonuniform/{popname}/{varname}.
+
+        In case of 1D datasets, for each variable we store the mapping
+        from source id to dataset ref in a two column compund dataset
+        with dtype=[('source', VLENSTR), ('data', REFTYPE)]
+
+        Args: 
+            popname (str): name with which the datasource list
+                should be stored. This will represent a population of
+                data sources.
+            
+            varname (str): name of the variable beind recorded. The
+                same name should be passed when actual data is being
+                added.
+        
+            idlist (list of str): list of unique identifiers of the
+                data sources.
+
+        Returns:
+            An HDF5 Dataset storing the source ids in `source` column.
+
+        Raises:
+            ValueError if dialect is not ONED.
+        
+            AssertionError if idlist is empty.
+
+        """
+        base = self.mapping.require_group(NONUNIFORM)
+        assert self.dialect == dialect.ONED, \
+            ValueError('valid only for dialect=ONED')
+        assert len(idlist) > 0, 'idlist must be nonempty'
+        grp = base.require_group(popname)
+        ds = grp.create_dataset(varname, shape=(len(idlist),),
+                                     dtype=SRCDATAMAPTYPE)
+        for ii in range(len(idlist)):
+            ds[ii] = (idlist[ii], None)
         return ds
 
-    def add_event_ds(self, name, idlist=[], model_paths=None):
+    def add_event_ds(self, name, idlist):
         """Create a group under `/map/event` with name `name` to store mapping
         between the datasources and event data.
 
@@ -301,26 +331,48 @@ class NSDFWriter(object):
                 should be stored. This will represent a population of
                 data sources.
 
-            model_paths (list): (optional) maps the path of the
-                sources in model tree to this group.
+            idlist (list): (optional) unique ids of the data sources.
 
         Returns: 
             The HDF5 Group `/map/event/{name}`.
+
         """
-        base = None
-        try:
-            base = self.mapping[EVENT]
-        except KeyError:
-            base = self.mapping.create_group(EVENT)
-        if ((self.dialect == dialect.ONED) or
-            (self.dialect == dialect.NUREGULAR)):
-            ds = base.create_group(name)
-        else:
-            assert(len(idlist) > 0)
-            ds = base.create_dataset(name, shape=(len(idlist),),
-                                     dtype=VLENSTR, data=idlist)
+        base = self.mapping.require_group(EVENT)
+        assert len(idlist) > 0, 'idlist must be nonempty'
+        assert (((self.dialect == dialect.VLEN) or
+                (self.dialect == dialect.NANFILLED)), 
+                'only for VLEN or NANFILLED dialects')
+        ds = base.create_dataset(name, shape=(len(idlist),),
+                                 dtype=VLENSTR, data=idlist)
         return ds
 
+    def add_event_ds_1d(self, popname, varname, idlist):
+        """Create a group under `/map/event` with name `name` to store mapping
+        between the datasources and event data.
+
+        Args: 
+            name (str): name with which the datasource list
+                should be stored. This will represent a population of
+                data sources.
+
+            idlist (list): (optional) unique ids of the data sources.
+
+        Returns: 
+            The HDF5 Group `/map/event/{name}`.
+
+        """
+        base = self.mapping.require_group(EVENT)
+        assert (len(idlist) > 0, 'idlist must be nonempty')
+        assert (((self.dialect == dialect.ONED) or
+            (self.dialect == dialect.NUREGULAR)),
+                'dialect must be ONED or NUREGULAR')
+        grp = base.require_group(popname)
+        ds = grp.create_dataset(varname, shape=(len(idlist),),
+                                     dtype=SRCDATAMAPTYPE)
+        for ii in range(len(idlist)):
+            ds[ii] = (idlist[ii], None)
+        return ds
+    
     def add_uniform_data(self, name, source_ds, source_data_dict,
                          field=None, unit=None, tstart=0.0, dt=0.0,
                          tunit=None, dtype=np.float64, fixed=False):
@@ -389,7 +441,7 @@ class NSDFWriter(object):
             if dt <= 0.0:
                 raise ValueError('`dt` must be > 0.0 for creating dataset.')
             if field is None:
-                raise ValueError('`field` is required for creating dataset.')
+                field = name
             if unit is None:
                 raise ValueError('`unit` is required for creating dataset.')
             if tunit is None:
@@ -483,7 +535,7 @@ class NSDFWriter(object):
             dataset[:, oldcolcount:] = data
         except KeyError:
             if field is None:
-                raise ValueError('`field` is required for creating dataset.')
+                field = name
             if unit is None:
                 raise ValueError('`unit` is required for creating dataset.')
             if tunit is None:
@@ -548,11 +600,10 @@ class NSDFWriter(object):
                 stored. It is simpler to keep this same as the
                 recorded field.
 
-            source_ds (HDF5 Group): the group under `/map/nonuniform`
-                created for this population of sources (created by
-                add_nonunifrom_ds). The name of this group reflects
-                that of the group under `/data/nonuniform` which
-                stores the datasets.
+            source_ds (HDF5 dataset): the dataset
+                `/map/nonuniform/{population}/{variable}` created for
+                this population of sources (created by
+                add_nonunifrom_ds_1d).
 
             source_name_dict (dict): mapping from source id to dataset
                 name.
@@ -577,33 +628,23 @@ class NSDFWriter(object):
         Returns:
             dict mapping source ids to the tuple (dataset, time).
 
+        Raises:
+            AssertionError when dialect is not ONED.
+
         """
-        if self.dialect != dialect.ONED:
-            raise Exception('add 1D dataset under nonuniform'
-                            ' only for dialect=ONED')
-        popname = source_ds.name.rpartition('/')[-1]
-        try:
-            ngrp = self.data[NONUNIFORM][popname]        
-        except KeyError:
-            ngrp = self.data[NONUNIFORM].create_group(popname)
-        assert len(source_name_dict) == len(source_data_dict),\
-               'number of sources do not match number of datasets'
-        try:
-            datagrp = ngrp[name]
-        except KeyError:
-            datagrp = ngrp.create_group(name)            
-        try:
-            map_pop = self.mapping[NONUNIFORM][popname]
-        except KeyError:
-            map_pop = self.mapping[NONUNIFORM].create_group(popname)
-        try:
-            mapping = map_pop[name]
-        except KeyError:
-            mapping = map_pop.create_dataset(name,
-                                             shape=(len(source_name_dict),),
-                                             dtype=SRCDATAMAPTYPE)
+        assert (self.dialect == dialect.ONED, 
+            'add 1D dataset under nonuniform only for dialect=ONED')
+        popname = source_ds.name.split('/')[-2]
+        ngrp = self.data[NONUNIFORM].require_group(popname)
+        assert (match_datasets(source_name_dict.keys(),
+                              source_data_dict.keys()), 
+               'number of sources do not match number of datasets')
+        assert (match_datasets(source_ds['source'],
+                              source_name_dict.keys()),  
+            'sources in mapping dataset do not match those with data')
+        datagrp = ngrp.require_group(name)            
         ret = {}
-        for ii, source in enumerate(source_data_dict.keys()):
+        for ii, source in enumerate(source_ds['source']):
             data, time = source_data_dict[source]
             dsetname = source_name_dict[source]
             try:
@@ -616,7 +657,7 @@ class NSDFWriter(object):
                 ts[oldlen:] = time
             except KeyError:
                 if field is None:
-                    raise ValueError('`field` is required for creating dataset.')
+                    field = name
                 if unit is None:
                     raise ValueError('`unit` is required for creating dataset.')
                 if tunit is None:
@@ -634,7 +675,7 @@ class NSDFWriter(object):
                 dset.attrs['unit'] = unit
                 dset.attrs['field'] = field
                 dset.attrs['source'] = source
-                mapping[ii] = (source, dset.ref)
+                source_ds[ii] = (source, dset.ref)
                 # Using {popname}_{variablename}_{dsetname} for
                 # simplicity. What about creating a hierarchy?
                 tsname = '{}_{}_{}'.format(popname, name, dsetname)
@@ -728,7 +769,7 @@ class NSDFWriter(object):
             dataset = ngrp[name]
         except KeyError:
             if field is None:
-                raise ValueError('`field` is required for creating dataset.')
+                field = name
             if unit is None:
                 raise ValueError('`unit` is required for creating dataset.')
             if tunit is None:
@@ -792,11 +833,12 @@ class NSDFWriter(object):
                 stored. It is simpler to keep this same as the
                 recorded field.
 
-            source_ds (HDF5 Group): the group under `/map/event`
-                created for this population of sources (created by
-                add_nonunifrom_ds). The name of this group reflects
-                that of the group under `/data/event` which
-                stores the datasets.
+            source_ds (HDF5 Dataset): the dataset
+                `/map/event/{populationname}{variablename}` created
+                for this population of sources (created by
+                add_event_ds_1d). The name of this group reflects
+                that of the group under `/data/event` which stores the
+                datasets.
 
             source_name_dict (dict): mapping from source id to dataset
                 name.
@@ -818,33 +860,17 @@ class NSDFWriter(object):
             dict mapping source ids to datasets.
 
         """
-        if ((self.dialect != dialect.ONED) and
-            (self.dialect != dialect.NUREGULAR)):
-            raise Exception('add 1D dataset under event'
-                            ' only for dialect=ONED or NUREGULAR')
-        popname = source_ds.name.rpartition('/')[-1]
-        try:
-            ngrp = self.data[EVENT][popname]        
-        except KeyError:
-            ngrp = self.data[EVENT].create_group(popname)
-        assert len(source_name_dict) == len(source_data_dict),  \
-               'number of sources do not match number of datasets'
-        try:
-            datagrp = ngrp[name]
-        except KeyError:
-            datagrp = ngrp.create_group(name)            
-        try:
-            map_pop = self.mapping[EVENT][popname]
-        except KeyError:
-            map_pop = self.mapping[EVENT].create_group(popname)
-        try:
-            mapping = map_pop[name]
-        except KeyError:
-            mapping = map_pop.create_dataset(name,
-                                             shape=(len(source_name_dict),),
-                                             dtype=SRCDATAMAPTYPE)
+        assert (((self.dialect == dialect.ONED) or
+            (self.dialect == dialect.NUREGULAR)), 
+            'add 1D dataset under event only for dialect=ONED or NUREGULAR')
+        popname = source_ds.name.split('/')[-2]
+        ngrp = self.data[EVENT].require_group(popname)
+        assert (match_datasets(source_name_dict.keys(),
+                              source_data_dict.keys()),  
+            'number of sources do not match number of datasets')
+        datagrp = ngrp.require_group(name)
         ret = {}
-        for ii, source in enumerate(source_data_dict.keys()):
+        for ii, source in enumerate(source_ds['source']):
             data = source_data_dict[source]
             dsetname = source_name_dict[source]
             try:
@@ -854,7 +880,7 @@ class NSDFWriter(object):
                 dset[oldlen:] = data
             except KeyError:
                 if field is None:
-                    raise ValueError('`field` is required for creating dataset.')
+                    field = name
                 if unit is None:
                     raise ValueError('`unit` is required for creating dataset.')
                 maxrows = len(data) if fixed else None
@@ -870,7 +896,7 @@ class NSDFWriter(object):
                 dset.attrs['unit'] = unit
                 dset.attrs['field'] = field
                 dset.attrs['source'] = source
-                mapping[ii] = (source, dset.ref)
+                source_ds[ii] = (source, dset.ref)
             ret[source] = dset
         return ret
     
@@ -897,7 +923,7 @@ class NSDFWriter(object):
                 stored. It is simpler to keep this same as the
                 recorded field.
 
-            source_ds (HDF5 dataset): the dataset under
+            source_ds (HDF5 Dataset): the dataset under
                 `/map/event` created for this population of
                 sources (created by add_nonunifrom_ds).
 
@@ -943,7 +969,7 @@ class NSDFWriter(object):
             dataset = ngrp[name]
         except KeyError:
             if field is None:
-                raise ValueError('`field` is required for creating dataset.')
+                field = name
             if unit is None:
                 raise ValueError('`unit` is required for creating dataset.')
             vlentype = h5.special_dtype(vlen=dtype)
