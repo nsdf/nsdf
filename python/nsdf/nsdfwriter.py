@@ -53,7 +53,7 @@ __version__ = '0.1'
 import h5py as h5
 import numpy as np
 
-from .model import ModelComponent
+from .model import ModelComponent, common_prefix
 from .constants import *
 from datetime import datetime
 
@@ -248,7 +248,13 @@ class NSDFWriter(object):
             base = self.mapping.create_group(UNIFORM)
         ds = base.create_dataset(name, shape=(len(idlist),),
                                  dtype=VLENSTR, data=idlist)
-        # id_path_dict = self.modelroot.get_id_path_dict()
+        self.modelroot.update_id_path_dict()
+        id_path_dict = self.modelroot.get_id_path_dict()
+        prefix = common_prefix(id_path_dict.values())
+        tmpattr = [ref for ref in ds.attrs.get('model', [])] + [ds.ref]
+        attr = np.empty((len(tmpattr),), dtype=REFTYPE)
+        attr[:] = tmpattr
+        ds.attrs['model'] = attr
         return ds
 
     def add_nonuniform_ds(self, popname, idlist):
@@ -306,18 +312,15 @@ class NSDFWriter(object):
             An HDF5 Dataset storing the source ids in `source` column.
 
         Raises:
-            ValueError if dialect is not ONED.
-        
-            AssertionError if idlist is empty.
+            AssertionError if idlist is empty or if dialect is not ONED.
 
         """
         base = self.mapping.require_group(NONUNIFORM)
-        assert self.dialect == dialect.ONED, \
-            ValueError('valid only for dialect=ONED')
+        assert self.dialect == dialect.ONED, 'valid only for dialect=ONED'
         assert len(idlist) > 0, 'idlist must be nonempty'
         grp = base.require_group(popname)
         ds = grp.create_dataset(varname, shape=(len(idlist),),
-                                     dtype=SRCDATAMAPTYPE)
+                                dtype=SRCDATAMAPTYPE)
         for ii in range(len(idlist)):
             ds[ii] = (idlist[ii], None)
         return ds
@@ -339,9 +342,9 @@ class NSDFWriter(object):
         """
         base = self.mapping.require_group(EVENT)
         assert len(idlist) > 0, 'idlist must be nonempty'
-        assert (((self.dialect == dialect.VLEN) or
-                (self.dialect == dialect.NANFILLED)), 
-                'only for VLEN or NANFILLED dialects')
+        assert ((self.dialect == dialect.VLEN) or
+                (self.dialect == dialect.NANFILLED)),   \
+            'only for VLEN or NANFILLED dialects'
         ds = base.create_dataset(name, shape=(len(idlist),),
                                  dtype=VLENSTR, data=idlist)
         return ds
@@ -363,9 +366,9 @@ class NSDFWriter(object):
         """
         base = self.mapping.require_group(EVENT)
         assert (len(idlist) > 0, 'idlist must be nonempty')
-        assert (((self.dialect == dialect.ONED) or
-            (self.dialect == dialect.NUREGULAR)),
-                'dialect must be ONED or NUREGULAR')
+        assert ((self.dialect == dialect.ONED) or
+            (self.dialect == dialect.NUREGULAR)),   \
+            'dialect must be ONED or NUREGULAR'
         grp = base.require_group(popname)
         ds = grp.create_dataset(varname, shape=(len(idlist),),
                                      dtype=SRCDATAMAPTYPE)
@@ -632,16 +635,16 @@ class NSDFWriter(object):
             AssertionError when dialect is not ONED.
 
         """
-        assert (self.dialect == dialect.ONED, 
-            'add 1D dataset under nonuniform only for dialect=ONED')
+        assert self.dialect == dialect.ONED, \
+            'add 1D dataset under nonuniform only for dialect=ONED'
         popname = source_ds.name.split('/')[-2]
         ngrp = self.data[NONUNIFORM].require_group(popname)
-        assert (match_datasets(source_name_dict.keys(),
-                              source_data_dict.keys()), 
-               'number of sources do not match number of datasets')
-        assert (match_datasets(source_ds['source'],
-                              source_name_dict.keys()),  
-            'sources in mapping dataset do not match those with data')
+        assert match_datasets(source_name_dict.keys(),
+                              source_data_dict.keys()), \
+               'number of sources do not match number of datasets'
+        assert match_datasets(source_ds['source'],
+                              source_name_dict.keys()),  \
+            'sources in mapping dataset do not match those with data'
         datagrp = ngrp.require_group(name)            
         ret = {}
         for ii, source in enumerate(source_ds['source']):
@@ -860,14 +863,14 @@ class NSDFWriter(object):
             dict mapping source ids to datasets.
 
         """
-        assert (((self.dialect == dialect.ONED) or
-            (self.dialect == dialect.NUREGULAR)), 
-            'add 1D dataset under event only for dialect=ONED or NUREGULAR')
+        assert ((self.dialect == dialect.ONED) or
+            self.dialect == dialect.NUREGULAR), \
+            'add 1D dataset under event only for dialect=ONED or NUREGULAR'
         popname = source_ds.name.split('/')[-2]
         ngrp = self.data[EVENT].require_group(popname)
-        assert (match_datasets(source_name_dict.keys(),
+        assert match_datasets(source_name_dict.keys(),
                               source_data_dict.keys()),  
-            'number of sources do not match number of datasets')
+            'number of sources do not match number of datasets'
         datagrp = ngrp.require_group(name)
         ret = {}
         for ii, source in enumerate(source_ds['source']):
@@ -943,11 +946,10 @@ class NSDFWriter(object):
         Returns:
             HDF5 Dataset containing the data.
 
-        TODO: 
-            Concatenating old data with new data and reassigning is a poor
-            choice. waiting for response from h5py mailing list about
-            appending data to rows of vlen datasets. If that is not
-            possible, vlen dataset is a technically poor choice.
+        Notes: 
+            Concatenating old data with new data and reassigning is a
+            poor choice for saving data incrementally. HDF5 does not
+            seem to support appending data to VLEN datasets.
 
             h5py does not support vlen datasets with float64
             elements. Change dtype to np.float64 once that is

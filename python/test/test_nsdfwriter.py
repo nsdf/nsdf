@@ -169,8 +169,7 @@ class TestNSDFWriterUniform(unittest.TestCase):
         data = writer.add_uniform_data(self.name, ds, self.datadict,
                                        field=self.field, unit=self.unit,
                                        tstart=self.tstart, dt=self.dt,
-                                       tunit=self.tunit)
-        
+                                       tunit=self.tunit)        
                 
     def test_add_uniform_ds(self):
         """Add the soma (gc_0) all the granule cells in olfactory bulb model
@@ -660,7 +659,29 @@ class TestNSDFWriterModelTree(unittest.TestCase):
         self.filepath = '{}.h5'.format(self.id())
         writer = nsdf.NSDFWriter(self.filepath,
                                  dialect=nsdf.dialect.ONED)
-        writer.add_modeltree(self.mdict['model_tree'])
+        writer.add_modeltree(self.mdict['model_tree'])        
+        self.granule_somata = []
+        self.popname = 'pop0'
+        for cell in self.mdict['granule_cells']:
+            for name, comp in cell.children.items():
+                if name == 'gc_0':
+                    self.granule_somata.append(comp.uid)
+        uds = writer.add_uniform_ds(self.popname,
+                              self.granule_somata)
+        self.datadict = {}
+        self.dlen = 5
+        for uid in self.granule_somata:
+            self.datadict[uid] = np.random.uniform(-65, -55, size=self.dlen)
+        self.dt = 1e-4
+        self.name = 'Vm'
+        self.field = 'Vm'
+        self.unit = 'mV'
+        self.tunit = 's'
+        self.tstart = 0.0
+        data = writer.add_uniform_data(self.name, uds, self.datadict,
+                                       field=self.field, unit=self.unit,
+                                       tstart=self.tstart, dt=self.dt,
+                                       tunit=self.tunit)        
         
     def test_add_modeltree(self):
         """For each node in model tree see if the corresponding group
@@ -719,7 +740,7 @@ class TestNSDFWriterModelTree(unittest.TestCase):
             fd['/model/modeltree/model'].visititems(check_map_in_ds)
             fd['/model/modeltree/model'].visititems(check_child_in_map)
             
-        os.remove(self.filepath)
+        # os.remove(self.filepath)
 
                 
     

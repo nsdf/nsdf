@@ -215,6 +215,7 @@ class ModelComponent(object):
         if self._id_path_dict is None:
             self._id_path_dict = {}
         def update_dict(node, dictobj):
+            print '%%%%%', node.path
             dictobj[node.uid] = node.path
         self.visit(update_dict, self._id_path_dict)
 
@@ -223,21 +224,32 @@ class ModelComponent(object):
             self.update_id_path_dict()
         return self._id_path_dict
 
-    
 def common_prefix(paths, sep='/'):
-    """Find the common prefix of paths."""
+    """Find the common prefix of paths.
+
+    Note: does not check for malformed paths right now.
+    """
     tokens_list = [path.split(sep) for path in paths]
+    for path in paths:
+        print '***', path         
     endmatch = False
     common = ''
     ii = 0
     while not endmatch:
-        tmp = [tokens[ii] for tokens in tokens_list]
-        for jj in range(1, len(tmp)):
-            if tmp[jj] != tmp[0]:
-                endmatch = True
-                break
+        try:
+            tmp = [tokens[ii] for tokens in tokens_list]            
+            for jj in range(1, len(tmp)):
+                print '#### 0.', tmp[jj]
+                if tmp[jj] != tmp[0]:
+                    print '#### 1.', tmp[0], tmp[jj]
+                    endmatch = True
+                    break
+            ii += 1
+        except IndexError:
+            endmatch = True
         if not endmatch:
             common = common + sep + tmp[0]
+    print common
     return common
             
         
