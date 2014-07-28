@@ -140,8 +140,8 @@ class NSDFWriter(object):
                 grp = self.mapping[stype]
             except KeyError:
                 self.mapping.create_group(stype)
-        self.modelroot = ModelComponent('modeltree', uid='/model/modeltree',
-                                        hdfgroup = self.modeltree)
+        self.modelroot = ModelComponent('modeltree', uid='modeltree',
+                                        hdfgroup=self.modeltree)
         self.compression = compression
         self.compression_opts = compression_opts
         self.fletcher32 = fletcher32
@@ -168,18 +168,20 @@ class NSDFWriter(object):
     def set_description(self, description):
         self._fd.attrs['description'] = description
 
-    def add_model_component(self, component, parentgroup=None):
-        """Add a model component to NSDF writer.
+    def add_model_component(self, component, parentgroup):
+        """Add a model component to NSDF writer. 
+
+        This creates a group `component.name` under parent group if
+        not already present. The `uid` of the component is stored in
+        the `uid` attribute of the group. Key-value pairs in the
+        `component.attrs` dict are stored as attributes of the group.
 
         Args: 
-
             component (ModelComponent): model component object to be
                 written to NSDF file.
                
             parentgroup (HDF Group): group under which this
-                component's group should be created. If None, it is
-                created at the path of the component relative to the
-                roort `/model/modeltree`.
+                component's group should be created.
 
         Returns:
             HDF Group created for this model component.
@@ -189,8 +191,6 @@ class NSDFWriter(object):
             corresponding to the component's parent exists.
 
         """
-        if parentgroup is None:
-            parentgroup = self.modeltree
         grp = parentgroup.require_group(component.name)
         component.hdfgroup = grp
         if component.uid is not None:
@@ -201,8 +201,9 @@ class NSDFWriter(object):
             grp.attrs[key] = value
         return grp
 
-    def add_modeltree(self, root, target=''):
-        """Add an entire model tree.
+    def add_modeltree(self, root, target='/'):
+        """Add an entire model tree. This will cause the modeltree rooted at
+        `root` to be written to the NSDF file.
 
         Args:
             root (ModelComponent): root of the source tree.
@@ -210,20 +211,27 @@ class NSDFWriter(object):
             target (str): target node path in NSDF file with respect
                 to '/model/modeltree'. `root` and its children are
                 added under this group.
+
         """
         def write_absolute(node, rootgroup):
+            """Write ModelComponent `node` at its path relative to `rootgroup`.
+            """
             if node.parent is None:
                 parentgroup = rootgroup
             else:
                 parentpath = node.parent.path[1:] 
                 parentgroup = rootgroup[parentpath]
             self.add_model_component(node, parentgroup)
+            
         node = self.modelroot
+        # Get the node corresponding to `target`, traverse by
+        # splitting to avoid confusion between absolute and relative
+        # paths.
         for name in target.split('/'):
             if name:
                 node = node.children[name]
         node.add_child(root)
-        self.modelroot.visit(write_absolute, self.modeltree)
+        self.modelroot.visit(write_absolute, self.model)
 
     def add_uniform_ds(self, name, idlist):
         """Add the sources listed in idlist under /map/uniform.
@@ -253,11 +261,29 @@ class NSDFWriter(object):
                                  dtype=VLENSTR, data=idlist)
         self.modelroot.update_id_path_dict()
         id_path_dict = self.modelroot.get_id_path_dict()
-        prefix = common_prefix(id_path_dict.values())
-        tmpattr = [ref for ref in ds.attrs.get('model', [])] + [ds.ref]
-        attr = np.empty((len(tmpattr),), dtype=REFTYPE)
-        attr[:] = tmpattr
-        ds.attrs['model'] = attr
+        if len(id_path_dict) > 1:    # there are elements other than /model/modeltree
+            for key, value in id_path_dict.items():
+                print '&&&', key, value
+            print '>>>>', idlist
+            print '<<<<', id_path_dict.keys()
+            for uid in idlist:
+                assert uid in id_path_dict
+            paths = [id_path_dict[uid] for uid in idlist]
+            prefix = common_prefix(paths)[len('/modeltree/'):]
+            print '#### prefix=', prefix
+            try:
+                print self.modeltree
+                source = self.modeltree[prefix]
+                tmpattr = [ref for ref in source.attrs.get('map', [])] + [ds.ref]
+                attr = np.empty((len(tmpattr),), dtype=REFTYPE)
+                attr[:] = tmpattr
+                source.attrs['map'] = attr
+                tmpattr = [ref for ref in ds.attrs.get('map', [])] + [source.ref]
+                attr = np.empty((len(tmpattr),), dtype=REFTYPE)
+                attr[:] = tmpattr
+                ds.attrs['model'] = attr                
+            except KeyError, e:
+                print e.message
         return ds
 
     def add_nonuniform_ds(self, popname, idlist):
@@ -368,7 +394,7 @@ class NSDFWriter(object):
 
         """
         base = self.mapping.require_group(EVENT)
-        assert (len(idlist) > 0, 'idlist must be nonempty')
+        assert len(idlist) > 0, 'idlist must be nonempty'
         assert ((self.dialect == dialect.ONED) or
             (self.dialect == dialect.NUREGULAR)),   \
             'dialect must be ONED or NUREGULAR'

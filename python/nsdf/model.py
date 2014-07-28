@@ -215,7 +215,6 @@ class ModelComponent(object):
         if self._id_path_dict is None:
             self._id_path_dict = {}
         def update_dict(node, dictobj):
-            print '%%%%%', node.path
             dictobj[node.uid] = node.path
         self.visit(update_dict, self._id_path_dict)
 
@@ -229,6 +228,9 @@ def common_prefix(paths, sep='/'):
 
     Note: does not check for malformed paths right now.
     """
+    print 'Paths:'
+    print paths
+    print '----------------'
     tokens_list = [path.split(sep) for path in paths]
     endmatch = False
     common = ''

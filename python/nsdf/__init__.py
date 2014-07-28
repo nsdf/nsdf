@@ -3,6 +3,7 @@ __author__ = 'Subhasis Ray'
 __version__ = '0.1'
 
 from .constants import *
+from .util import *
 from .model import *
 from .nsdfwriter import *
 

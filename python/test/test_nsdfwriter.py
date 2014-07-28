@@ -69,77 +69,7 @@ import os
 sys.path.append('..')
 import nsdf
 
-uid__ = 0
-def getuid():
-    """Increment the global uid tracker and return the value.
-
-    Returns:
-        str representation of the uid integer.
-    """
-    global uid__
-    uid__ += 1
-    return str(uid__)
-
-
-def create_ob_model_tree():
-        """This creates a model tree of the structure:
-
-        /model
-        |
-        |__Granule
-        |       |
-        |       |__granule_0
-        |       |       |__gc_0
-        |       |       |__...
-        |       |       |__gc_19
-         ... ... ...
-        |       |
-        |       |__granule_9
-        |               |__gc_0
-        |               |__...
-        |               |__gc_19 
-        |__Mitral
-        |       |
-        |       |__mitral_0
-        |       |       |__mc_0
-        |       |       |__...
-        |       |       |__mc_14
-         ... ... ...
-        |       |
-        |       |__mitral_9
-        |               |__mc_0
-        |               |__...
-        |               |__mc_19
-       
-
-        """
-        uid = 0
-        model_tree = nsdf.ModelComponent('model', uid=getuid())
-        granule = nsdf.ModelComponent('Granule', uid=getuid(),
-                                            parent=model_tree)
-        mitral = nsdf.ModelComponent('Mitral', uid=getuid(),
-                                           parent=model_tree)
-        granule_cells = [nsdf.ModelComponent('granule_{}'.format(ii),
-                                                 uid=getuid(),
-                                                 parent=granule)
-                                                 for ii in range(10)]
-        mitral_cells = [nsdf.ModelComponent('mitral_{}'.format(ii),
-                                                   uid=getuid(),
-                                                   parent=mitral)
-                                                 for ii in range(10)]
-        for cell in granule_cells:
-            cell.add_children([nsdf.ModelComponent('gc_{}'.format(ii),
-                                                uid=getuid())
-                               for ii in range(20)])
-        for cell in mitral_cells:
-            cell.add_children([nsdf.ModelComponent('mc_{}'.format(ii),
-                                                    uid=getuid())
-                               for ii in range(15)])
-        return {'model_tree': model_tree,
-                'granule_population': granule,
-                'mitral_population': mitral,
-                'granule_cells': granule_cells,
-                'mitral_cells': mitral_cells}
+from util import *
 
     
 class TestNSDFWriterUniform(unittest.TestCase):
@@ -655,11 +585,14 @@ class TestNSDFWriterModelTree(unittest.TestCase):
     """
     def setUp(self):
         self.mdict = create_ob_model_tree()
-        self.mdict['model_tree'].print_tree()
+        # self.mdict['model_tree'].print_tree()
         self.filepath = '{}.h5'.format(self.id())
         writer = nsdf.NSDFWriter(self.filepath,
                                  dialect=nsdf.dialect.ONED)
-        writer.add_modeltree(self.mdict['model_tree'])        
+        writer.add_modeltree(self.mdict['model_tree'])
+        print '########################'
+        writer.modelroot.print_tree()
+        print '========================'
         self.granule_somata = []
         self.popname = 'pop0'
         for cell in self.mdict['granule_cells']:
@@ -693,7 +626,7 @@ class TestNSDFWriterModelTree(unittest.TestCase):
                 self.fail('{} does not exist in nsdf file'.format(node.path))
                 
         with h5.File(self.filepath, 'r') as fd:
-            hdfroot = fd['/model/modeltree']
+            hdfroot = fd['/model']
             self.mdict['model_tree'].visit(nodes_match, hdfroot)
         os.remove(self.filepath)
 
@@ -702,24 +635,6 @@ class TestNSDFWriterModelTree(unittest.TestCase):
         which its children are members.
 
         """
-        source_ds_dict = {}
-        def ds_collector(name, obj):
-            """Collect all datasets under `/map`"""
-            if isinstance(obj, h5.Dataset):
-                print name
-                source_ds_dict[obj] = name
-            return None
-        
-        def check_map_in_ds(node, obj):
-            """Check that the references in `map` attribute are part of the
-            datasets under `/map`."""
-            try:
-                for ref in obj.attrs['map']:
-                    self.asssertTrue(obj.file[ref].name.startswith('/map'))
-            except KeyError:
-                pass
-            return None
-        
         def check_child_in_map(name, obj):
             if not isinstance(obj, h5.Group):
                 return
@@ -727,24 +642,70 @@ class TestNSDFWriterModelTree(unittest.TestCase):
             children = set([obj[chname].attrs['uid'] for chname in obj])
             try:
                 for ref in obj.attrs['map']:
+                    # For uniform datasets the source DS under map is a 1D dataset.
                     if fd[ref].dtype.fields is None:
                         map_ = set(fd[ref])
                     else:
+                        # event and nonuniform data are stored in 1D
+                        # datasets, the map tables will have two columns,
+                        # `source` column storing the uid of the source
+                        # component.
                         map_ = set(fd[ref]['source'])
-                    self.assertFalse(map_.intersection(children).empty())
+                    # If this component refers to a map table, then
+                    # one or more of its children must be members of
+                    # the map table.
+                    self.assertFalse(map_.intersection(children))
             except KeyError:
                 pass
 
         with h5.File(self.filepath, 'r') as fd:
-            fd['/map'].visititems(ds_collector)
+            fd['/model/modeltree/model'].visititems(check_child_in_map)            
+        os.remove(self.filepath)
+        
+    def test_map_in_ds(self):
+        """Check that the references in `map` attribute are part of the
+        datasets under `/map` (i.e. they have paths starting with
+        /map).
+
+        """
+        result = []
+        def check_map_in_ds(node, obj):
+            """Check if the path of all the map attribute entries start with
+            '/map'"""
+            try:
+                for ref in obj.attrs['map']:
+                    result.append(obj.file[ref].name.startswith('/map'))
+            except KeyError:
+                pass
+            return None
+        
+        with h5.File(self.filepath, 'r') as fd:
             fd['/model/modeltree/model'].visititems(check_map_in_ds)
-            fd['/model/modeltree/model'].visititems(check_child_in_map)
-            
-        # os.remove(self.filepath)
+            self.assertTrue(len(result) > 0)
+            self.assertNotIn(False, result)
+        os.remove(self.filepath)
 
-                
-    
+    def test_map_model_linking(self):
+        """Check that every source uid entry in map is also under one of the
+        references in the `model` attribute.
 
+        """
+        map_ds_list = []
+        ds_collector = nsdf.node_finder(map_ds_list,
+                                        lambda x: isinstance(x, h5.Dataset))
+        model_uids = []
+        with h5.File(self.filepath, 'r') as fd:
+            fd['/map'].visititems(ds_collector)
+            fd['/model/modeltree'].visititems(
+                lambda name, obj: model_uids.append(obj.attrs['uid']))
+            for source_ds in map_ds_list:
+                source_refs = source_ds.attrs['model']
+                model_uids = set(model_uids)
+                if source_ds.dtype.fields is not None:
+                    source_ds = np.asarray(source_ds['source'])
+                source_uids = set(source_ds)
+                self.assertEqual(source_uids, model_uids.intersection(source_uids))
+        os.remove(self.filepath)
         
 def main():
     unittest.main()
