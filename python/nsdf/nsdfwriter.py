@@ -191,7 +191,7 @@ class NSDFWriter(object):
         """
         if parentgroup is None:
             parentgroup = self.modeltree
-        grp = parentgroup.create_group(component.name)
+        grp = parentgroup.require_group(component.name)
         component.hdfgroup = grp
         if component.uid is not None:
             grp.attrs['uid'] = component.uid
@@ -201,7 +201,7 @@ class NSDFWriter(object):
             grp.attrs[key] = value
         return grp
 
-    def add_modeltree(self, root, target=None):
+    def add_modeltree(self, root, target=''):
         """Add an entire model tree.
 
         Args:
@@ -218,9 +218,12 @@ class NSDFWriter(object):
                 parentpath = node.parent.path[1:] 
                 parentgroup = rootgroup[parentpath]
             self.add_model_component(node, parentgroup)
-        if target is None:
-            target = self.modeltree
-        root.visit(write_absolute, target)        
+        node = self.modelroot
+        for name in target.split('/'):
+            if name:
+                node = node.children[name]
+        node.add_child(root)
+        self.modelroot.visit(write_absolute, self.modeltree)
 
     def add_uniform_ds(self, name, idlist):
         """Add the sources listed in idlist under /map/uniform.
@@ -869,7 +872,7 @@ class NSDFWriter(object):
         popname = source_ds.name.split('/')[-2]
         ngrp = self.data[EVENT].require_group(popname)
         assert match_datasets(source_name_dict.keys(),
-                              source_data_dict.keys()),  
+                              source_data_dict.keys()),  \
             'number of sources do not match number of datasets'
         datagrp = ngrp.require_group(name)
         ret = {}

@@ -49,7 +49,7 @@ import unittest
 import sys
 sys.path.append('..')
 
-from nsdf import model
+from nsdf import model, common_prefix
 
 uid__ = 0
 def getuid():
@@ -158,6 +158,18 @@ class TestModel(unittest.TestCase):
                 self.assertEqual(component.path, 
                                  '{}/{}'.format(cell.path, name))
 
+class TestCommonPrefix(unittest.TestCase):
+    def setUp(self):
+        self.paths = [
+            '/modeltree/model/Mitral/mitral_6/mc_11',
+            '/modeltree/model/Mitral/mitral_6/mc_10',
+            '/modeltree/model/Mitral/mitral_6/mc_5',
+            '/modeltree/model/Mitral/mitral_6/mc_0',
+            '/modeltree/model/Mitral/mitral_7/mc_11',
+            '/modeltree/model/Mitral/mitral_4']
+    def test_common_prefix(self):
+        self.assertEqual(common_prefix(self.paths), '/modeltree/model/Mitral')
+        
 if __name__ == '__main__':
     unittest.main()
 
