@@ -84,22 +84,17 @@ class TestNSDFWriterUniform(unittest.TestCase):
                 if name == 'gc_0':
                     self.granule_somata.append(comp.uid)
         writer = nsdf.NSDFWriter(self.filepath)
-        ds = writer.add_uniform_ds(self.popname,
+        source_ds = writer.add_uniform_ds(self.popname,
                               self.granule_somata)
-        self.datadict = {}
+        self.data_object = nsdf.UniformData('Vm', unit='mV', field='Vm')
         self.dlen = 5
         for uid in self.granule_somata:
-            self.datadict[uid] = np.random.uniform(-65, -55, size=self.dlen)
-        self.dt = 1e-4
-        self.name = 'Vm'
-        self.field = 'Vm'
-        self.unit = 'mV'
-        self.tunit = 's'
+            self.data_object.put_data(uid, np.random.uniform(-65, -55,
+                                                             size=self.dlen))
+        self.data_object.set_dt(1e-4, 's')
         self.tstart = 0.0
-        data = writer.add_uniform_data(self.name, ds, self.datadict,
-                                       field=self.field, unit=self.unit,
-                                       tstart=self.tstart, dt=self.dt,
-                                       tunit=self.tunit)        
+        data = writer.add_uniform_data(self.data_object, source_ds,
+                                       tstart=self.tstart)        
                 
     def test_add_uniform_ds(self):
         """Add the soma (gc_0) all the granule cells in olfactory bulb model
@@ -123,12 +118,14 @@ class TestNSDFWriterUniform(unittest.TestCase):
         """Check that the uniform data was created alright for the first
         time."""
         with h5.File(self.filepath, 'r') as fd:
-            data = fd['/data'][nsdf.UNIFORM][self.popname][self.field]
+            uniform_container = fd['/data'][nsdf.UNIFORM]
+            data = uniform_container[self.popname][self.data_object.field]
             for row, source in zip(data, data.dims[0]['source']):
-                nptest.assert_allclose(np.asarray(row), self.datadict[source])
-            self.assertEqual(data.attrs['field'], self.field)
-            self.assertEqual(data.attrs['unit'], self.unit)
-            self.assertAlmostEqual(data.attrs['dt'], self.dt)
+                nptest.assert_allclose(np.asarray(row),
+                                       self.data_object.get_data(source))
+            self.assertEqual(data.attrs['field'], self.data_object.field)
+            self.assertEqual(data.attrs['unit'], self.data_object.unit)
+            self.assertAlmostEqual(data.attrs['dt'], self.data_object.dt)
             self.assertAlmostEqual(data.attrs['tstart'], self.tstart)
         os.remove(self.filepath)
 
@@ -138,13 +135,15 @@ class TestNSDFWriterUniform(unittest.TestCase):
         writer = nsdf.NSDFWriter(self.filepath)
         ds = writer.mapping['uniform'][self.popname]
         for uid in self.granule_somata:            
-            self.datadict[uid] = np.random.uniform(-65, -55, size=self.dlen)
-        data = writer.add_uniform_data(self.name, ds, self.datadict)
+            self.data_object.put_data(uid, np.random.uniform(-65, -55,
+                                                             size=self.dlen))
+        data = writer.add_uniform_data(self.data_object, ds)
         del writer
         with h5.File(self.filepath, 'r') as fd:
-            data = fd['data'][nsdf.UNIFORM][self.popname][self.name]
+            uniform_container = fd['/data'][nsdf.UNIFORM]
+            data = uniform_container[self.popname][self.data_object.name]
             for row, source in zip(data, data.dims[0]['source']):
-                nptest.assert_allclose(row[-self.dlen:], self.datadict[source])
+                nptest.assert_allclose(row[-self.dlen:], self.data_object.get_data(source))
         os.remove(self.filepath)
         
     
@@ -601,20 +600,15 @@ class TestNSDFWriterModelTree(unittest.TestCase):
                     self.granule_somata.append(comp.uid)
         uds = writer.add_uniform_ds(self.popname,
                               self.granule_somata)
-        self.datadict = {}
+        self.data_object = nsdf.UniformData('Vm', unit='mV', field='Vm')
         self.dlen = 5
         for uid in self.granule_somata:
-            self.datadict[uid] = np.random.uniform(-65, -55, size=self.dlen)
-        self.dt = 1e-4
-        self.name = 'Vm'
-        self.field = 'Vm'
-        self.unit = 'mV'
-        self.tunit = 's'
+            self.data_object.put_data(uid, np.random.uniform(-65, -55,
+                                                             size=self.dlen))
+        self.data_object.set_dt(1e-4, 's')
         self.tstart = 0.0
-        data = writer.add_uniform_data(self.name, uds, self.datadict,
-                                       field=self.field, unit=self.unit,
-                                       tstart=self.tstart, dt=self.dt,
-                                       tunit=self.tunit)        
+        data = writer.add_uniform_data(self.data_object, uds,
+                                       tstart=self.tstart)        
         
     def test_add_modeltree(self):
         """For each node in model tree see if the corresponding group

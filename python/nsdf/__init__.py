@@ -5,6 +5,7 @@ __version__ = '0.1'
 from .constants import *
 from .util import *
 from .model import *
+from .nsdfdata import *
 from .nsdfwriter import *
 
 # from .NSDFWriter import NSDFWriter as writer

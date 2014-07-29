@@ -48,7 +48,7 @@
 
 import h5py as h5
 import numpy as np
-from collections import namedtuple
+# from collections import namedtuple
 
 VLENFLOAT = h5.special_dtype(vlen=np.dtype('float32'))
 VLENDOUBLE = h5.special_dtype(vlen=np.dtype('float64'))
@@ -56,7 +56,7 @@ VLENSTR = h5.special_dtype(vlen=str)
 REFTYPE = h5.special_dtype(ref=h5.Reference)
 SRCDATAMAPTYPE = np.dtype([('source', VLENSTR), ('data', REFTYPE)])
 
-NonuniformRec = namedtuple('NonuniformRec', ['sid', 'data', 'time'])
+# NonuniformRec = namedtuple('NonuniformRec', ['sid', 'data', 'time'])
 
 UNIFORM = 'uniform'
 NONUNIFORM = 'nonuniform'

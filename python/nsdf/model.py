@@ -67,7 +67,8 @@ class ModelComponent(object):
             to in NSDF file.
 
     """
-    def __init__(self, name, uid=None, parent=None, attrs=None, hdfgroup=None):
+    def __init__(self, name, uid=None, parent=None, attrs=None,
+                 hdfgroup=None):
         if uid is None:
             uid = name
         self.uid = uid
@@ -144,13 +145,14 @@ class ModelComponent(object):
             node = node.children[name]
 
     def visit(self, function, *args, **kwargs):
-        """Visit the subtree starting with `node` recursively, applying function
-        `fn` to each node.
+        """Visit the subtree starting with `node` recursively, applying
+        function `fn` to each node.
 
         Args:
             node (ModelComponent): node to start with.
 
-            fn(node, *args, **kwargs): a function to apply on each node.
+            fn(node, *args, **kwargs): a function to apply on each
+                node.
 
         Returns:
             None
@@ -204,6 +206,7 @@ class ModelComponent(object):
             
     @property
     def path(self):
+        """Path of this component"""
         pth = self.name
         node = self.parent
         while node is not None:
@@ -212,13 +215,22 @@ class ModelComponent(object):
         return '/' + pth
 
     def update_id_path_dict(self):
+        """Update the id->path mapping.
+
+        This must be called before using get_id_path_dict whenever the
+        model tree is been modified
+
+        """
         if self._id_path_dict is None:
             self._id_path_dict = {}
         def update_dict(node, dictobj):
+            """Insert the (uid, path) of `node` into `dictobj`."""
             dictobj[node.uid] = node.path
         self.visit(update_dict, self._id_path_dict)
 
     def get_id_path_dict(self):
+        """Return a dictionary mapping the unique id of the model components
+        to their path in modeltree."""
         if (self._id_path_dict is None) or (len(self._id_path_dict) == 0):
             self.update_id_path_dict()
         return self._id_path_dict
@@ -231,17 +243,17 @@ def common_prefix(paths, sep='/'):
     tokens_list = [path.split(sep) for path in paths]
     endmatch = False
     common = ''
-    ii = 0
+    iii = 0
     while not endmatch:
         name = ''
         try:
-            tmp = [tokens[ii] for tokens in tokens_list]
+            tmp = [tokens[iii] for tokens in tokens_list]
             name = tmp[0]
-            for jj in range(1, len(tmp)):
-                if tmp[jj] != tmp[0]:
+            for jjj in range(1, len(tmp)):
+                if tmp[jjj] != tmp[0]:
                     endmatch = True
                     break
-            ii += 1
+            iii += 1
         except IndexError:
             endmatch = True
         if name and (not endmatch):
