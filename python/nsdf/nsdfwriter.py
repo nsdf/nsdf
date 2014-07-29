@@ -168,6 +168,50 @@ class NSDFWriter(object):
     def set_description(self, description):
         self._fd.attrs['description'] = description
 
+    def _link_map_model(self, mapds):
+        """Link the model to map dataset and vice versa. 
+
+        The map dataset stores a list of references to the closest
+        common ancestor of all the source components in it in the
+        attribute `model`. The closest common ancestor in the model
+        tree also stores a reference to this map dataset in its `map`
+        attribute.
+
+        This is an internal optimization in NSDF because given that
+        every model component has an unique id and the map datasets
+        store these unique ids, it is always possible to search the
+        entire mdoel tree for these unique ids.
+    
+        Args:
+            mapds: The map dataset for which the linking should be done.
+
+        Returns:
+            None
+
+        """
+        self.modelroot.update_id_path_dict()
+        id_path_dict = self.modelroot.get_id_path_dict()
+        if mapds.dtype.fields is None:
+            idlist = mapds
+        else:
+            idlist = mapds['source']
+        if len(id_path_dict) > 1:    # there are elements other than /model/modeltree
+            paths = [id_path_dict[uid] for uid in idlist]
+            prefix = common_prefix(paths)[len('/modeltree/'):]
+            try:
+                source = self.modeltree[prefix]
+                tmpattr = [ref for ref in source.attrs.get('map', [])] + [mapds.ref]
+                attr = np.empty((len(tmpattr),), dtype=REFTYPE)
+                attr[:] = tmpattr
+                source.attrs['map'] = attr
+                tmpattr = [ref for ref in mapds.attrs.get('map', [])] + [source.ref]
+                attr = np.empty((len(tmpattr),), dtype=REFTYPE)
+                attr[:] = tmpattr
+                mapds.attrs['model'] = attr                
+            except KeyError, e:
+                print e.message
+        
+
     def add_model_component(self, component, parentgroup):
         """Add a model component to NSDF writer. 
 
@@ -260,30 +304,7 @@ class NSDFWriter(object):
         ds = base.create_dataset(name, shape=(len(idlist),),
                                  dtype=VLENSTR, data=idlist)
         self.modelroot.update_id_path_dict()
-        id_path_dict = self.modelroot.get_id_path_dict()
-        if len(id_path_dict) > 1:    # there are elements other than /model/modeltree
-            for key, value in id_path_dict.items():
-                print '&&&', key, value
-            print '>>>>', idlist
-            print '<<<<', id_path_dict.keys()
-            for uid in idlist:
-                assert uid in id_path_dict
-            paths = [id_path_dict[uid] for uid in idlist]
-            prefix = common_prefix(paths)[len('/modeltree/'):]
-            print '#### prefix=', prefix
-            try:
-                print self.modeltree
-                source = self.modeltree[prefix]
-                tmpattr = [ref for ref in source.attrs.get('map', [])] + [ds.ref]
-                attr = np.empty((len(tmpattr),), dtype=REFTYPE)
-                attr[:] = tmpattr
-                source.attrs['map'] = attr
-                tmpattr = [ref for ref in ds.attrs.get('map', [])] + [source.ref]
-                attr = np.empty((len(tmpattr),), dtype=REFTYPE)
-                attr[:] = tmpattr
-                ds.attrs['model'] = attr                
-            except KeyError, e:
-                print e.message
+        self._link_map_model(ds)
         return ds
 
     def add_nonuniform_ds(self, popname, idlist):
@@ -315,6 +336,7 @@ class NSDFWriter(object):
         assert len(idlist) > 0
         ds = base.create_dataset(popname, shape=(len(idlist),),
                                  dtype=VLENSTR, data=idlist)
+        self._link_map_model(ds)
         return ds
     
     def add_nonuniform_ds_1d(self, popname, varname, idlist):
@@ -352,6 +374,7 @@ class NSDFWriter(object):
                                 dtype=SRCDATAMAPTYPE)
         for ii in range(len(idlist)):
             ds[ii] = (idlist[ii], None)
+        self._link_map_model(ds)
         return ds
 
     def add_event_ds(self, name, idlist):
@@ -376,6 +399,7 @@ class NSDFWriter(object):
             'only for VLEN or NANFILLED dialects'
         ds = base.create_dataset(name, shape=(len(idlist),),
                                  dtype=VLENSTR, data=idlist)
+        self._link_map_model(ds)
         return ds
 
     def add_event_ds_1d(self, popname, varname, idlist):
@@ -403,7 +427,34 @@ class NSDFWriter(object):
                                      dtype=SRCDATAMAPTYPE)
         for ii in range(len(idlist)):
             ds[ii] = (idlist[ii], None)
+        self._link_map_model(ds)
         return ds
+
+    def add_static_ds(self, popname, idlist):
+        """Add the sources listed in idlist under /map/static.
+
+        Args: 
+            name (str): name with which the datasource list
+                should be stored. This will represent a population of
+                data sources.
+
+            idlist (list of str): list of unique identifiers of the
+                data sources.
+
+        Returns: 
+            An HDF5 Dataset storing the source ids. This is
+            converted into a dimension scale when actual data is
+            added.
+
+        """
+        if len(idlist) == 0:
+            raise ValueError('idlist must be nonempty')
+        base = self.mapping.require_group(STATIC)
+        ds = base.create_dataset(popname, shape=(len(idlist),),
+                                 dtype=VLENSTR, data=idlist)
+        self.modelroot.update_id_path_dict()
+        self._link_map_model(ds)
+        return ds        
     
     def add_uniform_data(self, name, source_ds, source_data_dict,
                          field=None, unit=None, tstart=0.0, dt=0.0,
@@ -846,7 +897,7 @@ class NSDFWriter(object):
 
     def add_event_1d(self, name, source_ds, source_name_dict,
                            source_data_dict, field=None, unit=None,
-                           tunit=None, dtype=np.float64, fixed=False):
+                           dtype=np.float64, fixed=False):
         """Add event time data when data from each source is in a separate 1D
         dataset.
 
@@ -1023,6 +1074,78 @@ class NSDFWriter(object):
             data = source_data_dict[source]
             dataset[ii] = np.concatenate((dataset[ii], data))
         return dataset
+
+    def add_static_data(self, name, source_ds, source_data_dict,
+                        field=None, unit=None, dtype=np.float64,
+                        fixed=True):
+        """Append static data `variable` values from `sources` to `data`.
+
+        Args: 
+            name (str): name under which this data should be
+                stored. Using the variable name whenever possible is
+                recommended.
+
+            source_ds (HDF5 Dataset): the dataset storing the source
+                ids under map. This is attached to the stored data as
+                a dimension scale called `source` on the row
+                dimension.
+
+            source_data_dict (dict): a dict mapping source ids to data
+                arrays or scalars. 
+
+            field (str): name of the recorded variable. Not required
+                when appending to existing data.
+        
+            unit (str): unit of the variable quantity being saved. Not
+                required when appending to existing data.
+
+            dtype (numpy.dtype): type of data (default 64 bit float)
+            
+            fixed (bool): if True, the data cannot grow. Default: True
+
+        Returns:
+            HDF5 dataset storing the data
+
+        Raises:
+            KeyError if the sources in `source_data_dict` do not match
+            those in `source_ds`.
+        
+        """
+        popname = source_ds.name.rpartition('/')[-1]
+        ugrp = self.data[STATIC].require_group(popname)
+        if not match_datasets(source_ds, source_data_dict.keys()):
+            raise KeyError('members of `source_ds` must match keys of'
+                           ' `source_data_dict`.')
+        ordered_data = [source_data_dict[src] for src in source_ds]
+        data = np.vstack(ordered_data)
+        try:
+            dataset = ugrp[name]
+            oldcolcount = dataset.shape[1]
+            dataset.resize(oldcolcount + data.shape[1], axis=1)
+            dataset[:, oldcolcount:] = data
+        except KeyError:
+            if field is None:
+                field = name
+            if unit is None:
+                raise ValueError('`unit` is required for creating dataset.')
+            maxcol = None
+            if fixed:
+                maxcol = data.shape[1]
+            dataset = ugrp.create_dataset(
+                name, shape=data.shape,
+                dtype=dtype,
+                data=data,
+                maxshape=(data.shape[0], maxcol),
+                compression=self.compression,
+                compression_opts=self.compression_opts,
+                fletcher32=self.fletcher32,
+                shuffle=self.shuffle)
+            dataset.dims.create_scale(source_ds, 'source')
+            dataset.dims[0].attach_scale(source_ds)
+            dataset.attrs['field'] = field
+            dataset.attrs['unit'] = unit
+        return dataset
+
 
     
 # 

@@ -228,9 +228,6 @@ def common_prefix(paths, sep='/'):
 
     Note: does not check for malformed paths right now.
     """
-    print 'Paths:'
-    print paths
-    print '----------------'
     tokens_list = [path.split(sep) for path in paths]
     endmatch = False
     common = ''
@@ -249,7 +246,6 @@ def common_prefix(paths, sep='/'):
             endmatch = True
         if name and (not endmatch):
             common = common + sep + name
-    print common
     return common
             
         
