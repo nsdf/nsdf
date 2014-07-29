@@ -99,40 +99,43 @@ def create_example():
     # Create the NSDF writer object
     writer = nsdf.NSDFWriter('poolroom.h5', mode='w')
     writer.add_modeltree(model)
+    dataobj = nsdf.StaticData('area', unit='m^2')
+    dataobj.put_data(poolroom.uid, [100.0])
     source_ds = writer.add_static_ds('rooms', [poolroom.uid])
-    writer.add_static_data('area', source_ds, {poolroom.uid: [100.0]},
-                           unit='m^2')
+    writer.add_static_data(source_ds, dataobj)
     source_ds = writer.add_static_ds('tables', [tab.uid for tab in
                                                 tables])
-    writer.add_static_data('height', source_ds, {tab.uid: [1.2]
-                                                      for tab in
-                                                      tables},
-                           field='height',
-                           unit='m')
+    dataobj = nsdf.StaticData('height', unit='m')
+    for tab in tables:
+        dataobj.put_data(tab.uid, 1.2)
+    writer.add_static_data(source_ds, dataobj)
     source_ds = writer.add_nonuniform_ds_1d('tables', 'players',
                                            [tab.uid for tab in tables])
-    source_data_dict = {}
+    dataobj = nsdf.NonuniformData('players', unit='item',
+                                  tunit='hour', dtype=np.int32)
     for tab in tables:
         times = np.cumsum(np.random.exponential(1/10.0, size=10))
-        source_data_dict[tab.uid] = (np.random.randint(10, size=10), times)
-    writer.add_nonuniform_1d('players', source_ds, {tab.uid: tab.name
-                                                    for tab in tables},
-                             source_data_dict,
-                             dtype=np.int32, unit='item',
-                             tunit='hour')
+        dataobj.put_data(tab.uid, (np.random.randint(10, size=10),
+                                   times))
+    writer.add_nonuniform_1d(source_ds, dataobj, {tab.uid: tab.name
+                                                  for tab in
+                                                  tables})
     source_ds = writer.add_uniform_ds('balls', [ball.uid for ball in balls])
-    datadict = {ball.uid: np.random.rand(10) * 10 for ball in balls}
-    writer.add_uniform_data('x', source_ds, datadict,
-                            unit='cm', dt=1.0, tunit='s')
+    dataobj = nsdf.UniformData('x', unit='cm')
+    for ball in balls:
+        dataobj.put_data(ball.uid, np.random.rand(10) * 10)
+    dataobj.set_dt(1e-2, 's')    
+    writer.add_uniform_data(source_ds, dataobj)
     
     source_ds = writer.add_event_ds_1d('balls', 'hit', [ball.uid for ball in balls])
-    writer.add_event_1d('hit', source_ds, {ball.uid:
-                                           '{}_{}'.format(ball.name,
-                                                          ball.uid) for ball in
-                                           balls}, {ball.uid:
-                                                    np.cumsum(np.random.exponential(1/100.0,
-                                                                                    size=10)) for ball in
-                                                    balls}, unit='s')
+    dataobj = nsdf.EventData('hit', unit='s')
+    source_name_dict = {}
+    for ball in balls:
+        source_name_dict[ball.uid] = '{}_{}'.format(ball.name,
+                                                    ball.uid)
+        data = np.cumsum(np.random.exponential(1/100.0, size=10))
+        dataobj.put_data(ball.uid, data)
+    writer.add_event_1d(source_ds, dataobj, source_name_dict)
     
             
                       

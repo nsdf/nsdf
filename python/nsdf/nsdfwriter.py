@@ -281,7 +281,6 @@ class NSDFWriter(object):
             base = self.mapping.create_group(UNIFORM)
         src_ds = base.create_dataset(name, shape=(len(idlist),),
                                  dtype=VLENSTR, data=idlist)
-        self.modelroot.update_id_path_dict()
         self._link_map_model(src_ds)
         return src_ds
 
@@ -633,7 +632,8 @@ class NSDFWriter(object):
         assert match_datasets(source_ds['source'],
                               source_name_dict.keys()),  \
             'sources in mapping dataset do not match those with data'
-        datagrp = ngrp.require_group(data_object.name)            
+        datagrp = ngrp.require_group(data_object.name)
+        datagrp.attrs['source'] = source_ds.ref
         ret = {}
         for iii, source in enumerate(source_ds['source']):
             data, time = data_object.get_data(source)
@@ -819,6 +819,7 @@ class NSDFWriter(object):
                               data_object.get_sources()),  \
             'number of sources do not match number of datasets'
         datagrp = ngrp.require_group(data_object.name)
+        datagrp.attrs['source'] = source_ds.ref
         ret = {}
         for iii, source in enumerate(source_ds['source']):
             data = data_object.get_data(source)
