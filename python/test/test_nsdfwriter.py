@@ -129,7 +129,7 @@ class TestNSDFWriterUniform(unittest.TestCase):
             self.assertAlmostEqual(data.attrs['tstart'], self.tstart)
         os.remove(self.filepath)
 
-    def test_append_uniform_data(self):
+    def test_append_data(self):
         """Try appending data to existing uniformly sampled dataset"""
         # start over for appending data
         writer = nsdf.NSDFWriter(self.filepath, mode='a')
@@ -236,6 +236,30 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
                 self.assertEqual(ts.attrs['unit'], self.data_object.tunit)
         os.remove(self.filepath)
 
+    def test_append_data(self):
+        """Try appending data to existing uniformly sampled dataset"""
+        # start over for appending data
+        writer = nsdf.NSDFWriter(self.filepath, mode='a')
+        ds = writer.mapping[nsdf.NONUNIFORM][self.popname][self.data_object.name]
+        for uid in ds['source']:
+            data = np.random.uniform(-65, -55, size=self.dlen)
+            times = np.cumsum(np.random.exponential(scale=0.01, size=self.dlen))
+            self.data_object.put_data(uid, (data, times))
+        data = writer.add_nonuniform_1d(ds, self.data_object, self.src_name_dict)
+        del writer
+        with h5.File(self.filepath, 'r') as fd:
+            nucontainer = fd['/data'][nsdf.NONUNIFORM]
+            data_grp = nucontainer[self.popname][self.data_object.name]
+            for dataset_name in data_grp:
+                dataset = data_grp[dataset_name]
+                srcuid = dataset.attrs['source']
+                nptest.assert_allclose(self.data_object.get_data(srcuid)[0],
+                                       dataset[-self.dlen:])
+                ts = dataset.dims[0]['time']
+                nptest.assert_allclose(self.data_object.get_data(srcuid)[1],
+                                       ts[-self.dlen:])                
+        os.remove(self.filepath)
+        
                 
 class TestNSDFWriterNonuniformVlen(unittest.TestCase):
     """Test case for writing nonuniformly sampled data in 2D ragged
@@ -433,11 +457,11 @@ class TestNSDFWriterEvent1D(unittest.TestCase):
                                           field=self.field)
         self.src_name_dict = {}
         rate = 100.0
-        dlen = np.random.poisson(lam=rate, size=len(self.sources))
+        self.dlen = np.random.poisson(lam=rate, size=len(self.sources))
         for ii, cell in enumerate(self.mdict['mitral_cells']):
             uid = cell.uid
             data = np.cumsum(np.random.exponential(scale=1.0/rate,
-                                                   size=dlen[ii]))
+                                                   size=self.dlen[ii]))
             self.data_object.put_data(uid, data)
             # this is not required to be cell.name, any valid hdf5
             # name will do
@@ -486,6 +510,31 @@ class TestNSDFWriterEvent1D(unittest.TestCase):
                 self.assertEqual(dataset.attrs['unit'], self.unit)
                 self.assertEqual(dataset.attrs['field'], self.field)
         os.remove(self.filepath)
+
+    def test_append_data(self):
+        """Try appending data to existing uniformly sampled dataset"""
+        # start over for appending data
+        writer = nsdf.NSDFWriter(self.filepath, mode='a')
+        ds = writer.mapping[nsdf.EVENT][self.popname][self.data_object.name]
+        rate = 100.0
+        new_dlen = np.random.poisson(lam=rate, size=len(self.sources))
+        for ii, cell in enumerate(self.mdict['mitral_cells']):
+            uid = cell.uid
+            data = np.cumsum(np.random.exponential(scale=1.0/rate,
+                                                   size=new_dlen[ii]))
+            self.data_object.put_data(uid, data)
+        writer.add_event_1d(ds, self.data_object, self.src_name_dict)
+        del writer
+        with h5.File(self.filepath, 'r') as fd:
+            eventcontainer = fd['/data'][nsdf.EVENT]
+            data_grp = eventcontainer[self.popname][self.data_object.name]
+            for ii, cell in enumerate(self.mdict['mitral_cells']):
+                uid = cell.uid            
+                dataset = data_grp[cell.name]
+                nptest.assert_allclose(self.data_object.get_data(uid),
+                                       dataset[self.dlen[ii]:])
+        os.remove(self.filepath)
+
 
 
 class TestNSDFWriterEventVlen(unittest.TestCase):

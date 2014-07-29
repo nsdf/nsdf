@@ -643,9 +643,9 @@ class NSDFWriter(object):
                 dset = datagrp[dsetname]
                 oldlen = dset.shape[0]
                 timescale = dset.dims[0]['time']
-                dset.resize(oldlen + len(data))
+                dset.resize((oldlen + len(data),))
                 dset[oldlen:] = data
-                timescale.resize(oldlen + len(data))
+                timescale.resize((oldlen + len(data),))
                 timescale[oldlen:] = time
             except KeyError:
                 if data_object.unit is None:
@@ -674,6 +674,7 @@ class NSDFWriter(object):
                     shape=(len(data),),
                     dtype=np.float64,
                     data=time,
+                    maxshape=(maxcol,),
                     **self.h5args)
                 dset.dims.create_scale(timescale, 'time')
                 dset.dims[0].label = 'time'
@@ -827,7 +828,7 @@ class NSDFWriter(object):
             try:
                 dset = datagrp[dsetname]
                 oldlen = dset.shape[0]
-                dset.resize(oldlen + len(data))
+                dset.resize((oldlen + len(data),))
                 dset[oldlen:] = data
             except KeyError:
                 if data_object.unit is None:
