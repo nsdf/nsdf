@@ -83,7 +83,7 @@ class TestNSDFWriterUniform(unittest.TestCase):
             for name, comp in cell.children.items():
                 if name == 'gc_0':
                     self.granule_somata.append(comp.uid)
-        writer = nsdf.NSDFWriter(self.filepath)
+        writer = nsdf.NSDFWriter(self.filepath, mode='w')
         source_ds = writer.add_uniform_ds(self.popname,
                               self.granule_somata)
         self.data_object = nsdf.UniformData('Vm', unit='mV', field='Vm')
@@ -93,7 +93,7 @@ class TestNSDFWriterUniform(unittest.TestCase):
                                                              size=self.dlen))
         self.data_object.set_dt(1e-4, 's')
         self.tstart = 0.0
-        data = writer.add_uniform_data(self.data_object, source_ds,
+        data = writer.add_uniform_data(source_ds, self.data_object,
                                        tstart=self.tstart)        
                 
     def test_add_uniform_ds(self):
@@ -132,12 +132,12 @@ class TestNSDFWriterUniform(unittest.TestCase):
     def test_append_uniform_data(self):
         """Try appending data to existing uniformly sampled dataset"""
         # start over for appending data
-        writer = nsdf.NSDFWriter(self.filepath)
+        writer = nsdf.NSDFWriter(self.filepath, mode='a')
         ds = writer.mapping['uniform'][self.popname]
         for uid in self.granule_somata:            
             self.data_object.put_data(uid, np.random.uniform(-65, -55,
                                                              size=self.dlen))
-        data = writer.add_uniform_data(self.data_object, ds)
+        data = writer.add_uniform_data(ds, self.data_object)
         del writer
         with h5.File(self.filepath, 'r') as fd:
             uniform_container = fd['/data'][nsdf.UNIFORM]
@@ -151,8 +151,8 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
     """Test case for writing nonuniformly sampled data in 1D arrays"""
     def setUp(self):
         self.mdict = create_ob_model_tree()
-        self.filepath = 'test_nsdfwriter_nonuniform_1d.h5'
-        writer = nsdf.NSDFWriter(self.filepath,
+        self.filepath = '{}.h5'.format(self.id())
+        writer = nsdf.NSDFWriter(self.filepath, mode='w',
                                  dialect=nsdf.dialect.ONED)
         writer.set_title(self.id())
         mitral_somata = []
@@ -162,27 +162,18 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
                     mitral_somata.append(comp.uid)
                     
         self.popname = 'pop1'
-        self.field = 'Vm'
-        self.unit = 'mV'
-        self.tunit = 's'
-        self.varname = 'Vm'
-        
-        ds = writer.add_nonuniform_ds_1d(self.popname, self.varname,
+        self.data_object = nsdf.NonuniformData('Vm', unit='mV', field='Vm', tunit='ms')
+        ds = writer.add_nonuniform_ds_1d(self.popname, self.data_object.name,
                                          mitral_somata)
         self.dlen = 1000
         self.src_name_dict = {}
-        self.src_data_dict = {}
         for ii, uid in enumerate(mitral_somata):
             data = np.random.uniform(-65, -55, size=self.dlen)
             times = np.cumsum(np.random.exponential(scale=0.01, size=self.dlen))
-            self.src_data_dict[uid] = (data, times)
+            self.data_object.put_data(uid, (data, times))
             self.src_name_dict[uid] = str('vm_{}'.format(ii))
-        dd = writer.add_nonuniform_1d(self.varname,
-                                           ds,self.src_name_dict,
-                                           self.src_data_dict,
-                                           field=self.field,
-                                           unit=self.unit,
-                                           tunit=self.tunit)
+        dd = writer.add_nonuniform_1d(ds, self.data_object,
+                                      self.src_name_dict)
 
     def test_source_ds_group(self):
         """Verify that the group for containing source-data mapping dataset
@@ -206,12 +197,12 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
             try:
                 source_ds_path = '/map/{}/{}/{}'.format(
                     nsdf.NONUNIFORM,
-                    self.popname, self.varname)
+                    self.popname, self.data_object.name)
                 source_ds = fd[source_ds_path]
             except KeyError:
                 self.fail('{} not created.'.format(source_ds_path))
             self.assertTrue(nsdf.match_datasets(source_ds['source'],
-                                                self.src_data_dict.keys()))
+                                                self.data_object.get_sources()))
         os.remove(self.filepath)
         
     def test_data(self):
@@ -219,30 +210,30 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
         with h5.File(self.filepath, 'r') as fd:
             data_grp_name = '/data/{}/{}/{}'.format(nsdf.NONUNIFORM,
                                                self.popname,
-                                               self.varname)            
+                                               self.data_object.name)            
             data_grp = fd[data_grp_name]
             for dataset_name in data_grp:
                 dataset = data_grp[dataset_name]
                 srcuid = dataset.attrs['source']
-                nptest.assert_allclose(np.asarray(self.src_data_dict[srcuid][0]),
+                nptest.assert_allclose(np.asarray(self.data_object.get_data(srcuid)[0]),
                                        np.asarray(dataset))
-                self.assertEqual(dataset.attrs['unit'], self.unit)
-                self.assertEqual(dataset.attrs['field'], self.field)
+                self.assertEqual(dataset.attrs['unit'], self.data_object.unit)
+                self.assertEqual(dataset.attrs['field'], self.data_object.field)
         os.remove(self.filepath)
 
     def test_ts(self):
         with h5.File(self.filepath, 'r') as fd:
             data_grp_name = '/data/{}/{}/{}'.format(nsdf.NONUNIFORM,
                                                self.popname,
-                                               self.varname)
+                                               self.data_object.name)
             data_grp = fd[data_grp_name]
             for dataset_name in data_grp:
                 dataset = data_grp[dataset_name]
                 srcuid = dataset.attrs['source']
                 ts = dataset.dims[0]['time']
-                nptest.assert_allclose(np.asarray(self.src_data_dict[srcuid][1]),
+                nptest.assert_allclose(np.asarray(self.data_object.get_data(srcuid)[1]),
                                        np.asarray(ts))
-                self.assertEqual(ts.attrs['unit'], self.tunit)
+                self.assertEqual(ts.attrs['unit'], self.data_object.tunit)
         os.remove(self.filepath)
 
                 
@@ -252,7 +243,7 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
     def setUp(self):
         self.mdict = create_ob_model_tree()
         self.filepath = '{}.h5'.format(self.id())
-        writer = nsdf.NSDFWriter(self.filepath,
+        writer = nsdf.NSDFWriter(self.filepath, mode='w',
                                       dialect=nsdf.dialect.VLEN)
         writer.set_title(self.id())
         mitral_somata = []
@@ -262,23 +253,25 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
                     mitral_somata.append(comp.uid)
                     
         self.popname = 'pop1'
-        ds = writer.add_nonuniform_ds(self.popname, mitral_somata)
         self.dlen = 1000
-        self.src_data_dict = {}
-        self.src_name_dict = {}
-        for ii, uid in enumerate(mitral_somata):
-            data = np.random.uniform(-65, -55, size=self.dlen)
-            times = np.cumsum(np.random.exponential(scale=0.01, size=self.dlen))
-            self.src_data_dict[uid] = (data, times)
         self.field = 'Vm'
         self.unit = 'mV'
         self.tunit = 's'
         self.varname = 'Vm'
-        dd = writer.add_nonuniform_vlen(self.varname, ds,
-                                             self.src_data_dict,
-                                             field=self.field,
-                                             unit=self.unit,
-                                             tunit=self.tunit)
+
+        ds = writer.add_nonuniform_ds(self.popname, mitral_somata)
+        # FIXME: vlen does not support float64
+        self.data_object = nsdf.NonuniformData(self.varname,
+                                               unit=self.unit,
+                                               field=self.field,
+                                               tunit=self.tunit,
+                                               dtype=np.float32) 
+        self.src_name_dict = {}
+        for ii, uid in enumerate(mitral_somata):
+            data = np.random.uniform(-65, -55, size=self.dlen)
+            times = np.cumsum(np.random.exponential(scale=0.01, size=self.dlen))
+            self.data_object.put_data(uid, (data, times))
+        dd = writer.add_nonuniform_vlen(ds, self.data_object)
 
     def test_source_ds(self):
         with h5.File(self.filepath, 'r') as fd:
@@ -287,7 +280,7 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
                                                  self.varname)
             source_ds = fd[source_ds_name]            
             self.assertTrue(nsdf.match_datasets(source_ds,
-                                                self.src_data_dict.keys()))            
+                                                self.data_object.get_sources()))
         os.remove(self.filepath)
 
     def test_data(self):
@@ -308,7 +301,7 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
             self.assertEqual(dataset.attrs['field'], self.field)    
             for ii in range(src_ds.len()):
                 srcuid = src_ds[ii]                
-                nptest.assert_allclose(self.src_data_dict[srcuid][0],
+                nptest.assert_allclose(self.data_object.get_data(srcuid)[0],
                                        dataset[ii])
         os.remove(self.filepath)
 
@@ -325,7 +318,7 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
             self.assertEqual(time_ds.shape, dataset.shape)
             for ii in range(src_ds.len()):
                 srcuid = src_ds[ii]                
-                nptest.assert_allclose(self.src_data_dict[srcuid][1],
+                nptest.assert_allclose(self.data_object.get_data(srcuid)[1],
                                        time_ds[ii])
         os.remove(self.filepath)
 
@@ -338,7 +331,7 @@ class TestNSDFWriterNonuniformRegular(unittest.TestCase):
     def setUp(self):
         self.mdict = create_ob_model_tree()
         self.filepath = '{}.h5'.format(self.id())
-        writer = nsdf.NSDFWriter(self.filepath,
+        writer = nsdf.NSDFWriter(self.filepath, mode='w',
                                       dialect=nsdf.dialect.NUREGULAR)
         writer.set_title(self.id())
         mitral_somata = []
@@ -350,22 +343,15 @@ class TestNSDFWriterNonuniformRegular(unittest.TestCase):
         self.popname = 'pop1'
         ds = writer.add_nonuniform_ds(self.popname, mitral_somata)
         self.dlen = 1000
-        self.src_data_dict = {}
+        self.data_object = nsdf.NonuniformRegularData(name='Vm',
+                                                      unit='mV', tunit='ms')
+        self.data_object.set_times(np.random.uniform(0, 1, size=self.dlen))
         self.src_name_dict = {}
-        self.times = np.random.uniform(0, 1, size=self.dlen)
         for ii, uid in enumerate(mitral_somata):
             data = np.random.uniform(-65, -55, size=self.dlen)
-            self.src_data_dict[uid] = data
-        self.field = 'Vm'
-        self.unit = 'mV'
-        self.tunit = 's'
-        self.varname = 'Vm'
-        dd = writer.add_nonuniform_regular(self.varname, ds,
-                                             self.src_data_dict,
-                                             self.times,
-                                             field=self.field,
-                                             unit=self.unit,
-                                             tunit=self.tunit)        
+            self.data_object.put_data(uid, data)
+        dd = writer.add_nonuniform_regular(ds,
+                                           self.data_object)    
 
     def test_adding_ds_creates_group(self):
         """Check that adding nonuniform data sources creates the 'nonuniform'
@@ -384,10 +370,10 @@ class TestNSDFWriterNonuniformRegular(unittest.TestCase):
         with h5.File(self.filepath, 'r') as fd:
             source_ds_name = '/map/{}/{}'.format(nsdf.NONUNIFORM,
                                                  self.popname,
-                                                 self.varname)
+                                                 self.data_object.name)
             source_ds = fd[source_ds_name]            
             self.assertTrue(nsdf.match_datasets(source_ds,
-                                                self.src_data_dict.keys()))
+                                                self.data_object.get_sources()))
         os.remove(self.filepath)
 
     def test_data(self):
@@ -395,7 +381,7 @@ class TestNSDFWriterNonuniformRegular(unittest.TestCase):
         with h5.File(self.filepath, 'r') as fd:
             dataset_name = '/data/{}/{}/{}'.format(nsdf.NONUNIFORM,
                                                    self.popname,
-                                                   self.varname)            
+                                                   self.data_object.name)
             dataset = fd[dataset_name]
             self.assertIsInstance(dataset, h5.Dataset)
             src_ds_name = '/map/{}/{}'.format(nsdf.NONUNIFORM,
@@ -404,11 +390,11 @@ class TestNSDFWriterNonuniformRegular(unittest.TestCase):
             self.assertIsInstance(src_ds, h5.Dataset)
             attached_src_ds = dataset.dims[0]['source']          
             self.assertEqual(src_ds, attached_src_ds)
-            self.assertEqual(dataset.attrs['unit'], self.unit)
-            self.assertEqual(dataset.attrs['field'], self.field)    
+            self.assertEqual(dataset.attrs['unit'], self.data_object.unit)
+            self.assertEqual(dataset.attrs['field'], self.data_object.field)    
             for ii in range(src_ds.len()):
                 srcuid = src_ds[ii]                
-                nptest.assert_allclose(self.src_data_dict[srcuid],
+                nptest.assert_allclose(self.data_object.get_data(srcuid),
                                        dataset[ii])
         os.remove(self.filepath)
 
@@ -416,14 +402,14 @@ class TestNSDFWriterNonuniformRegular(unittest.TestCase):
         with h5.File(self.filepath, 'r') as fd:
             dataset_name = '/data/{}/{}/{}'.format(nsdf.NONUNIFORM,
                                                self.popname,
-                                               self.varname)
+                                               self.data_object.name)
             dataset = fd[dataset_name]
             self.assertIsInstance(dataset, h5.Dataset)            
             src_ds = dataset.dims[0]['source']
             time_ds = dataset.dims[1]['time']
-            self.assertEqual(time_ds.attrs['unit'], self.tunit)
-            self.assertEqual(time_ds.shape, self.times.shape)
-            nptest.assert_allclose(self.times, time_ds)
+            self.assertEqual(time_ds.attrs['unit'], self.data_object.tunit)
+            self.assertEqual(time_ds.shape, self.data_object.get_times().shape)
+            nptest.assert_allclose(self.data_object.get_times(), time_ds)
         os.remove(self.filepath)
 
         
@@ -433,7 +419,7 @@ class TestNSDFWriterEvent1D(unittest.TestCase):
         save the data as 1D event data"""
         self.mdict = create_ob_model_tree()
         self.filepath = '{}.h5'.format(self.id())
-        writer = nsdf.NSDFWriter(self.filepath,
+        writer = nsdf.NSDFWriter(self.filepath, mode='w',
                                       dialect=nsdf.dialect.ONED)
         writer.set_title(self.id())
         self.sources = [cell.uid for cell in self.mdict['mitral_cells']]
@@ -442,7 +428,9 @@ class TestNSDFWriterEvent1D(unittest.TestCase):
         self.unit = 's'
         self.varname = 'spike'
         ds = writer.add_event_ds_1d(self.popname, self.varname, self.sources)
-        self.src_data_dict = {}
+        self.data_object = nsdf.EventData(self.varname,
+                                          unit=self.unit,
+                                          field=self.field)
         self.src_name_dict = {}
         rate = 100.0
         dlen = np.random.poisson(lam=rate, size=len(self.sources))
@@ -450,14 +438,11 @@ class TestNSDFWriterEvent1D(unittest.TestCase):
             uid = cell.uid
             data = np.cumsum(np.random.exponential(scale=1.0/rate,
                                                    size=dlen[ii]))
-            self.src_data_dict[uid] = data
+            self.data_object.put_data(uid, data)
             # this is not required to be cell.name, any valid hdf5
             # name will do
             self.src_name_dict[uid] = cell.name    
-        dd = writer.add_event_1d(self.varname, ds, self.src_name_dict,
-                                 self.src_data_dict,
-                                 field=self.field,
-                                 unit=self.unit)
+        dd = writer.add_event_1d(ds, self.data_object, self.src_name_dict)
 
     def test_adding_ds_event_creates_event_group(self):
         """Check that adding nonuniform data sources creates the '/nonuniform'
@@ -496,8 +481,8 @@ class TestNSDFWriterEvent1D(unittest.TestCase):
             for dataset_name in data_grp:
                 dataset = data_grp[dataset_name]
                 srcuid = dataset.attrs['source']
-                nptest.assert_allclose(np.asarray(self.src_data_dict[srcuid]),
-                                       np.asarray(dataset))
+                nptest.assert_allclose(self.data_object.get_data(srcuid),
+                                       dataset)
                 self.assertEqual(dataset.attrs['unit'], self.unit)
                 self.assertEqual(dataset.attrs['field'], self.field)
         os.remove(self.filepath)
@@ -514,13 +499,21 @@ class TestNSDFWriterEventVlen(unittest.TestCase):
         """
         self.mdict = create_ob_model_tree()
         self.filepath = '{}.h5'.format(self.id())
-        self.writer = nsdf.NSDFWriter(self.filepath,
+        self.writer = nsdf.NSDFWriter(self.filepath, mode='w',
                                       dialect=nsdf.dialect.VLEN)
         self.writer.set_title(self.id())
         self.sources = [cell.uid for cell in self.mdict['mitral_cells']]
         self.popname = 'pop1'
+        self.field = 'spike'
+        self.unit = 's'
+        self.varname = 'spike'
         ds = self.writer.add_event_ds(self.popname, self.sources)
-        self.src_data_dict = {}
+        # FIXME: h5py does not support vlen data with float64 type
+        # entries
+        self.data_object = nsdf.EventData(self.varname,
+                                          unit=self.unit,
+                                          field=self.field,
+                                          dtype=np.float32)
         self.src_name_dict = {}
         rate = 100.0
         dlen = np.random.poisson(lam=rate, size=len(self.sources))
@@ -528,17 +521,12 @@ class TestNSDFWriterEventVlen(unittest.TestCase):
             uid = cell.uid
             data = np.cumsum(np.random.exponential(scale=1.0/rate,
                                                    size=dlen[ii]))
-            self.src_data_dict[uid] = data
+            self.data_object.put_data(uid, data)
             # this is not required to be cell.name, any valid hdf5
             # name will do
             self.src_name_dict[uid] = cell.name
-        self.field = 'spike'
-        self.unit = 's'
-        self.varname = 'spike'
-        dd = self.writer.add_event_vlen(self.varname, ds,
-                                      self.src_data_dict,
-                                      field=self.field,
-                                      unit=self.unit)
+        dd = self.writer.add_event_vlen(ds,
+                                      self.data_object)
         del self.writer
         
     def test_source_ds(self):
@@ -548,7 +536,7 @@ class TestNSDFWriterEventVlen(unittest.TestCase):
                                                  self.varname)
             source_ds = fd[source_ds_name]            
             self.assertTrue(nsdf.match_datasets(source_ds,
-                                                self.src_data_dict.keys()))
+                                                self.data_object.get_sources()))
         os.remove(self.filepath)          
 
     def test_data(self):
@@ -569,7 +557,7 @@ class TestNSDFWriterEventVlen(unittest.TestCase):
             self.assertEqual(dataset.attrs['field'], self.field)    
             for ii in range(src_ds.len()):
                 srcuid = src_ds[ii]                
-                nptest.assert_allclose(self.src_data_dict[srcuid],
+                nptest.assert_allclose(self.data_object.get_data(srcuid),
                                        dataset[ii])
         os.remove(self.filepath)
 
@@ -586,10 +574,10 @@ class TestNSDFWriterModelTree(unittest.TestCase):
         self.mdict = create_ob_model_tree()
         # self.mdict['model_tree'].print_tree()
         self.filepath = '{}.h5'.format(self.id())
-        writer = nsdf.NSDFWriter(self.filepath,
+        writer = nsdf.NSDFWriter(self.filepath, mode='w',
                                  dialect=nsdf.dialect.ONED)
         writer.add_modeltree(self.mdict['model_tree'])
-        print '########################'
+        print '######## Model Tree ################'
         writer.modelroot.print_tree()
         print '========================'
         self.granule_somata = []
@@ -607,7 +595,7 @@ class TestNSDFWriterModelTree(unittest.TestCase):
                                                              size=self.dlen))
         self.data_object.set_dt(1e-4, 's')
         self.tstart = 0.0
-        data = writer.add_uniform_data(self.data_object, uds,
+        data = writer.add_uniform_data(uds, self.data_object,
                                        tstart=self.tstart)        
         
     def test_add_modeltree(self):

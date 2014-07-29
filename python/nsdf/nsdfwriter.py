@@ -136,9 +136,7 @@ class NSDFWriter(object):
             represents in the string attribute `uid`.
 
     """
-    def __init__(self, filename, dialect=dialect.ONED, mode='a',
-                 compression='gzip', compression_opts=6,
-                 fletcher32=True, shuffle=True):
+    def __init__(self, filename, dialect=dialect.ONED, mode='a', **h5args):
         self._fd = h5.File(filename, mode)
         self.timestamp = datetime.utcnow()
         self._fd.attrs['timestamp'] = self.timestamp.isoformat()
@@ -155,10 +153,7 @@ class NSDFWriter(object):
             self.mapping.require_group(stype)
         self.modelroot = ModelComponent('modeltree', uid='modeltree',
                                         hdfgroup=self.modeltree)
-        self.compression = compression
-        self.compression_opts = compression_opts
-        self.fletcher32 = fletcher32
-        self.shuffle = shuffle
+        self.h5args = h5args
 
     def __del__(self):
         self._fd.close()
@@ -439,18 +434,19 @@ class NSDFWriter(object):
         self._link_map_model(src_ds)
         return src_ds        
     
-    def add_uniform_data(self, data_object, source_ds, tstart=0.0,
+    def add_uniform_data(self, source_ds, data_object, tstart=0.0,
                          fixed=False):
         """Append uniformly sampled `variable` values from `sources` to
         `data`.
 
         Args: 
-            data_object (nsdf.UniformData): Uniform dataset to be added to file.
-
             source_ds (HDF5 Dataset): the dataset storing the source
                 ids under map. This is attached to the stored data as
                 a dimension scale called `source` on the row
                 dimension.
+
+            data_object (nsdf.UniformData): Uniform dataset to be
+                added to file.
 
             tstart (double): (optional) start time of this dataset
                 recording. Defaults to 0.
@@ -496,10 +492,7 @@ class NSDFWriter(object):
                 dtype=data_object.dtype,
                 data=data,
                 maxshape=(data.shape[0], maxcol),
-                compression=self.compression,
-                compression_opts=self.compression_opts,
-                fletcher32=self.fletcher32,
-                shuffle=self.shuffle)
+                **self.h5args)
             dataset.dims.create_scale(source_ds, 'source')
             dataset.dims[0].attach_scale(source_ds)
             dataset.attrs['tstart'] = tstart
@@ -509,38 +502,20 @@ class NSDFWriter(object):
             dataset.attrs['timeunit'] = data_object.tunit
         return dataset
 
-    def add_nonuniform_regular(self, name, source_ds,
-                                   source_data_dict, ts, field=None,
-                                   unit=None, tunit=None,
-                                   dtype=np.float64, fixed=False):
+    def add_nonuniform_regular(self, source_ds, data_object,
+                               fixed=False):
         """Append nonuniformly sampled `variable` values from `sources` to
         `data`. In this case sampling times of all the sources are
         same and the data is stored in a 2D dataset.
 
         Args: 
-            name (str): name under which this data should be
-                stored. Using the variable name whenever possible is
-                recommended.
-
             source_ds (HDF5 Dataset): the dataset storing the source
                 ids under map. This is attached to the stored data as
                 a dimension scale called `source` on the row
                 dimension.
-
-            source_data_dict (dict): a dict mapping source ids to data
-                arrays. The data arrays are numpy arrays.
             
-            ts (sequence of floats): list of sampling times. 
-
-            field (str): name of the recorded variable. Not required
-                when appending to existing data.
-        
-            unit (str): unit of the variable quantity being saved. Not
-                required when appending to existing data.
-
-            tunit (str): unit of sampling time in ts.
-        
-            dtype (numpy.dtype): type of data (default 64 bit float).
+            data_object (nsdf.NonuniformRegularData):
+                NonUniformRegular dataset to be added to file.
 
             fixed (bool): if True, the data cannot grow. Default: False
 
@@ -548,7 +523,7 @@ class NSDFWriter(object):
             HDF5 dataset storing the data
 
         Raises:
-            KeyError if the sources in `source_data_dict` do not match
+            KeyError if the sources in `data_object` do not match
             those in `source_ds`.
         
             ValueError if the data arrays are not all equal in length.
@@ -558,65 +533,53 @@ class NSDFWriter(object):
 
         """
         popname = source_ds.name.rpartition('/')[-1]
-        try:
-            ngrp = self.data[NONUNIFORM][popname]            
-        except KeyError:
-            ngrp = self.data[NONUNIFORM].create_group(popname)
-        if not match_datasets(source_ds, source_data_dict.keys()):
-            raise KeyError('members of `source_ds` must match keys of'
-                           ' `source_data_dict`.')
-        ordered_data = [source_data_dict[src] for src in source_ds]
+        ngrp = self.data[NONUNIFORM].require_group(popname)
+        if not match_datasets(source_ds, data_object.get_sources()):
+            raise KeyError('members of `source_ds` must match sources in'
+                           ' `data_object`.')
+        ordered_data = [data_object.get_data(src) for src in source_ds]
         data = np.vstack(ordered_data)
-        if data.shape[1] != len(ts):
+        if data.shape[1] != len(data_object.get_times()):
             raise ValueError('number sampling times must be '
                              'same as the number of data points')
         try:
-            dataset = ngrp[name]
+            dataset = ngrp[data_object.name]
             oldcolcount = dataset.shape[1]
             dataset.resize(oldcolcount + data.shape[1], axis=1)
             dataset[:, oldcolcount:] = data
         except KeyError:
-            if field is None:
-                field = name
-            if unit is None:
+            if data_object.unit is None:
                 raise ValueError('`unit` is required for creating dataset.')
-            if tunit is None:
+            if data_object.tunit is None:
                 raise ValueError('`tunit` is required for creating dataset.')
             maxcol = None
             if fixed:
                 maxcol = data.shape[1]
             dataset = ngrp.create_dataset(
-                name, shape=data.shape,
+                data_object.name, shape=data.shape,
                 dtype=data.dtype,
                 data=data,
                 maxshape=(data.shape[0], maxcol),
-                compression=self.compression,
-                compression_opts=self.compression_opts,
-                fletcher32=self.fletcher32,
-                shuffle=self.shuffle)
+                **self.h5args)
             dataset.dims.create_scale(source_ds, 'source')
             dataset.dims[0].attach_scale(source_ds)
-            dataset.attrs['field'] = field
-            dataset.attrs['unit'] = unit
-            tsname = '{}_{}'.format(popname, name)
+            dataset.attrs['field'] = data_object.field
+            dataset.attrs['unit'] = data_object.unit
+            tsname = '{}_{}'.format(popname, data_object.name)
             tscale = self.time_dim.create_dataset(
                 tsname,
-                shape=(len(ts),),
+                shape=(len(data_object.get_times()),),
                 dtype=np.float64,
-                data=ts,
-                compression=self.compression,
-                compression_opts=self.compression_opts,
-                fletcher32=self.fletcher32,
-                shuffle=self.shuffle)
+                data=data_object.get_times(),
+                **self.h5args)
             dataset.dims.create_scale(tscale, 'time')
             dataset.dims[1].label = 'time'
             dataset.dims[1].attach_scale(tscale)
-            tscale.attrs['unit'] = tunit
+            tscale.attrs['unit'] = data_object.tunit
         return dataset
 
-    def add_nonuniform_1d(self, name, source_ds, source_name_dict,
-                          source_data_dict, field=None, unit=None,
-                          tunit=None, dtype=np.float64, fixed=False):
+    def add_nonuniform_1d(self, source_ds, data_object,
+                          source_name_dict, fixed=False):
         """Add nonuniform data when data from each source is in a separate 1D
         dataset.
 
@@ -638,31 +601,16 @@ class NSDFWriter(object):
         this timestep is not global.
 
         Args: 
-            name (str): name of the group under which data should be
-                stored. It is simpler to keep this same as the
-                recorded field.
-
             source_ds (HDF5 dataset): the dataset
                 `/map/nonuniform/{population}/{variable}` created for
                 this population of sources (created by
                 add_nonunifrom_ds_1d).
 
+            data_object (nsdf.NonuniformData): NSDFData object storing
+                the data for all sources in `source_ds`.
+
             source_name_dict (dict): mapping from source id to dataset
                 name.
-
-            source_data_dict (dict): mapping from source id to the
-                tuple (data, time) where data contains the recorded
-                data points and time contains the sampling times for
-                these data points.
-
-            field (str): name of the recorded field. If None, `name`
-                is used as the field name.
-
-            unit (str): unit of the data.
-
-            tunit (str): time unit (for the sampling times)
-
-            dtype (numpy.dtype): type of data (default 64 bit float).
 
             fixed (bool): if True, the data cannot grow. Default:
                 False
@@ -679,69 +627,63 @@ class NSDFWriter(object):
         popname = source_ds.name.split('/')[-2]
         ngrp = self.data[NONUNIFORM].require_group(popname)
         assert match_datasets(source_name_dict.keys(),
-                              source_data_dict.keys()), \
-               'number of sources do not match number of datasets'
+                              data_object.get_sources()), \
+               'sources in `source_name_dict`'    \
+               ' do not match those in `data_object`'
         assert match_datasets(source_ds['source'],
                               source_name_dict.keys()),  \
             'sources in mapping dataset do not match those with data'
-        datagrp = ngrp.require_group(name)            
+        datagrp = ngrp.require_group(data_object.name)            
         ret = {}
         for iii, source in enumerate(source_ds['source']):
-            data, time = source_data_dict[source]
+            data, time = data_object.get_data(source)
             dsetname = source_name_dict[source]
+            timescale = None
             try:
                 dset = datagrp[dsetname]
                 oldlen = dset.shape[0]
-                ts = dset.dims[0]['time']
+                timescale = dset.dims[0]['time']
                 dset.resize(oldlen + len(data))
                 dset[oldlen:] = data
-                ts.resize(oldlen + len(data))
-                ts[oldlen:] = time
+                timescale.resize(oldlen + len(data))
+                timescale[oldlen:] = time
             except KeyError:
-                if field is None:
-                    field = name
-                if unit is None:
+                if data_object.unit is None:
                     raise ValueError('`unit` is required'
                                      ' for creating dataset.')
-                if tunit is None:
+                if data_object.tunit is None:
                     raise ValueError('`tunit` is required'
                                      ' for creating dataset.')
                 maxcol = len(data) if fixed else None
                 dset = datagrp.create_dataset(
                     dsetname,
                     shape=(len(data),),
-                    dtype=dtype, data=data,
+                    dtype=data_object.dtype,
+                    data=data,
                     maxshape=(maxcol,),
-                    compression=self.compression,
-                    compression_opts=self.compression_opts,
-                    fletcher32=self.fletcher32,
-                    shuffle=self.shuffle)
-                dset.attrs['unit'] = unit
-                dset.attrs['field'] = field
+                    **self.h5args)
+                dset.attrs['unit'] = data_object.unit
+                dset.attrs['field'] = data_object.field
                 dset.attrs['source'] = source
                 source_ds[iii] = (source, dset.ref)
                 # Using {popname}_{variablename}_{dsetname} for
                 # simplicity. What about creating a hierarchy?
-                tsname = '{}_{}_{}'.format(popname, name, dsetname)
-                ts = self.time_dim.create_dataset(
+                tsname = '{}_{}_{}'.format(popname, data_object.name, dsetname)
+                timescale = self.time_dim.create_dataset(
                     tsname,
                     shape=(len(data),),
                     dtype=np.float64,
                     data=time,
-                    compression=self.compression,
-                    compression_opts=self.compression_opts,
-                    fletcher32=self.fletcher32,
-                    shuffle=self.shuffle)
-                dset.dims.create_scale(ts, 'time')
+                    **self.h5args)
+                dset.dims.create_scale(timescale, 'time')
                 dset.dims[0].label = 'time'
-                dset.dims[0].attach_scale(ts)
-                ts.attrs['unit'] = tunit
-            ret[source] = (dset, ts)
+                dset.dims[0].attach_scale(timescale)
+                timescale.attrs['unit'] = data_object.tunit
+            ret[source] = (dset, timescale)
         return ret
     
-    def add_nonuniform_vlen(self, name, source_ds, source_data_dict,
-                            field=None, unit=None, tunit=None,
-                            dtype=np.float32, fixed=False):
+    def add_nonuniform_vlen(self, source_ds, data_object,
+                                fixed=False):
         """Add nonuniform data when data from all sources in a population is
         stored in a 2D ragged array.
 
@@ -758,27 +700,12 @@ class NSDFWriter(object):
         this timestep is not global.
 
         Args: 
-            name (str): name of the group under which data should be
-                stored. It is simpler to keep this same as the
-                recorded field.
-
             source_ds (HDF5 dataset): the dataset under
                 `/map/nonuniform` created for this population of
                 sources (created by add_nonunifrom_ds).
 
-            source_data_dict (dict): mapping from source id to the
-                tuple (data, time) where data contains the recorded
-                data points and time contains the sampling times for
-                these data points.
-
-            field (str): name of the recorded field. If None, `name`
-                is used as the field name.
-
-            unit (str): unit of the data.
-
-            tunit (str): time unit (for the sampling times)
-
-            dtype (numpy.dtype): type of data (default 32 bit float).
+            data_object (nsdf.NonuniformData): NSDFData object storing
+                the data for all sources in `source_ds`.
 
             fixed (bool): if True, this is a one-time write and the
                 data cannot grow. Default: False
@@ -802,40 +729,33 @@ class NSDFWriter(object):
             raise Exception('add 2D vlen dataset under nonuniform'
                             ' only for dialect=VLEN')
         popname = source_ds.name.rpartition('/')[-1]
-        try:
-            ngrp = self.data[NONUNIFORM][popname]            
-        except KeyError:
-            ngrp = self.data[NONUNIFORM].create_group(popname)
-        if not match_datasets(source_ds, source_data_dict.keys()):
+        ngrp = self.data[NONUNIFORM].require_group(popname)
+        if not match_datasets(source_ds, data_object.get_sources()):
             raise KeyError('members of `source_ds` must match keys of'
                            ' `source_data_dict`.')
         try:
-            dataset = ngrp[name]
+            dataset = ngrp[data_object.name]
         except KeyError:
-            if field is None:
-                field = name
-            if unit is None:
+            if data_object.unit is None:
                 raise ValueError('`unit` is required for creating dataset.')
-            if tunit is None:
+            if data_object.tunit is None:
                 raise ValueError('`tunit` is required for creating dataset.')
-            vlentype = h5.special_dtype(vlen=dtype)
-            maxrows = dataset.shape[0] if fixed else None
+            vlentype = h5.special_dtype(vlen=data_object.dtype)
+            maxrows = source_ds.shape[0] if fixed else None
             # Fix me: is there any point of keeping the compression
             # and shuffle options?
             dataset = ngrp.create_dataset(
-                name, shape=source_ds.shape,
+                data_object.name,
+                shape=source_ds.shape,
                 dtype=vlentype,
-                compression=self.compression,
-                compression_opts=self.compression_opts,
-                fletcher32=self.fletcher32,
-                shuffle=self.shuffle)
-            dataset.attrs['field'] = field
-            dataset.attrs['unit'] = unit
+                **self.h5args)
+            dataset.attrs['field'] = data_object.field
+            dataset.attrs['unit'] = data_object.unit
             dataset.dims.create_scale(source_ds, 'source')
             dataset.dims[0].attach_scale(source_ds)
             # Using {popname}_{variablename} for simplicity. What
             # about creating a hierarchy?
-            tsname = '{}_{}'.format(popname, name)
+            tsname = '{}_{}'.format(popname, data_object.name)
             # fixme: VLENFLOAT should be made VLENDOUBLE whenever h5py
             # fixes it
             time_ds = self.time_dim.create_dataset(
@@ -843,22 +763,19 @@ class NSDFWriter(object):
                 shape=dataset.shape,
                 maxshape=(maxrows,),
                 dtype=VLENFLOAT,
-                compression=self.compression,
-                compression_opts=self.compression_opts,
-                fletcher32=self.fletcher32,
-                shuffle=self.shuffle)
+                **self.h5args)
             dataset.dims.create_scale(time_ds, 'time')
             dataset.dims[0].attach_scale(time_ds)
-            time_ds.attrs['unit'] = tunit
+            time_ds.attrs['unit'] = data_object.tunit
         for iii, source in enumerate(source_ds):
-            data, time = source_data_dict[source]
+            data, time, = data_object.get_data(source)
+            print '#####', data.dtype
             dataset[iii] = np.concatenate((dataset[iii], data))
-            time_ds[iii] = np.concatenate((time_ds[iii], time))            
+            time_ds[iii] = np.concatenate((time_ds[iii], time))
         return dataset, time_ds
 
-    def add_event_1d(self, name, source_ds, source_name_dict,
-                           source_data_dict, field=None, unit=None,
-                           dtype=np.float64, fixed=False):
+    def add_event_1d(self, source_ds, data_object, source_name_dict,
+                     fixed=False):
         """Add event time data when data from each source is in a separate 1D
         dataset.
 
@@ -873,10 +790,6 @@ class NSDFWriter(object):
         {name} is preferably the name of the field being recorded.
         
         Args: 
-            name (str): name of the group under which data should be
-                stored. It is simpler to keep this same as the
-                recorded field.
-
             source_ds (HDF5 Dataset): the dataset
                 `/map/event/{populationname}{variablename}` created
                 for this population of sources (created by
@@ -884,18 +797,11 @@ class NSDFWriter(object):
                 that of the group under `/data/event` which stores the
                 datasets.
 
+            data_object (nsdf.EventData): NSDFData object storing
+                the data for all sources in `source_ds`.
+
             source_name_dict (dict): mapping from source id to dataset
                 name.
-
-            source_data_dict (dict): mapping from source id to the
-                event time data.
-
-            field (str): name of the recorded field. If None, `name`
-                is used as the field name.
-
-            unit (str): unit of the data.
-
-            dtype (numpy.dtype): type of data (default 64 bit float).
 
             fixed (bool): if True, the data cannot grow. Default:
                 False
@@ -910,12 +816,12 @@ class NSDFWriter(object):
         popname = source_ds.name.split('/')[-2]
         ngrp = self.data[EVENT].require_group(popname)
         assert match_datasets(source_name_dict.keys(),
-                              source_data_dict.keys()),  \
+                              data_object.get_sources()),  \
             'number of sources do not match number of datasets'
-        datagrp = ngrp.require_group(name)
+        datagrp = ngrp.require_group(data_object.name)
         ret = {}
         for iii, source in enumerate(source_ds['source']):
-            data = source_data_dict[source]
+            data = data_object.get_data(source)
             dsetname = source_name_dict[source]
             try:
                 dset = datagrp[dsetname]
@@ -923,30 +829,23 @@ class NSDFWriter(object):
                 dset.resize(oldlen + len(data))
                 dset[oldlen:] = data
             except KeyError:
-                if field is None:
-                    field = name
-                if unit is None:
+                if data_object.unit is None:
                     raise ValueError('`unit` is required for creating dataset.')
                 maxrows = len(data) if fixed else None
                 dset = datagrp.create_dataset(
                     dsetname,
                     shape=(len(data),),
-                    dtype=dtype, data=data,
+                    dtype=data_object.dtype, data=data,
                     maxshape=(maxrows,),
-                    compression=self.compression,
-                    compression_opts=self.compression_opts,
-                    fletcher32=self.fletcher32,
-                    shuffle=self.shuffle)
-                dset.attrs['unit'] = unit
-                dset.attrs['field'] = field
+                    **self.h5args)
+                dset.attrs['unit'] = data_object.unit
+                dset.attrs['field'] = data_object.field
                 dset.attrs['source'] = source
                 source_ds[iii] = (source, dset.ref)
             ret[source] = dset
         return ret
     
-    def add_event_vlen(self, name, source_ds, source_data_dict,
-                       field=None, unit=None, dtype=np.float32,
-                       fixed=False):
+    def add_event_vlen(self, source_ds, data_object, fixed=False):
         """Add event data when data from all sources in a population is
         stored in a 2D ragged array.
 
@@ -963,23 +862,12 @@ class NSDFWriter(object):
         this timestep is not global.
 
         Args: 
-            name (str): name of the group under which data should be
-                stored. It is simpler to keep this same as the
-                recorded field.
-
             source_ds (HDF5 Dataset): the dataset under
                 `/map/event` created for this population of
                 sources (created by add_nonunifrom_ds).
 
-            source_data_dict (dict): mapping from source id to the
-                event time data.
-
-            field (str): name of the recorded field. If None, `name`
-                is used as the field name.
-
-            unit (str): unit of the data.
-
-            dtype (numpy.dtype): type of data (default 32 bit float).
+            data_object (nsdf.EventData): NSDFData object storing
+                the data for all sources in `source_ds`.
 
             fixed (bool): if True, this is a one-time write and the
                 data cannot grow. Default: False
@@ -1001,66 +889,45 @@ class NSDFWriter(object):
             raise Exception('add 2D vlen dataset under event'
                             ' only for dialect=VLEN')
         popname = source_ds.name.rpartition('/')[-1]
+        ngrp = self.data[EVENT].require_group(popname)
+        if not match_datasets(source_ds, data_object.get_sources()):
+            raise KeyError('members of `source_ds` must match sources '
+                           'in `data_object`.')        
         try:
-            ngrp = self.data[EVENT][popname]            
+            dataset = ngrp[data_object.name]
         except KeyError:
-            ngrp = self.data[EVENT].create_group(popname)
-        if not match_datasets(source_ds, source_data_dict.keys()):
-            raise KeyError('members of `source_ds` must match keys of'
-                           ' `source_data_dict`.')        
-        try:
-            dataset = ngrp[name]
-        except KeyError:
-            if field is None:
-                field = name
-            if unit is None:
+            if data_object.unit is None:
                 raise ValueError('`unit` is required for creating dataset.')
-            vlentype = h5.special_dtype(vlen=dtype)
+            vlentype = h5.special_dtype(vlen=data_object.dtype)
             maxrows = len(source_ds) if fixed else None
             # Fix me: is there any point of keeping the compression
             # and shuffle options?
             dataset = ngrp.create_dataset(
-                name, shape=source_ds.shape,
+                data_object.name, shape=source_ds.shape,
                 maxshape=(maxrows,),
                 dtype=vlentype,
-                compression=self.compression,
-                compression_opts=self.compression_opts,
-                fletcher32=self.fletcher32,
-                shuffle=self.shuffle)
-            dataset.attrs['field'] = field
-            dataset.attrs['unit'] = unit
+                **self.h5args)
+            dataset.attrs['field'] = data_object.field
+            dataset.attrs['unit'] = data_object.unit
             dataset.dims.create_scale(source_ds, 'source')
             dataset.dims[0].attach_scale(source_ds)
         for iii, source in enumerate(source_ds):
-            data = source_data_dict[source]
+            data = data_object.get_data(source)
             dataset[iii] = np.concatenate((dataset[iii], data))
         return dataset
 
-    def add_static_data(self, name, source_ds, source_data_dict,
-                        field=None, unit=None, dtype=np.float64,
+    def add_static_data(self, source_ds, data_object,
                         fixed=True):
         """Append static data `variable` values from `sources` to `data`.
 
         Args: 
-            name (str): name under which this data should be
-                stored. Using the variable name whenever possible is
-                recommended.
-
-            source_ds (HDF5 Dataset): the dataset storing the source
+           source_ds (HDF5 Dataset): the dataset storing the source
                 ids under map. This is attached to the stored data as
                 a dimension scale called `source` on the row
                 dimension.
 
-            source_data_dict (dict): a dict mapping source ids to data
-                arrays or scalars. 
-
-            field (str): name of the recorded variable. Not required
-                when appending to existing data.
-        
-            unit (str): unit of the variable quantity being saved. Not
-                required when appending to existing data.
-
-            dtype (numpy.dtype): type of data (default 64 bit float)
+            data_object (nsdf.EventData): NSDFData object storing
+                the data for all sources in `source_ds`.
             
             fixed (bool): if True, the data cannot grow. Default: True
 
@@ -1074,37 +941,33 @@ class NSDFWriter(object):
         """
         popname = source_ds.name.rpartition('/')[-1]
         ugrp = self.data[STATIC].require_group(popname)
-        if not match_datasets(source_ds, source_data_dict.keys()):
+        if not match_datasets(source_ds, data_object.get_sources()):
             raise KeyError('members of `source_ds` must match keys of'
                            ' `source_data_dict`.')
-        ordered_data = [source_data_dict[src] for src in source_ds]
+        ordered_data = [data_object.get_data( src) for src in    \
+                        source_ds]
         data = np.vstack(ordered_data)
         try:
-            dataset = ugrp[name]
+            dataset = ugrp[data_object.name]
             oldcolcount = dataset.shape[1]
             dataset.resize(oldcolcount + data.shape[1], axis=1)
             dataset[:, oldcolcount:] = data
         except KeyError:
-            if field is None:
-                field = name
-            if unit is None:
+            if data_object.unit is None:
                 raise ValueError('`unit` is required for creating dataset.')
             maxcol = None
             if fixed:
                 maxcol = data.shape[1]
             dataset = ugrp.create_dataset(
-                name, shape=data.shape,
-                dtype=dtype,
+                data_object.name, shape=data.shape,
+                dtype=data_object.dtype,
                 data=data,
                 maxshape=(data.shape[0], maxcol),
-                compression=self.compression,
-                compression_opts=self.compression_opts,
-                fletcher32=self.fletcher32,
-                shuffle=self.shuffle)
+                **self.h5args)
             dataset.dims.create_scale(source_ds, 'source')
             dataset.dims[0].attach_scale(source_ds)
-            dataset.attrs['field'] = field
-            dataset.attrs['unit'] = unit
+            dataset.attrs['field'] = data_object.field
+            dataset.attrs['unit'] = data_object.unit
         return dataset
 
 

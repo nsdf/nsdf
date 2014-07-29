@@ -103,21 +103,24 @@ class NSDFData(object):
         """Return the data for specified source"""
         return self._src_data_dict[source]
             
-
-class UniformData(NSDFData):
+class TimeSeriesData(NSDFData):
+    def __init__(self, name, unit=None, field=None, tunit=None, dtype=np.float64):
+        super(TimeSeriesData, self).__init__(name, unit, field, dtype)
+        self.tunit = tunit
+        
+class UniformData(TimeSeriesData):
     """Stores uniformly sampled data."""
     def __init__(self, *args, **kwargs):
         super(UniformData, self).__init__(*args, **kwargs)
         self.dt = 0.0
-        self.tunit = None
-
-    def set_dt(self, value, unit):
+    def set_dt(self, value, unit=None):
         """Set the timestep used for data recording."""
         self.dt = value
-        self.tunit = unit
+        if unit is not None:
+            self.tunit = unit
 
         
-class NonuniformData(NSDFData):
+class NonuniformData(TimeSeriesData):
     """Stores nonuniformly sampled data."""
     def __init__(self, *args, **kwargs):
         super(NonuniformData, self).__init__(*args, **kwargs)
@@ -141,16 +144,18 @@ class NonuniformData(NSDFData):
         super(NonuniformData, self).put_data(source, data)
 
         
-class NonuniformRegularData(NSDFData):
+class NonuniformRegularData(TimeSeriesData):
     """Stores nonuniformly sampled data where all sources are sampled at
     the same time points."""
     def __init__(self, *args, **kwargs):
         super(NonuniformRegularData, self).__init__(*args, **kwargs)
         self._times = None
 
-    def set_sampling_times(self, times):
+    def set_times(self, times, tunit=None):
         """Set the sampling times of all the data points."""
         self._times = times
+        if tunit is not None:
+            self.tunit = tunit
 
     def put_data(self, source, data):
         """Set the data array for source. 
@@ -185,6 +190,12 @@ class EventData(NSDFData):
     def __init__(self, *args, **kwargs):
         super(EventData, self).__init__(*args, **kwargs)
 
+        
+class StaticData(NSDFData):
+    """Stores static data recorded from data sources."""
+    def __init__(self, *args, **kwargs):
+        super(StaticData, self).__init__(*args, **kwargs)
+        
 
 # 
 # nsdfdata.py ends here
