@@ -1,5 +1,5 @@
 .. nsdf documentation master file, created by
-   sphinx-quickstart on Tue Jul 15 20:43:56 2014.
+   sphinx-quickstart on Wed Jul 30 20:30:56 2014.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
@@ -11,7 +11,8 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   nsdfdoc.rst
+   nsdf
+
 
 Indices and tables
 ==================

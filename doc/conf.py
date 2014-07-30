@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # nsdf documentation build configuration file, created by
-# sphinx-quickstart on Tue Jul 15 20:43:56 2014.
+# sphinx-quickstart on Wed Jul 30 20:30:56 2014.
 #
 # This file is execfile()d with the current directory set to its containing dir.
 #
@@ -241,3 +241,46 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
+
+
+# -- Options for Epub output ---------------------------------------------------
+
+# Bibliographic Dublin Core info.
+epub_title = u'nsdf'
+epub_author = u'Subhasis Ray'
+epub_publisher = u'Subhasis Ray'
+epub_copyright = u'2014, Subhasis Ray'
+
+# The language of the text. It defaults to the language option
+# or en if the language is not set.
+#epub_language = ''
+
+# The scheme of the identifier. Typical schemes are ISBN or URL.
+#epub_scheme = ''
+
+# The unique identifier of the text. This can be a ISBN number
+# or the project homepage.
+#epub_identifier = ''
+
+# A unique identification for the text.
+#epub_uid = ''
+
+# A tuple containing the cover image and cover page html template filenames.
+#epub_cover = ()
+
+# HTML files that should be inserted before the pages created by sphinx.
+# The format is a list of tuples containing the path and title.
+#epub_pre_files = []
+
+# HTML files shat should be inserted after the pages created by sphinx.
+# The format is a list of tuples containing the path and title.
+#epub_post_files = []
+
+# A list of files that should not be packed into the epub file.
+#epub_exclude_files = []
+
+# The depth of the table of contents in toc.ncx.
+#epub_tocdepth = 3
+
+# Allow duplicate toc entries.
+#epub_tocdup = True
