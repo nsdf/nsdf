@@ -9,10 +9,15 @@ Welcome to nsdf's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    nsdf
-
+   constants
+   nsdfdata
+   model
+   nsdfwriter
+   util
+   
 
 Indices and tables
 ==================
