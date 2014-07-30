@@ -418,8 +418,7 @@ class TestNSDFWriterNonuniformRegular(unittest.TestCase):
     def test_source_ds(self):
         with h5.File(self.filepath, 'r') as fd:
             source_ds_name = '/map/{}/{}'.format(nsdf.NONUNIFORM,
-                                                 self.popname,
-                                                 self.data_object.name)
+                                                 self.popname)
             source_ds = fd[source_ds_name]            
             self.assertTrue(nsdf.match_datasets(source_ds,
                                                 self.data_object.get_sources()))
@@ -458,6 +457,129 @@ class TestNSDFWriterNonuniformRegular(unittest.TestCase):
             self.assertEqual(time_ds.attrs['unit'], self.data_object.tunit)
             self.assertEqual(time_ds.shape, self.data_object.get_times().shape)
             nptest.assert_allclose(self.data_object.get_times(), time_ds)
+        os.remove(self.filepath)
+        
+
+class TestNSDFWriterNonuniformNan(unittest.TestCase):
+    """Test case for writing nonuniformly sampled data in homogeneous 2D
+    arrays with NaN-padding.
+
+    """
+    def setUp(self):
+        self.mdict = create_ob_model_tree()
+        self.filepath = '{}.h5'.format(self.id())
+        writer = nsdf.NSDFWriter(self.filepath, mode='w',
+                                      dialect=nsdf.dialect.NANPADDED)
+        writer.set_title(self.id())
+        mitral_somata = []
+        for cell in self.mdict['mitral_cells']:
+            for name, comp in cell.children.items():
+                if name == 'mc_0':
+                    mitral_somata.append(comp.uid)
+        self.sources = mitral_somata
+        self.popname = 'pop1'        
+        ds = writer.add_nonuniform_ds(self.popname, self.sources)
+        rate = 100.0
+        self.dlen = np.random.poisson(lam=rate, size=len(self.sources))
+        self.data_object = nsdf.NonuniformData(name='Vm', unit='mV',
+                                               tunit='ms')
+        self.src_name_dict = {}
+        for ii, uid in enumerate(mitral_somata):
+            data = np.random.uniform(-65, -55, size=self.dlen[ii])
+            time = np.random.uniform(0, 1, size=self.dlen[ii])
+            self.data_object.put_data(uid, (data, time))
+        dd = writer.add_nonuniform_nan(ds,
+                                       self.data_object)    
+
+    def test_source_ds(self):
+        with h5.File(self.filepath, 'r') as fd:
+            source_ds_name = '/map/{}/{}'.format(nsdf.NONUNIFORM,
+                                                 self.popname)
+            source_ds = fd[source_ds_name]            
+            self.assertTrue(nsdf.match_datasets(source_ds,
+                                                self.data_object.get_sources()))
+            dataset_name = '/data/{}/{}/{}'.format(nsdf.NONUNIFORM,
+                                                   self.popname,
+                                                   self.data_object.name)
+            dataset = fd[dataset_name]
+            self.assertEqual(source_ds, dataset.dims[0]['source'])
+        os.remove(self.filepath)
+
+    def test_data(self):
+        """Check the data is correctly written."""
+        with h5.File(self.filepath, 'r') as fd:
+            dataset_name = '/data/{}/{}/{}'.format(nsdf.NONUNIFORM,
+                                                   self.popname,
+                                                   self.data_object.name)
+            dataset = fd[dataset_name]
+            self.assertIsInstance(dataset, h5.Dataset)
+            src_ds = dataset.dims[0]['source']
+            self.assertIsInstance(src_ds, h5.Dataset)
+            attached_src_ds = dataset.dims[0]['source']          
+            self.assertEqual(src_ds, attached_src_ds)
+            self.assertEqual(dataset.attrs['unit'], self.data_object.unit)
+            self.assertEqual(dataset.attrs['field'], self.data_object.field)    
+            for ii in range(len(src_ds)):
+                srcuid = src_ds[ii]
+                orig_data = self.data_object.get_data(srcuid)[0]
+                nptest.assert_allclose(orig_data,
+                                       dataset[ii, :len(orig_data)])
+                nptest.assert_equal(dataset[ii, len(orig_data):], np.nan)
+        os.remove(self.filepath)
+
+    def test_ts(self):
+        with h5.File(self.filepath, 'r') as fd:
+            dataset_name = '/data/{}/{}/{}'.format(nsdf.NONUNIFORM,
+                                               self.popname,
+                                               self.data_object.name)
+            dataset = fd[dataset_name]
+            self.assertIsInstance(dataset, h5.Dataset)            
+            time_ds = dataset.dims[1]['time']
+            self.assertEqual(time_ds.attrs['unit'], self.data_object.tunit)
+            src_ds_name = '/map/{}/{}'.format(nsdf.NONUNIFORM,
+                                              self.popname)
+            src_ds = fd[src_ds_name]            
+            for ii, uid in enumerate(src_ds):
+                time = self.data_object.get_data(uid)[1]
+                nptest.assert_allclose(time,
+                                       time_ds[ii, :len(time)])
+                nptest.assert_allclose(time_ds[len(time):], np.nan)
+        os.remove(self.filepath)
+
+    def test_append_data(self):
+        """Try appending data to existing NaN-padded nonuniform dataset"""
+        # start over for appending data
+        writer = nsdf.NSDFWriter(self.filepath, mode='a',
+                                 dialect=nsdf.dialect.NANPADDED)
+        source_ds = writer.mapping[nsdf.NONUNIFORM][self.popname]
+        self.assertTrue(nsdf.match_datasets(self.sources, source_ds))
+        rate = 100.0
+        new_dlen = np.random.poisson(lam=rate, size=len(self.sources))
+        for ii, uid in enumerate(self.sources):
+            data = np.cumsum(np.random.exponential(scale=1.0/rate,
+                                                   size=new_dlen[ii]))
+            time = np.random.uniform(0, 1, size=new_dlen[ii])
+            self.data_object.put_data(uid, (data, time))
+        writer.add_nonuniform_nan(source_ds, self.data_object)
+        del writer
+        with h5.File(self.filepath, 'r') as fd:
+            data_path = '/data/{}/{}/{}'.format(nsdf.NONUNIFORM,
+                                                self.popname,
+                                                self.data_object.name)
+            dataset = fd[data_path]
+            time_ds = dataset.dims[1]['time']
+            for ii, uid in enumerate(self.sources):
+                orig_data, orig_time = self.data_object.get_data(uid)
+                file_data = dataset[ii,
+                                    self.dlen[ii]:self.dlen[ii]+new_dlen[ii]]
+                nptest.assert_allclose(orig_data, file_data)
+                nptest.assert_allclose(dataset[self.dlen[ii] +
+                                               new_dlen[ii]:], np.nan)
+                file_time = time_ds[ii,
+                                    self.dlen[ii]:self.dlen[ii]+new_dlen[ii]]
+                nptest.assert_allclose(orig_time, file_time)
+                nptest.assert_allclose(time_ds[ii, self.dlen[ii] +
+                                               new_dlen[ii]:], np.nan)                
         os.remove(self.filepath)
         
         

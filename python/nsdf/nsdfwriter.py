@@ -833,13 +833,21 @@ class NSDFWriter(object):
         # Using {popname}_{variablename} for simplicity. What
         # about creating a hierarchy?
         tsname = '{}_{}'.format(popname, data_object.name)
-        cols = max([len(row) for row in data_object.get_all_data()])
+        cols = [len(data_object.get_data(source)[0]) for source in
+                source_ds]
+        starts = np.zeros(source_ds.shape[0], dtype=int)
+        ends = np.asarray(cols, dtype=int)
         try:
             dataset = ngrp[data_object.name]
+            for iii in range(source_ds.shape[0]):
+                try:
+                    starts[iii] = next(find(dataset[iii], np.isnan))[0][0]
+                except StopIteration:
+                    starts[iii] = len(dataset[iii])
+                ends[iii] = starts[iii] + cols[iii]
+            dataset.resize(max(ends), 1)            
             time_ds = self.time_dim[tsname]
-            oldcols = dataset.shape[1]
-            dataset.resize(oldcols + cols, 1)
-            time_ds.resize(oldcols + cols, 1)
+            time_ds.resize(max(ends), 1)
         except KeyError:
             if data_object.unit is None:
                 raise ValueError('`unit` is required for creating dataset.')
@@ -847,10 +855,10 @@ class NSDFWriter(object):
                 raise ValueError('`tunit` is required for creating dataset.')
             
             maxrows = len(source_ds) if fixed else None
-            maxcols = cols if fixed else None
+            maxcols = max(cols) if fixed else None
             dataset = ngrp.create_dataset(
                 data_object.name,
-                shape=(source_ds.shape[0], cols),
+                shape=(source_ds.shape[0], max(ends)),
                 maxshape=(maxrows, maxcols),
                 fillvalue=np.nan,
                 dtype=data_object.dtype,
@@ -862,19 +870,17 @@ class NSDFWriter(object):
             time_ds = self.time_dim.create_dataset(
                 tsname,
                 shape=dataset.shape,
-                maxshape=(maxrows,),
-                dtype=VLENDOUBLE,
+                maxshape=(maxrows,maxcols),
+                dtype=np.float64,
                 fillvalue=np.nan,
                 **self.h5args)
             dataset.dims.create_scale(time_ds, 'time')
-            dataset.dims[0].attach_scale(time_ds)
+            dataset.dims[1].attach_scale(time_ds)
             time_ds.attrs['unit'] = data_object.tunit
-            
         for iii, source in enumerate(source_ds):
             data, time = data_object.get_data(source)
-            data_end = find(dataset[iii], np.isnan)
-            dataset[iii, data_end:] = data
-            time_ds[iii, data_end:] = time
+            dataset[iii, starts[iii]:ends[iii]] = data
+            time_ds[iii, starts[iii]:ends[iii]] = time
         return dataset
 
 
