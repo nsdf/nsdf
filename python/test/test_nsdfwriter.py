@@ -454,13 +454,11 @@ class TestNSDFWriterNonuniformRegular(unittest.TestCase):
                                                self.data_object.name)
             dataset = fd[dataset_name]
             self.assertIsInstance(dataset, h5.Dataset)            
-            src_ds = dataset.dims[0]['source']
             time_ds = dataset.dims[1]['time']
             self.assertEqual(time_ds.attrs['unit'], self.data_object.tunit)
             self.assertEqual(time_ds.shape, self.data_object.get_times().shape)
             nptest.assert_allclose(self.data_object.get_times(), time_ds)
         os.remove(self.filepath)
-
         
         
 class TestNSDFWriterEvent1D(unittest.TestCase):
@@ -538,7 +536,7 @@ class TestNSDFWriterEvent1D(unittest.TestCase):
         os.remove(self.filepath)
 
     def test_append_data(self):
-        """Try appending data to existing uniformly sampled dataset"""
+        """Try appending data to existing 1D event dataset"""
         # start over for appending data
         writer = nsdf.NSDFWriter(self.filepath, mode='a')
         ds = writer.mapping[nsdf.EVENT][self.popname][self.data_object.name]
@@ -560,7 +558,6 @@ class TestNSDFWriterEvent1D(unittest.TestCase):
                 nptest.assert_allclose(self.data_object.get_data(uid),
                                        dataset[self.dlen[ii]:])
         os.remove(self.filepath)
-
 
 
 class TestNSDFWriterEventVlen(unittest.TestCase):
@@ -637,6 +634,108 @@ class TestNSDFWriterEventVlen(unittest.TestCase):
         os.remove(self.filepath)
 
 
+class TestNSDFWriterEventNanPadded(unittest.TestCase):
+    """Test the case of writing event data with NaN padding"""
+    def setUp(self):
+        """Create a poisson spike train for each cell in mitral population and
+        save the data as 1D event data"""
+        self.mdict = create_ob_model_tree()
+        self.filepath = '{}.h5'.format(self.id())
+        writer = nsdf.NSDFWriter(self.filepath, mode='w',
+                                      dialect=nsdf.dialect.NANPADDED)
+        writer.set_title(self.id())
+        self.sources = [cell.uid for cell in self.mdict['mitral_cells']]
+        self.popname = 'pop1'
+        self.field = 'spike'
+        self.unit = 's'
+        self.varname = 'spike'
+        ds = writer.add_event_ds(self.popname, self.sources)
+        self.data_object = nsdf.EventData(self.varname,
+                                          unit=self.unit,
+                                          field=self.field)
+        self.src_name_dict = {}
+        rate = 100.0
+        self.dlen = np.random.poisson(lam=rate, size=len(self.sources))
+        for ii, cell in enumerate(self.mdict['mitral_cells']):
+            uid = cell.uid
+            data = np.cumsum(np.random.exponential(scale=1.0/rate,
+                                                   size=self.dlen[ii]))
+            self.data_object.put_data(uid, data)
+            # this is not required to be cell.name, any valid hdf5
+            # name will do
+            self.src_name_dict[uid] = cell.name    
+        dd = writer.add_event_nan(ds, self.data_object)
+
+    def test_adding_ds_event_creates_event_group(self):
+        """Check that adding event data sources creates the '/event' group
+        under '/map'
+
+        """
+        with h5.File(self.filepath, 'r') as fd:
+            try:
+                nonuniform_group = fd['map']['event']
+            except KeyError:
+                self.fail('/map/event group does not exist after'
+                          ' adding event data sources')
+        os.remove(self.filepath)
+
+    def test_source_ds(self):
+        with h5.File(self.filepath, 'r') as fd:
+            try:
+                source_ds_path = 'map/{}/{}'.format(nsdf.EVENT,
+                                                         self.popname)
+                source_ds = fd[source_ds_path]
+            except KeyError:
+                self.fail('{} does not exist after'
+                          ' adding event data sources'.source_ds_path)
+            self.assertTrue(nsdf.match_datasets(source_ds,
+                                                self.sources))
+        os.remove(self.filepath)                                       
+                                       
+    def test_data(self):
+        """Check the data is correctly written."""
+        with h5.File(self.filepath, 'r') as fd:
+            data_path = '/data/{}/{}/{}'.format(nsdf.EVENT,
+                                               self.popname,
+                                               self.varname)
+            dataset = fd[data_path]            
+            source_ds = dataset.dims[0]['source']
+            for iii, srcuid in enumerate(source_ds):
+                data = self.data_object.get_data(srcuid)
+                nptest.assert_allclose(data,
+                                       dataset[iii, :len(data)])
+                nptest.assert_equal(dataset[iii, len(data):], np.nan)
+            self.assertEqual(dataset.attrs['unit'], self.unit)
+            self.assertEqual(dataset.attrs['field'], self.field)
+        os.remove(self.filepath)
+
+    def test_append_data(self):
+        """Try appending data to existing NaN-padded event dataset"""
+        # start over for appending data
+        writer = nsdf.NSDFWriter(self.filepath, mode='a',
+                                 dialect=nsdf.dialect.NANPADDED)
+        source_ds = writer.mapping[nsdf.EVENT][self.popname]
+        rate = 100.0
+        new_dlen = np.random.poisson(lam=rate, size=len(self.sources))
+        for ii, cell in enumerate(self.mdict['mitral_cells']):
+            uid = cell.uid
+            data = np.cumsum(np.random.exponential(scale=1.0/rate,
+                                                   size=new_dlen[ii]))
+            self.data_object.put_data(uid, data)
+        writer.add_event_nan(source_ds, self.data_object)
+        del writer
+        with h5.File(self.filepath, 'r') as fd:
+            dataset = fd['/data'][nsdf.EVENT][self.popname][self.varname]
+            for ii, cell in enumerate(self.mdict['mitral_cells']):
+                uid = cell.uid
+                orig_data = self.data_object.get_data(uid)
+                file_data = dataset[ii, self.dlen[ii]:self.dlen[ii]+new_dlen[ii]]
+                nptest.assert_allclose(orig_data, file_data)
+                nptest.assert_allclose(dataset[self.dlen[ii] +
+                                               new_dlen[ii]:], np.nan)
+        os.remove(self.filepath)
+
+
 class TestNSDFWriterModelTree(unittest.TestCase):
     """Test the structure of model tree saved in `/model/modeltree` of the
     NSDF file.
@@ -652,9 +751,9 @@ class TestNSDFWriterModelTree(unittest.TestCase):
         writer = nsdf.NSDFWriter(self.filepath, mode='w',
                                  dialect=nsdf.dialect.ONED)
         writer.add_modeltree(self.mdict['model_tree'])
-        print '######## Model Tree ################'
-        writer.modelroot.print_tree()
-        print '========================'
+        # print '######## Model Tree ################'
+        # writer.modelroot.print_tree()
+        # print '========================'
         self.granule_somata = []
         self.popname = 'pop0'
         for cell in self.mdict['granule_cells']:

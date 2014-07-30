@@ -116,7 +116,7 @@ class NSDFWriter(object):
 
             VLEN for storing such data in 2D VLEN datasets.
 
-            NANFILLED for storing such data in 2D homogeneous datasets
+            NANPADDED for storing such data in 2D homogeneous datasets
             with NaN padding.
 
         model (h5.Group): /model group
@@ -320,7 +320,7 @@ class NSDFWriter(object):
 
         Returns:
             An HDF5 Dataset storing the source ids when dialect
-            is VLEN or NANFILLED. This is converted into a dimension
+            is VLEN or NANPADDED. This is converted into a dimension
             scale when actual data is added.
 
         Raises:
@@ -392,8 +392,8 @@ class NSDFWriter(object):
         base = self.mapping.require_group(EVENT)
         assert len(idlist) > 0, 'idlist must be nonempty'
         assert ((self.dialect == dialect.VLEN) or
-                (self.dialect == dialect.NANFILLED)),   \
-            'only for VLEN or NANFILLED dialects'
+                (self.dialect == dialect.NANPADDED)),   \
+            'only for VLEN or NANPADDED dialects'
         src_ds = base.create_dataset(name, shape=(len(idlist),),
                                  dtype=VLENSTR, data=idlist)
         self._link_map_model(src_ds)
@@ -823,8 +823,8 @@ class NSDFWriter(object):
             developed.
 
         """
-        assert self.dialect == dialect.NANFILLED,    \
-            'add 2D dataset under `nonuniform` only for dialect=NANFILLED'
+        assert self.dialect == dialect.NANPADDED,    \
+            'add 2D dataset under `nonuniform` only for dialect=NANPADDED'
         popname = source_ds.name.rpartition('/')[-1]
         ngrp = self.data[NONUNIFORM].require_group(popname)
         if not match_datasets(source_ds, data_object.get_sources()):
@@ -1034,37 +1034,37 @@ class NSDFWriter(object):
         Returns:
             HDF5 Dataset containing the data.
 
-        Notes: 
-            Concatenating old data with new data and reassigning is a
-            poor choice for saving data incrementally. HDF5 does not
-            seem to support appending data to VLEN datasets.
-
-            h5py does not support vlen datasets with float64
-            elements. Change dtype to np.float64 once that is
-            developed.
-
         """
-        assert self.dialect == dialect.NANFILLED,    \
-            'add 2D vlen dataset under event only for dialect=NANFILLED'
+        assert self.dialect == dialect.NANPADDED,    \
+            'add 2D vlen dataset under event only for dialect=NANPADDED'
         popname = source_ds.name.rpartition('/')[-1]
         ngrp = self.data[EVENT].require_group(popname)
         if not match_datasets(source_ds, data_object.get_sources()):
             raise KeyError('members of `source_ds` must match sources '
                            'in `data_object`.')
-        cols = max([len(row) for row in data_object.get_all_data()])     
+        cols = [len(data_object.get_data(source)) for source in
+                source_ds]
+        starts = np.zeros(source_ds.shape[0], dtype=int)
+        ends = np.asarray(cols, dtype=int)
         try:
             dataset = ngrp[data_object.name]
-            dataset.resize(dataset.shape[1] + cols, 1)
+            for iii in range(dataset.shape[0]):
+                try:
+                    starts[iii] = next(find(dataset[iii], np.isnan))[0][0]
+                except StopIteration:
+                    starts[iii] = len(dataset[iii])
+                ends[iii] = starts[iii] + cols[iii]
+            dataset.resize(max(ends), 1)            
         except KeyError:
             if data_object.unit is None:
                 raise ValueError('`unit` is required for creating dataset.')
             maxrows = len(source_ds) if fixed else None
-            maxcols = cols if fixed else None
+            maxcols = max(ends) if fixed else None
             dataset = ngrp.create_dataset(
                 data_object.name,
-                shape=(source_ds.shape[0], cols),
+                shape=(source_ds.shape[0], max(ends)),
                 maxshape=(maxrows, maxcols),
-                dtype=vlentype,
+                dtype=data_object.dtype,
                 fillvalue=np.nan,
                 **self.h5args)
             dataset.attrs['field'] = data_object.field
@@ -1073,8 +1073,7 @@ class NSDFWriter(object):
             dataset.dims[0].attach_scale(source_ds)
         for iii, source in enumerate(source_ds):
             data = data_object.get_data(source)
-            data_end = find(dataset[iii], np.isnan)
-            dataset[iii, data_end:] = data
+            dataset[iii, starts[iii]:ends[iii]] = data
         return dataset
     
     def add_static_data(self, source_ds, data_object,

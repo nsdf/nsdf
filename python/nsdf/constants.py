@@ -71,7 +71,7 @@ class dialect(object):
 
     ONED: nonuniform and event data are in 1d datasets
      
-    NANFILLED: nonuniform and event data in regular 2d
+    NANPADDED: nonuniform and event data in regular 2d
     datasets with NaN padding in extra entrie
 
     NUREGULAR: nonuniform data has shared sampling times. Thus
@@ -81,7 +81,7 @@ class dialect(object):
     """
     VLEN = 0    
     ONED = 1   
-    NANFILLED = 2      
+    NANPADDED = 2      
     NUREGULAR = 3
 
 SAMPLING_TYPES = [UNIFORM, NONUNIFORM, EVENT, STATIC]
