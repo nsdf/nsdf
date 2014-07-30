@@ -72,11 +72,11 @@ class dialect(object):
     ONED: nonuniform and event data are in 1d datasets
      
     NANPADDED: nonuniform and event data in regular 2d
-    datasets with NaN padding in extra entrie
+        datasets with NaN padding.
 
     NUREGULAR: nonuniform data has shared sampling times. Thus
-    nonuniform data goes into regular 2D datasets.  In this case the
-    events are stored in 1D datasets.
+        nonuniform data goes into regular 2D datasets.  In this case the
+        events are stored in 1D datasets.
 
     """
     VLEN = 0    

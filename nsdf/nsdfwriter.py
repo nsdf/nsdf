@@ -315,9 +315,6 @@ class NSDFWriter(object):
             idlist (list of str): list of unique identifiers of the
                 data sources. This becomes irrelevant if homogeneous=False.
 
-            path_id_dict (dict): (optional) maps the path of the
-                source in model tree to the unique id of the source.
-
         Returns:
             An HDF5 Dataset storing the source ids when dialect
             is VLEN or NANPADDED. This is converted into a dimension
@@ -383,7 +380,7 @@ class NSDFWriter(object):
                 should be stored. This will represent a population of
                 data sources.
 
-            idlist (list): (optional) unique ids of the data sources.
+            idlist (list): unique ids of the data sources.
 
         Returns: 
             The HDF5 Group `/map/event/{name}`.
@@ -404,14 +401,16 @@ class NSDFWriter(object):
         between the datasources and event data.
 
         Args: 
-            name (str): name with which the datasource list
-                should be stored. This will represent a population of
-                data sources.
+            popname (str): name of the group under which the
+                datasource list should be stored. This will represent
+                a population of data sources.
 
-            idlist (list): (optional) unique ids of the data sources.
+            varname (str): name of the dataset mapping source uid to
+                data. This should be same as the name of the recorded
+                variable.
 
         Returns: 
-            The HDF5 Group `/map/event/{name}`.
+            The HDF5 Dataset `/map/event/{popname}/{varname}`.
 
         """
         base = self.mapping.require_group(EVENT)
@@ -431,7 +430,7 @@ class NSDFWriter(object):
         """Add the sources listed in idlist under /map/static.
 
         Args: 
-            name (str): name with which the datasource list
+            popname (str): name with which the datasource list
                 should be stored. This will represent a population of
                 data sources.
 
