@@ -237,7 +237,7 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
         os.remove(self.filepath)
 
     def test_append_data(self):
-        """Try appending data to existing uniformly sampled dataset"""
+        """Try appending data to existing nonuniform 1d datasets"""
         # start over for appending data
         writer = nsdf.NSDFWriter(self.filepath, mode='a')
         ds = writer.mapping[nsdf.NONUNIFORM][self.popname][self.data_object.name]
@@ -277,12 +277,11 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
                     mitral_somata.append(comp.uid)
                     
         self.popname = 'pop1'
-        self.dlen = 1000
+        self.dlen = np.random.randint(10, 100, size=len(mitral_somata))
         self.field = 'Vm'
         self.unit = 'mV'
         self.tunit = 's'
         self.varname = 'Vm'
-
         ds = writer.add_nonuniform_ds(self.popname, mitral_somata)
         # FIXME: vlen does not support float64
         self.data_object = nsdf.NonuniformData(self.varname,
@@ -292,8 +291,8 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
                                                dtype=np.float32) 
         self.src_name_dict = {}
         for ii, uid in enumerate(mitral_somata):
-            data = np.random.uniform(-65, -55, size=self.dlen)
-            times = np.cumsum(np.random.exponential(scale=0.01, size=self.dlen))
+            data = np.random.uniform(-65, -55, size=self.dlen[ii])
+            times = np.cumsum(np.random.exponential(scale=0.01, size=self.dlen[ii]))
             self.data_object.put_data(uid, (data, times))
         dd = writer.add_nonuniform_vlen(ds, self.data_object)
 
@@ -344,6 +343,32 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
                 srcuid = src_ds[ii]                
                 nptest.assert_allclose(self.data_object.get_data(srcuid)[1],
                                        time_ds[ii])
+        os.remove(self.filepath)
+
+    def test_append_data(self):
+        """Try appending data to existing nonuniformly sampled vlen dataset"""
+        # start over for appending data
+        writer = nsdf.NSDFWriter(self.filepath, mode='a',
+                                 dialect=nsdf.dialect.VLEN)
+        ds = writer.mapping[nsdf.NONUNIFORM][self.popname]
+        dlen = np.random.randint(10, 100, size=ds.shape[0])
+        for iii, uid in enumerate(ds):
+            data = np.random.uniform(-65, -55, size=dlen[iii])
+            times = np.cumsum(np.random.exponential(scale=0.01,
+                                                    size=dlen[iii]))
+            self.data_object.put_data(uid, (data, times))
+        data = writer.add_nonuniform_vlen(ds, self.data_object)
+        del writer
+        with h5.File(self.filepath, 'r') as fd:
+            ds = fd['map'][nsdf.NONUNIFORM][self.popname]
+            dataset = fd['/data'][nsdf.NONUNIFORM][self.popname][self.varname]
+            ts = dataset.dims[0]['time']
+            for iii, source in enumerate(ds):
+                data, times = self.data_object.get_data(source)
+                nptest.assert_allclose(data,
+                                       dataset[iii][-len(data):])
+                nptest.assert_allclose(times,
+                                       ts[iii][-len(data):])
         os.remove(self.filepath)
 
 
@@ -436,6 +461,7 @@ class TestNSDFWriterNonuniformRegular(unittest.TestCase):
             nptest.assert_allclose(self.data_object.get_times(), time_ds)
         os.remove(self.filepath)
 
+        
         
 class TestNSDFWriterEvent1D(unittest.TestCase):
     def setUp(self):

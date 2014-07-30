@@ -55,6 +55,7 @@ import numpy as np
 
 from .model import ModelComponent, common_prefix
 from .constants import *
+from .util import *
 from datetime import datetime
 
 def match_datasets(hdfds, pydata):
@@ -137,6 +138,25 @@ class NSDFWriter(object):
 
     """
     def __init__(self, filename, dialect=dialect.ONED, mode='a', **h5args):
+        """Initialize NSDF writer.
+
+        Args:
+
+            filename (str): path of the file to be written.
+
+            dialect (nsdf.dialect member): the dialect of NSDF to be
+                used. Default: ONED.
+
+            mode (str): file write mode. Default is 'a', which is also
+                the default of h5py.File.
+
+            **h5args: other keyword arguments are passed to h5py when
+                  creating datasets. These can be `compression`
+                  (='gzip'/'szip'/'lzf'), `compression_opts` (=0-9
+                  with gzip), `fletcher32` (=True/False), `shuffle`
+                  (=True/False).
+
+        """
         self._fd = h5.File(filename, mode)
         self.timestamp = datetime.utcnow()
         self._fd.attrs['timestamp'] = self.timestamp.isoformat()
@@ -590,8 +610,8 @@ class NSDFWriter(object):
         the corresponding datasets must be specified and this function
         will create one dataset for each source under
         `/data/nonuniform/{population}/{name}` where {name} is the
-        first argument, preferably the name of the field being
-        recorded.
+        name of the data_object, preferably the name of the field
+        being recorded.
         
         This function can be used when different sources in a
         population are sampled at different time points for a field
@@ -734,8 +754,12 @@ class NSDFWriter(object):
         if not match_datasets(source_ds, data_object.get_sources()):
             raise KeyError('members of `source_ds` must match keys of'
                            ' `source_data_dict`.')
+        # Using {popname}_{variablename} for simplicity. What
+        # about creating a hierarchy?
+        tsname = '{}_{}'.format(popname, data_object.name)
         try:
             dataset = ngrp[data_object.name]
+            time_ds = self.time_dim[tsname]
         except KeyError:
             if data_object.unit is None:
                 raise ValueError('`unit` is required for creating dataset.')
@@ -754,10 +778,7 @@ class NSDFWriter(object):
             dataset.attrs['unit'] = data_object.unit
             dataset.dims.create_scale(source_ds, 'source')
             dataset.dims[0].attach_scale(source_ds)
-            # Using {popname}_{variablename} for simplicity. What
-            # about creating a hierarchy?
-            tsname = '{}_{}'.format(popname, data_object.name)
-            # fixme: VLENFLOAT should be made VLENDOUBLE whenever h5py
+            # FIXME: VLENFLOAT should be made VLENDOUBLE whenever h5py
             # fixes it
             time_ds = self.time_dim.create_dataset(
                 tsname,
@@ -770,10 +791,92 @@ class NSDFWriter(object):
             time_ds.attrs['unit'] = data_object.tunit
         for iii, source in enumerate(source_ds):
             data, time, = data_object.get_data(source)
-            print '#####', data.dtype
             dataset[iii] = np.concatenate((dataset[iii], data))
             time_ds[iii] = np.concatenate((time_ds[iii], time))
         return dataset, time_ds
+
+    def add_nonuniform_nan(self, source_ds, data_object, fixed=False):
+        """Add nonuniform data when data from all sources in a population is
+        stored in a 2D array with NaN padding.
+
+        Args: 
+            source_ds (HDF5 Dataset): the dataset under
+                `/map/event` created for this population of
+                sources (created by add_nonunifrom_ds).
+
+            data_object (nsdf.EventData): NSDFData object storing
+                the data for all sources in `source_ds`.
+
+            fixed (bool): if True, this is a one-time write and the
+                data cannot grow. Default: False
+
+        Returns:
+            HDF5 Dataset containing the data.
+
+        Notes: 
+            Concatenating old data with new data and reassigning is a
+            poor choice for saving data incrementally. HDF5 does not
+            seem to support appending data to VLEN datasets.
+
+            h5py does not support vlen datasets with float64
+            elements. Change dtype to np.float64 once that is
+            developed.
+
+        """
+        assert self.dialect == dialect.NANFILLED,    \
+            'add 2D dataset under `nonuniform` only for dialect=NANFILLED'
+        popname = source_ds.name.rpartition('/')[-1]
+        ngrp = self.data[NONUNIFORM].require_group(popname)
+        if not match_datasets(source_ds, data_object.get_sources()):
+            raise KeyError('members of `source_ds` must match sources '
+                           'in `data_object`.')
+        # Using {popname}_{variablename} for simplicity. What
+        # about creating a hierarchy?
+        tsname = '{}_{}'.format(popname, data_object.name)
+        cols = max([len(row) for row in data_object.get_all_data()])
+        try:
+            dataset = ngrp[data_object.name]
+            time_ds = self.time_dim[tsname]
+            oldcols = dataset.shape[1]
+            dataset.resize(oldcols + cols, 1)
+            time_ds.resize(oldcols + cols, 1)
+        except KeyError:
+            if data_object.unit is None:
+                raise ValueError('`unit` is required for creating dataset.')
+            if data_object.tunit is None:
+                raise ValueError('`tunit` is required for creating dataset.')
+            
+            maxrows = len(source_ds) if fixed else None
+            maxcols = cols if fixed else None
+            dataset = ngrp.create_dataset(
+                data_object.name,
+                shape=(source_ds.shape[0], cols),
+                maxshape=(maxrows, maxcols),
+                fillvalue=np.nan,
+                dtype=data_object.dtype,
+                **self.h5args)
+            dataset.attrs['field'] = data_object.field
+            dataset.attrs['unit'] = data_object.unit
+            dataset.dims.create_scale(source_ds, 'source')
+            dataset.dims[0].attach_scale(source_ds)
+            time_ds = self.time_dim.create_dataset(
+                tsname,
+                shape=dataset.shape,
+                maxshape=(maxrows,),
+                dtype=VLENDOUBLE,
+                fillvalue=np.nan,
+                **self.h5args)
+            dataset.dims.create_scale(time_ds, 'time')
+            dataset.dims[0].attach_scale(time_ds)
+            time_ds.attrs['unit'] = data_object.tunit
+            
+        for iii, source in enumerate(source_ds):
+            data, time = data_object.get_data(source)
+            data_end = find(dataset[iii], np.isnan)
+            dataset[iii, data_end:] = data
+            time_ds[iii, data_end:] = time
+        return dataset
+
 
     def add_event_1d(self, source_ds, data_object, source_name_dict,
                      fixed=False):
@@ -788,7 +891,8 @@ class NSDFWriter(object):
         the corresponding datasets must be specified in
         `source_name_dict` and this function will create one dataset
         for each source under `/data/event/{population}/{name}` where
-        {name} is preferably the name of the field being recorded.
+        {name} is the name of the data_object, preferably the field
+        name.
         
         Args: 
             source_ds (HDF5 Dataset): the dataset
@@ -854,15 +958,9 @@ class NSDFWriter(object):
         When adding the data, the uid of the sources and the names for
         the corresponding datasets must be specified and this function
         will create the dataset `/data/event/{population}/{name}`
-        where {name} is the first argument, preferably the name of the
-        field being recorded.
+        where {name} is name of the data_object, preferably the name
+        of the field being recorded.
         
-        This function can be used when different sources in a
-        population are sampled at different time points for a field
-        value. Such case may arise when each member of the population
-        is simulated using a variable timestep method like CVODE and
-        this timestep is not global.
-
         Args: 
             source_ds (HDF5 Dataset): the dataset under
                 `/map/event` created for this population of
@@ -918,6 +1016,67 @@ class NSDFWriter(object):
             dataset[iii] = np.concatenate((dataset[iii], data))
         return dataset
 
+    def add_event_nan(self, source_ds, data_object, fixed=False):
+        """Add event data when data from all sources in a population is
+        stored in a 2D array with NaN padding.
+
+        Args: 
+            source_ds (HDF5 Dataset): the dataset under
+                `/map/event` created for this population of
+                sources (created by add_nonunifrom_ds).
+
+            data_object (nsdf.EventData): NSDFData object storing
+                the data for all sources in `source_ds`.
+
+            fixed (bool): if True, this is a one-time write and the
+                data cannot grow. Default: False
+
+        Returns:
+            HDF5 Dataset containing the data.
+
+        Notes: 
+            Concatenating old data with new data and reassigning is a
+            poor choice for saving data incrementally. HDF5 does not
+            seem to support appending data to VLEN datasets.
+
+            h5py does not support vlen datasets with float64
+            elements. Change dtype to np.float64 once that is
+            developed.
+
+        """
+        assert self.dialect == dialect.NANFILLED,    \
+            'add 2D vlen dataset under event only for dialect=NANFILLED'
+        popname = source_ds.name.rpartition('/')[-1]
+        ngrp = self.data[EVENT].require_group(popname)
+        if not match_datasets(source_ds, data_object.get_sources()):
+            raise KeyError('members of `source_ds` must match sources '
+                           'in `data_object`.')
+        cols = max([len(row) for row in data_object.get_all_data()])     
+        try:
+            dataset = ngrp[data_object.name]
+            dataset.resize(dataset.shape[1] + cols, 1)
+        except KeyError:
+            if data_object.unit is None:
+                raise ValueError('`unit` is required for creating dataset.')
+            maxrows = len(source_ds) if fixed else None
+            maxcols = cols if fixed else None
+            dataset = ngrp.create_dataset(
+                data_object.name,
+                shape=(source_ds.shape[0], cols),
+                maxshape=(maxrows, maxcols),
+                dtype=vlentype,
+                fillvalue=np.nan,
+                **self.h5args)
+            dataset.attrs['field'] = data_object.field
+            dataset.attrs['unit'] = data_object.unit
+            dataset.dims.create_scale(source_ds, 'source')
+            dataset.dims[0].attach_scale(source_ds)
+        for iii, source in enumerate(source_ds):
+            data = data_object.get_data(source)
+            data_end = find(dataset[iii], np.isnan)
+            dataset[iii, data_end:] = data
+        return dataset
+    
     def add_static_data(self, source_ds, data_object,
                         fixed=True):
         """Append static data `variable` values from `sources` to `data`.
@@ -971,7 +1130,6 @@ class NSDFWriter(object):
             dataset.attrs['field'] = data_object.field
             dataset.attrs['unit'] = data_object.unit
         return dataset
-
 
     
 # 
