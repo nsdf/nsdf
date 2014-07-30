@@ -1,4 +1,4 @@
-NSDF File Writer
+NSDF file writer
 ================
 
 .. _nsdfwriter:
