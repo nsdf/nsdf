@@ -65,22 +65,25 @@ STATIC = 'static'
 
 # Enums for dialects
 class dialect(object):
-    """Enumeration of different dialects of NSDF.
+    """Enumeration of different dialects of NSDF. 
 
-    VLEN: 
-        nonuniform and event data stored in vlen 2d datasets.
-
-    ONED: 
-        nonuniform and event data stored in 1d datasets.
-     
-    NANPADDED: 
-        nonuniform and event data in stored in regular 2d datasets
-        with NaN padding.
-
-    NUREGULAR: 
-        nonuniform datasets have shared sampling times. Thus
-        nonuniform data goes into regular 2D datasets. In this case
-        the events are stored in 1D datasets.
+    The following constants are defined:
+    
+    
+        VLEN: 
+            nonuniform and event data stored in vlen 2d datasets.
+    
+        ONED: 
+            nonuniform and event data stored in 1d datasets.
+         
+        NANPADDED: 
+            nonuniform and event data in stored in regular 2d datasets
+            with NaN padding.
+    
+        NUREGULAR: 
+            nonuniform datasets have shared sampling times. Thus
+            nonuniform data goes into regular 2D datasets. In this case
+            the events are stored in 1D datasets.
 
     """
     VLEN = 0    
@@ -88,6 +91,7 @@ class dialect(object):
     NANPADDED = 2      
     NUREGULAR = 3
 
+    
 SAMPLING_TYPES = [UNIFORM, NONUNIFORM, EVENT, STATIC]
 
 

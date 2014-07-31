@@ -18,6 +18,7 @@ a neuron, the human brain, model of the world, etc.), data collected
 from model components and the mapping between the data and its source
 (model component) respectively.
 
+
 .. _data-label
 Data
 ----
@@ -100,6 +101,7 @@ static: In addition to time series or temporal data, components in a
     model can have static data associated with them. These are stored
     under the `static` group.
 
+
 .. _model-label:
 Model
 -----
@@ -163,8 +165,8 @@ stores the reference to the 1D dataset collected from this source.
 Note on namespace
 -----------------
 
-The nsdf package is organized into :ref:`constants`, :ref:`nsdfdata`,
-:ref:`model`, :ref:`nsdfwriter` and :ref:`util` submodules. However all their
+The nsdf package is organized into `constants`, `nsdfdata`,
+`model`, `nsdfwriter` and `util` submodules. However all their
 contents are directly accessible under the `nsdf` namespace. Thus,
 instead of `nsdf.nsdfwriter.NSDFWriter` you should use
 `nsdf.NSDFWriter`.
