@@ -2,6 +2,7 @@ Constants
 =========
 
 .. _constants:
+
 :mod:`constants` Module
 -----------------------
 
