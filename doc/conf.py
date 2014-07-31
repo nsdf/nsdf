@@ -277,8 +277,8 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'nsdf', u'nsdf Documentation',
-   u'Subhasis Ray', 'nsdf', 'One line description of project.',
-   'Miscellaneous'),
+   u'Subhasis Ray', 'nsdf', 'NSDF is Neuro-Simulation Data Format.',
+   'Science'),
 ]
 
 # Documents to append as an appendix to all manuals.
