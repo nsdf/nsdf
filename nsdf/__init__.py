@@ -1,10 +1,10 @@
-"""
-.. _nsdf-label:
+""".. _nsdf-label:
+
 NSDF
 ====
 
-NSDF (Neuroscience Simulation Data Format) is a file format built
-on top of HDF5 <http://www.hdfgroup.org/>.
+NSDF (Neuroscience Simulation Data Format) is a file format built on
+top of `HDF5 <http://www.hdfgroup.org/>`_.
 
 Although the design and development started with the aim of storing
 data generated from simulations in computational neuroscience, this
@@ -18,7 +18,9 @@ a neuron, the human brain, model of the world, etc.), data collected
 from model components and the mapping between the data and its source
 (model component) respectively.
 
-.. _data-label
+
+.. _data-label:
+
 Data
 ----
 
@@ -100,7 +102,9 @@ static: In addition to time series or temporal data, components in a
     model can have static data associated with them. These are stored
     under the `static` group.
 
+
 .. _model-label:
+
 Model
 -----
 
@@ -138,6 +142,7 @@ modeltree: This group stores a tree structure representing
     meant for storing the ontological term for this component.
 
 .. _map-label:
+
 Map
 ---
 
@@ -164,10 +169,10 @@ Note on namespace
 -----------------
 
 The nsdf package is organized into :ref:`constants`, :ref:`nsdfdata`,
-:ref:`model`, :ref:`nsdfwriter` and :ref:`util` submodules. However all their
-contents are directly accessible under the `nsdf` namespace. Thus,
-instead of `nsdf.nsdfwriter.NSDFWriter` you should use
-`nsdf.NSDFWriter`.
+:ref:`model`, :ref:`nsdfwriter` and :ref:`util` submodules. However
+all their contents are directly accessible under the `nsdf`
+namespace. Thus, instead of `nsdf.nsdfwriter.NSDFWriter` you should
+use `nsdf.NSDFWriter`.
 
 """
 __author__ = 'Subhasis Ray'

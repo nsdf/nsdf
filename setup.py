@@ -15,7 +15,7 @@ setup(
     author_email = "ray dot subhasis at gmail dot com",
     description = ("NSDF (Neuroscience Simulation Data Format)"),
     license = "GPL 3",
-    keywords = "example documentation tutorial",
+    keywords = "neuroscience simulation format data",
     url = "http://github.com/subhacom/nsdf",
     packages=['nsdf', 'test'],
     long_description=read('README.md'),

@@ -3,4 +3,7 @@
 *.ns5
 *.pyc
 *~
+build
 _build
+nsdf.egg-info
+dist

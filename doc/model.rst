@@ -2,6 +2,7 @@ Data structure for model hierarchy
 ==================================
 
 .. _model:
+
 :mod:`model` Module
 -------------------
 
