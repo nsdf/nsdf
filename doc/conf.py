@@ -39,7 +39,7 @@ if on_rtd:
             else:
                 return Mock()
 
-    MOCK_MODULES = ['h5py']
+    MOCK_MODULES = ['h5py', 'numpy']
     for mod_name in MOCK_MODULES:
         sys.modules[mod_name] = Mock()
 else:
