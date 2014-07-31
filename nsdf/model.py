@@ -95,9 +95,6 @@ class ModelComponent(object):
         Raises:
             TypeError
 
-        .. note:: We store the children in a list to ensure ordering. It
-            is up to the user to make sure same child is not added twice.
-
         """
         if not isinstance(child, ModelComponent):
             raise TypeError('require a ModelComponent instance.')
@@ -220,6 +217,8 @@ class ModelComponent(object):
         This must be called before using get_id_path_dict whenever the
         model tree is been modified
 
+        .. seealso:: get_id_path_dict
+
         """
         if self._id_path_dict is None:
             self._id_path_dict = {}
@@ -230,7 +229,11 @@ class ModelComponent(object):
 
     def get_id_path_dict(self):
         """Return a dictionary mapping the unique id of the model components
-        to their path in modeltree."""
+        to their path in modeltree.
+
+        .. seealso:: update_id_path_dict
+
+        """
         if (self._id_path_dict is None) or (len(self._id_path_dict) == 0):
             self.update_id_path_dict()
         return self._id_path_dict
