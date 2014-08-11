@@ -221,9 +221,7 @@ def create_example(dialect=nsdf.dialect.ONED, simtime=10.0, dt=1e-4):
         if dialect in (nsdf.dialect.ONED, nsdf.dialect.NUREGULAR):
             event_ds = writer.add_event_ds_1d(celltype, 'spiketime',
                                               event_data.get_sources())
-            src_name_map = {source.uid: source.uid for source in \
-                            event_sources}
-            writer.add_event_1d(event_ds, event_data, src_name_map)
+            writer.add_event_1d(event_ds, event_data)
         else:
             event_ds = writer.add_event_ds(celltype,
                                            event_data.get_sources())
