@@ -10,6 +10,13 @@ format is generic enough that any time series data should fit in. Thus
 the actual application can be much broader than simulations in
 neuroscience.
 
+ * NSDF is under development and we welcome feedback and suggestions from
+the community.
+
+ * This is work in progress and please contact the developers regarding
+its use and citation.
+
+
 Requirements
 ------------
 
@@ -17,6 +24,7 @@ nsdf module works with h5py 2.3.1. Python 2.7 and numpy.
 
 To build the documentation you also need sphinx,
 sphinxcontrib-napoleon packages.
+
 
 Installation
 ------------
@@ -35,3 +43,17 @@ This will create "\_build" directory and the index of the docs will be
 in "\_build/html/index.html". Or you can read the latest documentation
 built from git:master branch on nsdf.readthedocs.org.
 
+
+Credits
+-------
+
+Subhasis Ray, Chaitanya Chintaluri, Upinder Bhalla and Daniel Wójcik
+have been designing the specification in collaboration.
+
+Chaitanya is providing examples and use cases.
+
+Subhasis is developing this Python module providing a high level API
+for reading and writing NSDF files.
+
+We thank Aviral Goel, Johannes Rieke and Matteo Cantarelli for their
+critical input.
