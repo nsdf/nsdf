@@ -681,7 +681,7 @@ class NSDFWriter(object):
         return dataset
 
     def add_nonuniform_1d(self, source_ds, data_object,
-                          source_name_dict, fixed=False):
+                          source_name_dict=None, fixed=False):
         """Add nonuniform data when data from each source is in a separate 1D
         dataset.
 
@@ -712,7 +712,10 @@ class NSDFWriter(object):
                 the data for all sources in `source_ds`.
 
             source_name_dict (dict): mapping from source id to dataset
-                name.
+                name. If None (default), the uids of the sources will
+                be used as dataset names. If the uids are not
+                compatible with HDF5 names (contain '.' or '/'), then
+                the index of the source in source_ds will be used.
 
             fixed (bool): if True, the data cannot grow. Default:
                 False
@@ -726,6 +729,13 @@ class NSDFWriter(object):
         """
         assert self.dialect == dialect.ONED, \
             'add 1D dataset under nonuniform only for dialect=ONED'
+        if source_name_dict is None:
+            names = np.asarray(source_ds['source'], dtype=str)
+            if np.any((np.char.find(names, '/') >= 0) |
+                      (np.char.find(names, '.') >= 0)):
+                names = [str(index) for index in range(len(names))]
+            source_name_dict = dict(zip(source_ds['source'], names))
+
         assert len(set(source_name_dict.values())) == len(source_ds), \
             'The names in `source_name_dict` must be unique'        
         popname = source_ds.name.split('/')[-2]
@@ -969,7 +979,7 @@ class NSDFWriter(object):
         return dataset
 
 
-    def add_event_1d(self, source_ds, data_object, source_name_dict,
+    def add_event_1d(self, source_ds, data_object, source_name_dict=None,
                      fixed=False):
         """Add event time data when data from each source is in a separate 1D
         dataset.
@@ -997,7 +1007,10 @@ class NSDFWriter(object):
                 the data for all sources in `source_ds`.
 
             source_name_dict (dict): mapping from source id to dataset
-                name.
+                name. If None (default) it tries to use the uids in
+                the source_ds. If the uids do not fit the hdf5 naming
+                convention, the index of the entries in source_ds will
+                be used.
 
             fixed (bool): if True, the data cannot grow. Default:
                 False
@@ -1009,6 +1022,12 @@ class NSDFWriter(object):
         assert ((self.dialect == dialect.ONED) or
             self.dialect == dialect.NUREGULAR), \
             'add 1D dataset under event only for dialect=ONED or NUREGULAR'
+        if source_name_dict is None:
+            names = np.asarray(source_ds['source'], dtype=str)
+            if np.any((np.char.find(names, '/') >= 0) |
+                      (np.char.find(names, '.') >= 0)):
+                names = [str(index) for index in range(len(names))]
+            source_name_dict = dict(zip(source_ds['source'], names))
         assert len(set(source_name_dict.values())) == len(source_ds), \
             'The names in `source_name_dict` must be unique'
         popname = source_ds.name.split('/')[-2]
