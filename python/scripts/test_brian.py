@@ -10,6 +10,10 @@
 import h5py
 import numpy as np
 from brian import *
+import sys
+sys.path.append('../..')
+import nsdf
+
 seed_no = 500
 seed(seed_no)
 eqs = '''
@@ -17,8 +21,8 @@ dv/dt = (ge+gi-(v+49*mV))/(20*ms) : volt
 dge/dt = -ge/(5*ms) : volt
 dgi/dt = -gi/(10*ms) : volt
 '''
-num_neurons = 8 #in 1e03
-sim_time = 10 #in seconds
+num_neurons = 2 #in 1e03
+sim_time = 2 #in seconds
 
 P = NeuronGroup(1000*num_neurons, eqs, threshold=-50*mV, reset=-60*mV)
 P.v = -60*mV+10*mV*rand(len(P))
@@ -111,8 +115,81 @@ def h5_cmpd():
         doh_ += 1
     h.close()
 
-h5_vlen()
-h5_nan()
-h5_cmpd()
+### vlen arrays - using NSDF library
+def h5_vlen_nsdf():
+    writer = nsdf.NSDFWriter('Brian_vlen_'+str(seed_no)+'.h5', mode='w', dialect=nsdf.dialect.VLEN)
+    e_list = []
+    
+    dataobj = nsdf.EventData('spikes', unit='s', dtype=np.float32)
+    for ii in range(e_spikes):
+        uid = 'nrn_'+str(ii)
+        dataobj.put_data(uid, Me[ii])
+        e_list.append(uid)
+    source_ds = writer.add_event_ds('excitatory', e_list)
+    writer.add_event_vlen(source_ds, dataobj)
 
+    i_list = []
+    dataobj = nsdf.EventData('spikes', unit='s', dtype=np.float32)
+    for ii in range(i_spikes):
+        uid = 'nrn_'+str(ii)
+        dataobj.put_data(uid, Mi[ii])
+        i_list.append(uid)
+    source_ds = writer.add_event_ds('inhibitory', i_list)
+    writer.add_event_vlen(source_ds, dataobj)
+
+
+### NaN filled arrays - using NSDF library
+def h5_nan_nsdf():
+    writer = nsdf.NSDFWriter('Brian_NaN_'+str(seed_no)+'.h5', mode='w', dialect=nsdf.dialect.NANPADDED)
+    e_list = []
+    
+    dataobj = nsdf.EventData('spikes', unit='s', dtype=np.float32)
+    for ii in range(e_spikes):
+        uid = 'nrn_'+str(ii)
+        dataobj.put_data(uid, Me[ii])
+        e_list.append(uid)
+    source_ds = writer.add_event_ds('excitatory', e_list)
+    writer.add_event_nan(source_ds, dataobj)
+
+    i_list = []
+    dataobj = nsdf.EventData('spikes', unit='s', dtype=np.float32)
+    for ii in range(i_spikes):
+        uid = 'nrn_'+str(ii)
+        dataobj.put_data(uid, Mi[ii])
+        i_list.append(uid)
+    source_ds = writer.add_event_ds('inhibitory', i_list)
+    writer.add_event_nan(source_ds, dataobj)
+
+### Compound arrays - using NSDF library
+def h5_cmpd_nsdf():
+    writer = nsdf.NSDFWriter('Brian_compound_'+str(seed_no)+'.h5', mode='w', dialect=nsdf.dialect.ONED)
+    e_list = []
+    
+    dataobj = nsdf.EventData('spikes', unit='s', dtype=np.float32)
+    source_name_dict = {}
+    for ii in range(e_spikes):
+        uid = 'nrn_'+str(ii)
+        source_name_dict[uid] = uid
+        dataobj.put_data(uid, Me[ii])
+        e_list.append(uid)
+    source_ds = writer.add_event_ds_1d('excitatory', 'spikes', e_list)
+    writer.add_event_1d(source_ds, dataobj, source_name_dict)
+
+    i_list = []
+    dataobj = nsdf.EventData('spikes', unit='s', dtype=np.float32)
+    source_name_dict = {}
+    for ii in range(i_spikes):
+        uid = 'nrn_'+str(ii)
+        source_name_dict[uid] = uid
+        dataobj.put_data(uid, Mi[ii])
+        i_list.append(uid)
+    source_ds = writer.add_event_ds_1d('inhibitory', 'spikes', i_list)
+    writer.add_event_1d(source_ds, dataobj, source_name_dict)
+
+#h5_vlen()
+h5_vlen_nsdf()
+#h5_nan()
+#h5_nan_nsdf()
+#h5_cmpd()
+#h5_cmpd_nsdf()
 # End of test_brian.py
