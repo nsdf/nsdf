@@ -86,10 +86,10 @@ class dialect(object):
             the events are stored in 1D datasets.
 
     """
-    VLEN = 0    
-    ONED = 1   
-    NANPADDED = 2      
-    NUREGULAR = 3
+    VLEN = 'VLEN'
+    ONED = 'ONED'   
+    NANPADDED = 'NANPADDED'      
+    NUREGULAR = 'NUREGULAR'
 
     
 SAMPLING_TYPES = [UNIFORM, NONUNIFORM, EVENT, STATIC]

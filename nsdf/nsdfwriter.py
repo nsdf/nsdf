@@ -47,8 +47,6 @@
 """
 Writer for NSDF file format.
 """
-__author__ = 'Subhasis Ray'
-__version__ = '0.1'
 
 import h5py as h5
 import numpy as np
@@ -159,8 +157,9 @@ class NSDFWriter(object):
         """
         self._fd = h5.File(filename, mode)
         self.timestamp = datetime.utcnow()
-        self._fd.attrs['timestamp'] = self.timestamp.isoformat()
-        self._fd.attrs['version'] = '0.1'
+        self._fd.attrs['created'] = self.timestamp.isoformat()
+        self._fd.attrs['nsdf_version'] = '0.1'
+        self._fd.attrs['dialect'] = dialect
         self.mode = mode
         self.dialect = dialect
         self.data = self._fd.require_group('/data')
@@ -179,22 +178,107 @@ class NSDFWriter(object):
         self._fd.close()
 
     def set_title(self, title):
+        """Set the title of the file.
+
+        Args:
+            title (str): title text of the file.
+
+        """
         self._fd.attrs['title'] = title
 
-    def set_creator(self, creator):
-        self._fd.attrs['creator'] = creator
+    def set_creator(self, creator_list):
+        """Set the creator (one or more authors) of the file.
+
+        Args:
+            creator_list (list of str): list of creators of the file.
+
+        """
+        attr = np.zeros((len(creator_list),), dtype=VLENSTR)
+        attr[:] = creator_list
+        self._fd.attrs['creator'] = attr                
 
     def set_license(self, text):
         self._fd.attrs['license'] = text
 
     def set_software(self, software_list):       
-        self._fd.attrs['software'] = software_list
+        """Set the software (one or more) used to generate the data in the
+        file.
+
+        Args:
+            software_list (list of str): list of software that
+                involved in generating the data in the file.
+
+        """
+        attr = np.zeros((len(software_list),), dtype=VLENSTR)
+        attr[:] = software_list
+        self._fd.attrs['software'] = attr
 
     def set_method(self, method_list):
-        self._fd.attrs['method'] = method_list
+        """Set the (numerical) methods applied in generating the data.
+
+        Args:
+            method_list (list of str): names of the methods employed
+                to generate the data.
+
+        """
+        attr = np.zeros((len(method_list),), dtype=VLENSTR)
+        attr[:] = method_list
+        self._fd.attrs['method'] = attr                
 
     def set_description(self, description):
+        """Set the description of the file.
+
+        Args:
+            description (str): a human readable description of the
+                file.
+
+        """
         self._fd.attrs['description'] = description
+
+    def set_rights(self, rights):
+        """Set the rights of the file contents.
+
+        Args:
+            rights (str): text describing the rights of various
+                individuals/organizations/other entities on the file
+                contents.
+
+        """
+        self._fd.attrs['rights'] = rights
+
+    def set_tstart(self, tstart):
+        """Set the start time of simulation/recording
+
+        Args:
+            tstart (datetime.datetime): start date-time of the data
+                recording/simulation.
+
+        """
+        self._fd.attrs['tstart'] = tstart.isoformat()
+
+    def set_tend(self, tend):
+        """Set the end time of recording/simulation.
+
+        Args: 
+            tend (datetime.datetime): end date-time of the data
+                recording or simulation.
+
+        """
+        self._fd.attrs['tend'] = tend.isoformat()
+
+    def set_contributor(self, contributor_list):
+        """Set the list of contributors to the contents of the file.
+
+        Args: 
+            contributor_list (list of str): list of
+                individuals/organizations/other entities who
+                contributed towards the data stored in the file.
+
+        """
+        attr = np.zeros((len(contributor_list),), dtype=VLENSTR)
+        attr[:] = contributor_list
+        self._fd.attrs['contributor'] = attr                
+        
 
     def _link_map_model(self, mapds):
         """Link the model to map dataset and vice versa. 
@@ -388,8 +472,8 @@ class NSDFWriter(object):
         """
         base = self.mapping.require_group(EVENT)
         assert len(idlist) > 0, 'idlist must be nonempty'
-        assert ((self.dialect == dialect.VLEN) or
-                (self.dialect == dialect.NANPADDED)),   \
+        assert ((self.dialect != dialect.ONED) and
+                (self.dialect != dialect.NUREGULAR)),   \
             'only for VLEN or NANPADDED dialects'
         src_ds = base.create_dataset(name, shape=(len(idlist),),
                                  dtype=VLENSTR, data=idlist)
@@ -642,6 +726,8 @@ class NSDFWriter(object):
         """
         assert self.dialect == dialect.ONED, \
             'add 1D dataset under nonuniform only for dialect=ONED'
+        assert len(set(source_name_dict.values())) == len(source_ds), \
+            'The names in `source_name_dict` must be unique'        
         popname = source_ds.name.split('/')[-2]
         ngrp = self.data[NONUNIFORM].require_group(popname)
         assert match_datasets(source_name_dict.keys(),
@@ -923,6 +1009,8 @@ class NSDFWriter(object):
         assert ((self.dialect == dialect.ONED) or
             self.dialect == dialect.NUREGULAR), \
             'add 1D dataset under event only for dialect=ONED or NUREGULAR'
+        assert len(set(source_name_dict.values())) == len(source_ds), \
+            'The names in `source_name_dict` must be unique'
         popname = source_ds.name.split('/')[-2]
         ngrp = self.data[EVENT].require_group(popname)
         assert match_datasets(source_name_dict.keys(),
