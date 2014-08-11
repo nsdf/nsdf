@@ -472,8 +472,8 @@ class NSDFWriter(object):
         """
         base = self.mapping.require_group(EVENT)
         assert len(idlist) > 0, 'idlist must be nonempty'
-        assert ((self.dialect == dialect.VLEN) or
-                (self.dialect == dialect.NANPADDED)),   \
+        assert ((self.dialect != dialect.ONED) and
+                (self.dialect != dialect.NUREGULAR)),   \
             'only for VLEN or NANPADDED dialects'
         src_ds = base.create_dataset(name, shape=(len(idlist),),
                                  dtype=VLENSTR, data=idlist)
@@ -726,6 +726,8 @@ class NSDFWriter(object):
         """
         assert self.dialect == dialect.ONED, \
             'add 1D dataset under nonuniform only for dialect=ONED'
+        assert len(set(source_name_dict.values())) == len(source_ds), \
+            'The names in `source_name_dict` must be unique'        
         popname = source_ds.name.split('/')[-2]
         ngrp = self.data[NONUNIFORM].require_group(popname)
         assert match_datasets(source_name_dict.keys(),
@@ -1007,6 +1009,8 @@ class NSDFWriter(object):
         assert ((self.dialect == dialect.ONED) or
             self.dialect == dialect.NUREGULAR), \
             'add 1D dataset under event only for dialect=ONED or NUREGULAR'
+        assert len(set(source_name_dict.values())) == len(source_ds), \
+            'The names in `source_name_dict` must be unique'
         popname = source_ds.name.split('/')[-2]
         ngrp = self.data[EVENT].require_group(popname)
         assert match_datasets(source_name_dict.keys(),

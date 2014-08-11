@@ -69,19 +69,17 @@ class ModelComponent(object):
     """
     def __init__(self, name, uid=None, parent=None, attrs=None,
                  hdfgroup=None):
-        if uid is None:
-            uid = name
-        self.uid = uid
+        self.uid = name if uid is None else uid
         self.name = name
         self.parent = parent
-        if parent is not None:
-            parent.children[name] = self
         self.children = {}
         # store the order in which children were added
         # self._birth_order = {} 
         self.attrs = attrs if attrs is not None else {}
         self.hdfgroup = hdfgroup
         self._id_path_dict = None
+        if parent is not None:
+            parent.children[name] = self
         
     def add_child(self, child):
         """Add a child component under this model component.
