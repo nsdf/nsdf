@@ -597,6 +597,7 @@ class NSDFWriter(object):
                 **self.h5args)
             dataset.dims.create_scale(source_ds, 'source')
             dataset.dims[0].attach_scale(source_ds)
+            dataset.dims[0].label = 'source'
             dataset.attrs['tstart'] = tstart
             dataset.attrs['dt'] = data_object.dt
             dataset.attrs['field'] = data_object.field
@@ -665,6 +666,7 @@ class NSDFWriter(object):
                 **self.h5args)
             dataset.dims.create_scale(source_ds, 'source')
             dataset.dims[0].attach_scale(source_ds)
+            dataset.dims[0].label = 'source'
             dataset.attrs['field'] = data_object.field
             dataset.attrs['unit'] = data_object.unit
             tsname = '{}_{}'.format(popname, data_object.name)
@@ -675,8 +677,8 @@ class NSDFWriter(object):
                 data=data_object.get_times(),
                 **self.h5args)
             dataset.dims.create_scale(tscale, 'time')
-            dataset.dims[1].label = 'time'
             dataset.dims[1].attach_scale(tscale)
+            dataset.dims[1].label = 'time'
             tscale.attrs['unit'] = data_object.tunit
         return dataset
 
@@ -873,6 +875,7 @@ class NSDFWriter(object):
             dataset.attrs['unit'] = data_object.unit
             dataset.dims.create_scale(source_ds, 'source')
             dataset.dims[0].attach_scale(source_ds)
+            dataset.dims[0].label = 'source'
             # FIXME: VLENFLOAT should be made VLENDOUBLE whenever h5py
             # fixes it
             time_ds = self.time_dim.create_dataset(
@@ -882,7 +885,8 @@ class NSDFWriter(object):
                 dtype=VLENFLOAT,
                 **self.h5args)
             dataset.dims.create_scale(time_ds, 'time')
-            dataset.dims[0].attach_scale(time_ds)
+            dataset.dims[1].attach_scale(time_ds)
+            dataset.dims[1].label = 'time'            
             time_ds.attrs['unit'] = data_object.tunit
         for iii, source in enumerate(source_ds):
             data, time, = data_object.get_data(source)
@@ -962,6 +966,7 @@ class NSDFWriter(object):
             dataset.attrs['unit'] = data_object.unit
             dataset.dims.create_scale(source_ds, 'source')
             dataset.dims[0].attach_scale(source_ds)
+            dataset.dims[0].label = 'source'
             time_ds = self.time_dim.create_dataset(
                 tsname,
                 shape=dataset.shape,
@@ -971,6 +976,7 @@ class NSDFWriter(object):
                 **self.h5args)
             dataset.dims.create_scale(time_ds, 'time')
             dataset.dims[1].attach_scale(time_ds)
+            dataset.dims[1].label = 'time'            
             time_ds.attrs['unit'] = data_object.tunit
         for iii, source in enumerate(source_ds):
             data, time = data_object.get_data(source)
@@ -1123,6 +1129,7 @@ class NSDFWriter(object):
             dataset.attrs['unit'] = data_object.unit
             dataset.dims.create_scale(source_ds, 'source')
             dataset.dims[0].attach_scale(source_ds)
+            dataset.dims[0].label = 'source'            
         for iii, source in enumerate(source_ds):
             data = data_object.get_data(source)
             dataset[iii] = np.concatenate((dataset[iii], data))
@@ -1183,6 +1190,7 @@ class NSDFWriter(object):
             dataset.attrs['unit'] = data_object.unit
             dataset.dims.create_scale(source_ds, 'source')
             dataset.dims[0].attach_scale(source_ds)
+            dataset.dims[0].label = 'source'            
         for iii, source in enumerate(source_ds):
             data = data_object.get_data(source)
             dataset[iii, starts[iii]:ends[iii]] = data
@@ -1238,6 +1246,7 @@ class NSDFWriter(object):
                 **self.h5args)
             dataset.dims.create_scale(source_ds, 'source')
             dataset.dims[0].attach_scale(source_ds)
+            dataset.dims[0].label = 'source'                        
             dataset.attrs['field'] = data_object.field
             dataset.attrs['unit'] = data_object.unit
         return dataset
