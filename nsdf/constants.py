@@ -77,7 +77,7 @@ class dialect(object):
             nonuniform and event data stored in 1d datasets.
          
         NANPADDED: 
-            nonuniform and event data in stored in regular 2d datasets
+            nonuniform and event data stored in regular 2d datasets
             with NaN padding.
     
         NUREGULAR: 
