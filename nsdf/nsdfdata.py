@@ -91,6 +91,24 @@ class NSDFData(object):
         """Return a dictionary storing the mapping from source->data."""
         return self._src_data_dict
 
+    def update_source_data_dict(self, src_data):
+        """Insert a bunch of source, data pairs.
+
+        Args:
+            src_data (dict-like): an object that is a dict or a
+            sequence of key-value pairs.
+            
+        Returns:
+            None
+
+        Examples:
+            >>> data_obj = nsdf.UniformData('current', unit='pA')
+            >>> data_obj.update_source_data_dict([('KA', [0.1, 0.3, 0.5]),
+                                                  ('KDR', [0.2, 0.14])])      
+
+        """
+        self._src_data_dict.update(src_data)
+
     def get_sources(self):
         """Return the source ids as a list"""
         return self._src_data_dict.keys()
@@ -102,17 +120,20 @@ class NSDFData(object):
     def get_data(self, source):
         """Return the data for specified source"""
         return self._src_data_dict[source]
-            
+
+    
 class TimeSeriesData(NSDFData):
     def __init__(self, name, unit=None, field=None, tunit=None, dtype=np.float64):
         super(TimeSeriesData, self).__init__(name, unit, field, dtype)
         self.tunit = tunit
+        
         
 class UniformData(TimeSeriesData):
     """Stores uniformly sampled data."""
     def __init__(self, *args, **kwargs):
         super(UniformData, self).__init__(*args, **kwargs)
         self.dt = 0.0
+        
     def set_dt(self, value, unit=None):
         """Set the timestep used for data recording."""
         self.dt = value
