@@ -74,7 +74,7 @@ class TestNSDFUniformData(unittest.TestCase):
                          for name in 'abc'}
         for name, data in src_data_dict.items():
             self.data.put_data(name, data)
-        self.assertEqual(len(src_data_dict), self.data.get_sources())
+        self.assertEqual(len(src_data_dict), len(self.data.get_sources()))
         self.assertEqual(set(src_data_dict.keys()),
                          set(self.data.get_sources()))
 
@@ -82,6 +82,17 @@ class TestNSDFUniformData(unittest.TestCase):
         self.data.set_dt(1.0, 's')
         self.assertEqual(self.data.dt, 1.0)
         self.assertEqual(self.data.tunit, 's')
+
+    def test_update_source_data_dict(self):
+        src_data = [('a', [1.0, 2.0, 3.0]),
+                    ('b', [4.0, 5.0])]
+        self.data.update_source_data_dict(src_data)
+        for key, value in src_data:
+            np.testing.assert_allclose(value,
+                               self.data.get_data(key))
+
+if __name__ == '__main__':
+    unittest.main()
 
 
 # 
