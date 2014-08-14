@@ -15,12 +15,14 @@
 from neuron import h
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 
 dump_hdf5 = True 
-dump_type = 2 # use dump_type=2 for NSDF
+dump_type = 4 # use dump_type=4 for using NSDF library
 # 1 = preference to time data.
 # 2 = THIS IS NSDF. Agnostic of data 'addition of static subgroup'
 # 3 = uses regional reference inside /model to point to specific data_sources
+# 4 = uses NSDF library
 
 #Obtain morphology details
 n3dpoints = {} #has sec name and the first and last coordinates of its location
@@ -361,6 +363,72 @@ if dump_hdf5:
         elec_names = h5.create_dataset('/map/electronics_names', data=['i_clamp', 'epsp_site'])
         tie_data_map(elec_dset, elec_names, 'SOURCE', 0)
         tie_data_map(elec_dset, morp_labels, 'label', 1)
+
+    elif dump_type == 4:
+        sys.path.append('../../..')
+        import nsdf
+        writer = nsdf.NSDFWriter('hay_currents_nsdf.h5', mode='w')
+        curr_source_ds = writer.add_uniform_ds('hay_currs', i_cp_names)
+        data_obj_1 = nsdf.UniformData('i', unit='nA')
+        data_obj_2 = nsdf.UniformData('i_pas', unit='nA')
+        data_obj_3 = nsdf.UniformData('i_cap', unit='nA')
+        data_obj_4 = nsdf.UniformData('i_ca', unit='nA')
+        data_obj_5 = nsdf.UniformData('i_na', unit='nA')
+        data_obj_6 = nsdf.UniformData('i_k', unit='nA')
+        data_obj_7 = nsdf.UniformData('i_ih', unit='nA')
+
+        for ii,source in enumerate(i_cp_names):
+            data_obj_1.put_data(source, total_hdf5[ii])
+            data_obj_2.put_data(source, i_pas_hdf5[ii])
+            data_obj_3.put_data(source, i_cap_hdf5[ii])
+            data_obj_4.put_data(source, i_ca_hdf5[ii])
+            data_obj_5.put_data(source, i_na_hdf5[ii])
+            data_obj_6.put_data(source, i_k_hdf5[ii])
+            data_obj_7.put_data(source, i_ih_hdf5[ii])
+        data_obj_1.set_dt(0.25, unit='ms')
+        data_obj_2.set_dt(0.25, unit='ms')
+        data_obj_3.set_dt(0.25, unit='ms')
+        data_obj_4.set_dt(0.25, unit='ms')
+        data_obj_5.set_dt(0.25, unit='ms')
+        data_obj_6.set_dt(0.25, unit='ms')
+        data_obj_7.set_dt(0.25, unit='ms')
+    
+        v_source_ds = writer.add_uniform_ds('hay_v', ['soma','dend', 'dend2'])
+        ele_source_ds = writer.add_uniform_ds('hay_ele', ['iclamp','epsp'])
+        data_obj_8 = nsdf.UniformData('v', unit='mV')
+        for ii,source in enumerate(['soma','dend', 'dend2']):
+            data_obj_8.put_data(source, v_all[ii])
+        data_obj_9 = nsdf.UniformData('electronics', unit='nA')
+        data_obj_9.put_data('iclamp', i_clamp_curr*-1.)
+        data_obj_9.put_data('epsp', epsp_curr)
+
+        data_obj_8.set_dt(0.25, unit='ms')
+        data_obj_9.set_dt(0.25, unit='ms')
+
+        writer.add_uniform_data(curr_source_ds, data_obj_1)
+        writer.add_uniform_data(curr_source_ds, data_obj_2)
+        writer.add_uniform_data(curr_source_ds, data_obj_3)
+        writer.add_uniform_data(curr_source_ds, data_obj_4)
+        writer.add_uniform_data(curr_source_ds, data_obj_5)
+        writer.add_uniform_data(curr_source_ds, data_obj_6)
+        writer.add_uniform_data(curr_source_ds, data_obj_7)
+
+        writer.add_uniform_data(v_source_ds, data_obj_8)
+        writer.add_uniform_data(ele_source_ds, data_obj_9)
+
+
+        # for doh_,name in enumerate(i_cp_names):
+        #     loc_array[doh_] = np.array(location_dict[name])
+        #     loc_names.append(name)
+        # morp_dset = h5.create_dataset('/data/static/morphology', data=loc_array, dtype=np.float32)
+        # #morp_names = h5.create_dataset('/map/morphology/hay_names', data=loc_names)
+        # morp_labels = h5.create_dataset('/map/morph_labels', data=['x0','y0','z0','d0','x1','y1','z1','d1'])
+        # tie_data_map(morp_dset, cp_names, 'SOURCE', 0)
+        # tie_data_map(morp_dset, morp_labels, 'label', 1)
+        # elec_dset = h5.create_dataset('/data/static/electronic_loc', data=np.array((location_dict['soma[0]_0'], epsp_location)), dtype=np.float32)
+        # elec_names = h5.create_dataset('/map/electronics_names', data=['i_clamp', 'epsp_site'])
+        # tie_data_map(elec_dset, elec_names, 'SOURCE', 0)
+        # tie_data_map(elec_dset, morp_labels, 'label', 1)
 
     ### TYPE 3
     elif dump_type == 3:

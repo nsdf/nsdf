@@ -15,7 +15,8 @@ sys.path.append('../..')
 import nsdf
 
 seed_no = 500
-seed(seed_no)
+np.random.seed(seed_no)
+#seed(seed_no)
 eqs = '''
 dv/dt = (ge+gi-(v+49*mV))/(20*ms) : volt
 dge/dt = -ge/(5*ms) : volt
@@ -117,7 +118,7 @@ def h5_cmpd():
 
 ### vlen arrays - using NSDF library
 def h5_vlen_nsdf():
-    writer = nsdf.NSDFWriter('Brian_vlen_'+str(seed_no)+'.h5', mode='w', dialect=nsdf.dialect.VLEN)
+    writer = nsdf.NSDFWriter('brian_VLEN_nsdf_'+str(seed_no)+'.h5', mode='w', dialect=nsdf.dialect.VLEN)
     e_list = []
     
     dataobj = nsdf.EventData('spikes', unit='s', dtype=np.float32)
@@ -140,7 +141,7 @@ def h5_vlen_nsdf():
 
 ### NaN filled arrays - using NSDF library
 def h5_nan_nsdf():
-    writer = nsdf.NSDFWriter('Brian_NaN_'+str(seed_no)+'.h5', mode='w', dialect=nsdf.dialect.NANPADDED)
+    writer = nsdf.NSDFWriter('brian_NANPADDED_nsdf'+str(seed_no)+'.h5', mode='w', dialect=nsdf.dialect.NANPADDED)
     e_list = []
     
     dataobj = nsdf.EventData('spikes', unit='s', dtype=np.float32)
@@ -162,7 +163,7 @@ def h5_nan_nsdf():
 
 ### Compound arrays - using NSDF library
 def h5_cmpd_nsdf():
-    writer = nsdf.NSDFWriter('Brian_compound_'+str(seed_no)+'.h5', mode='w', dialect=nsdf.dialect.ONED)
+    writer = nsdf.NSDFWriter('brian_ONED_nsdf'+str(seed_no)+'.h5', mode='w', dialect=nsdf.dialect.ONED)
     e_list = []
     
     dataobj = nsdf.EventData('spikes', unit='s', dtype=np.float32)
@@ -187,9 +188,9 @@ def h5_cmpd_nsdf():
     writer.add_event_1d(source_ds, dataobj, source_name_dict)
 
 #h5_vlen()
-h5_vlen_nsdf()
 #h5_nan()
-#h5_nan_nsdf()
 #h5_cmpd()
-#h5_cmpd_nsdf()
+h5_vlen_nsdf()
+h5_cmpd_nsdf()
+h5_nan_nsdf()
 # End of test_brian.py
