@@ -103,8 +103,8 @@ class NSDFData(object):
 
         Examples:
             >>> data_obj = nsdf.UniformData('current', unit='pA')
-            >>> data_obj.update_source_data_dict([('KA', [0.1, 0.3, 0.5]),
-                                                  ('KDR', [0.2, 0.14])])      
+            >>> ika, ikdr = [0.1, 0.3, 0.5], [0.3, 0.14]
+            >>> data_obj.update_source_data_dict([('KA', ika), ('KDR', ikdr)])
 
         """
         self._src_data_dict.update(src_data)
@@ -129,16 +129,25 @@ class TimeSeriesData(NSDFData):
         
         
 class UniformData(TimeSeriesData):
-    """Stores uniformly sampled data."""
+    """Stores uniformly sampled data.
+
+    Attributes:        
+        dt (float): the sampling interval of the data.
+    
+        tunit (float): unit of time.
+
+    """
     def __init__(self, *args, **kwargs):
+        dt = kwargs.pop('dt', 1.0)
+        tunit = kwargs.pop('tunit', 's')
         super(UniformData, self).__init__(*args, **kwargs)
-        self.dt = 0.0
+        self.dt = dt
+        self.tunit = tunit
         
-    def set_dt(self, value, unit=None):
+    def set_dt(self, value, unit):
         """Set the timestep used for data recording."""
         self.dt = value
-        if unit is not None:
-            self.tunit = unit
+        self.tunit = unit
 
         
 class NonuniformData(TimeSeriesData):
