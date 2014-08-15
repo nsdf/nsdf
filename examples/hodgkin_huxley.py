@@ -6,12 +6,27 @@ compartment.
 __author__ = 'Subhasis Ray'
 __date__ = 'Fri Aug  1 21:43:07 IST 2014'
 
-
+import sys
+sys.path.append('..')
 import numpy as np
 from uuid import uuid1
 
 import nsdf
 
+vm_array = np.random.rand(100) - 65.0
+ina = np.random.rand(100)
+ik = np.random.rand(100)
+
+def hh_vm():
+    model = nsdf.ModelComponent('compartment')
+    data_container = nsdf.UniformData('Vm', unit='mV', dt=0.1, tunit='ms')
+    data_container.put_data(model.uid, vm_array)                            
+    writer = nsdf.NSDFWriter('hh_vm.h5', mode='w')
+    writer.add_modeltree(model)
+    source_ds = writer.add_uniform_ds(model.name, [model.uid])
+    writer.add_uniform_data(source_ds, data_container)
+
+    
 def hh_compartment():
     filename = 'hh_compartment.h5'
     model = nsdf.ModelComponent('compartment', uid=uuid1().hex)
@@ -32,10 +47,8 @@ def hh_compartment():
     writer.add_static_data(source_ds, data_obj)
     # Add membrane potential
     source_ds = writer.add_uniform_ds(model.name, [model.uid])
-    data_obj = nsdf.UniformData('Vm', unit='mV')
-    data_obj.put_data(model.uid,
-                      np.random.uniform(low=-67.0, high=-63.0, size=100))
-    data_obj.set_dt(0.1, unit='ms')
+    data_obj = nsdf.UniformData('Vm', unit='mV', dt=0.1, tunit='ms')
+    data_obj.put_data(model.uid, vm_array)
     writer.add_uniform_data(source_ds, data_obj)
     
 
@@ -70,14 +83,14 @@ def hh_compartment_with_channels():
     writer.add_uniform_data(source_ds, data_obj)
     source_ds = writer.add_uniform_ds('channel', [na_channel.uid,
                                                   k_channel.uid])
-    data_obj = nsdf.UniformData('Ik', unit='nA')
-    for uid in source_ds:
-        data_obj.put_data(uid, np.random.uniform(0, 1.0, size=100))
-        data_obj.set_dt(0.1, unit='ms')
+    data_obj = nsdf.UniformData('Ik', unit='nA', dt=0.1, tunit='ms')
+    data_obj.update_source_data_dict([(na_channel.uid, ina),
+                                      (k_channel.uid, ik)])
     writer.add_uniform_data(source_ds, data_obj)
     
 
 if __name__ == '__main__':
+    hh_vm()
     hh_compartment()
     hh_compartment_with_channels()
     
