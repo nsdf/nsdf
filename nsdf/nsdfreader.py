@@ -136,7 +136,7 @@ class NSDFReader(object):
         """
         return self.data['event'][population].keys()
 
-    def get_uniform_data(self, population, varname):
+    def get_uniform_dataset(self, population, varname):
         """Returns the data sources and data contents for recorded variable
         `varname` from `population`.
 
@@ -155,6 +155,18 @@ class NSDFReader(object):
         return (self.mapping['uniform'][population][varname],
                 self.data['uniform'][population][varname])
 
+    def _get_or_create_uniform_ts(self, dataset):
+        try:
+            tstart = dataset.attrs['tstart']
+            dt = dataset.attrs['dt']
+            tunit = dataset.attrs['tunit']
+            ts = np.arange(dataset.shape[1], dtype=np.double) * dt + tstart
+        except KeyError:
+            ts = dataset.dims[1]['time']
+            tunit = ts.attrs['unit']
+        return (ts, tunit)
+        
+
     def get_uniform_ts(self, population, varname):
         """Returns an array of sampling times and time-unit for the uniform
         dataset `varname` recorded from `population`.
@@ -171,15 +183,7 @@ class NSDFReader(object):
 
         """
         data = self.data['uniform'][population][varname]
-        try:
-            tstart = data.attrs['tstart']
-            dt = data.attrs['dt']
-            tunit = data.attrs['tunit']
-            ts = np.arange(data.shape[1], dtype=np.double) * dt + tstart
-        except KeyError:
-            ts = data.dims[1]['time']
-            tunit = ts.attrs['unit']
-        return (ts, tunit)
+        return self._get_or_create_uniform_ts(data)
 
     def get_uniform_dt(self, population, varname):
         """Returns sampling interval and time-unit for the uniform dataset
@@ -204,6 +208,36 @@ class NSDFReader(object):
             ts = data.dims[1]['time']
             tunit = ts.attrs['unit']
         return (ts[1]-ts[0], tunit)
+
+    def get_uniform_data(self, srcid, field):
+        """Get the data for `field` variable recorded from source with
+        unique id `srcid`.
+
+        Args:
+            srcid (str): unique id of the source.
+
+            varname (str): name of the variable.
+
+        Returns:
+            (data, unit, times, timeunit)
+
+        """
+        for srcmap in self.mapping['uniform']:
+            sources = np.asarray(srcmap, dtype=str)
+            indices = np.where(sources == srcid)[0]
+            if indices:
+                index = indices[0]
+                for refinfo, dtype in sources.attrs['REFERENCE_LIST']:
+                    ref = refinfo[0]
+                    dataset = self._fd[ref]
+                    if dataset.attrs['field'] == field:
+                        data = np.asarray(dataset[index])
+                        unit =  dataset.attrs['unit']
+                        ts, tunit = self._get_or_create_uniform_ts(dataset)
+                        return (data, unit, ts, tunit)
+                                
+                
+            
         
 # 
 # nsdfreader.py ends here
