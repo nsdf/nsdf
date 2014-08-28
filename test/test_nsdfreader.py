@@ -72,17 +72,24 @@ def create_test_data_file(filename, dialect):
     for cell in mdict['granule_cells']:
         uniform_data.put_data(cell.children['gc_0'].uid, np.random.uniform(-63, -57, 100))
         
-    nonuniform_data = nsdf.NonuniformData('Im', unit='pA', field='Im', tunit='ms')
     if dialect == nsdf.dialect.NUREGULAR:
-        sizes = [150] * len(mdict['mitral_cells'])
+        size = 150
+        nonuniform_data = nsdf.NonuniformRegularData('Im', unit='pA', field='Im', tunit='ms')
+        nonuniform_data.set_times(np.cumsum(np.random.rand(size)))
+        for ii, cell in enumerate(mdict['mitral_cells']):
+            nonuniform_data.put_data(cell.children['mc_0'].uid,
+                                     np.random.rand(size))
     else:
+        nonuniform_data = nsdf.NonuniformData('Im', unit='pA', field='Im', tunit='ms', dtype=np.float32)
         sizes = 150 + np.random.randint(-50, 50, len(mdict['mitral_cells']))
-    for ii, cell in enumerate(mdict['mitral_cells']):
-        nonuniform_data.put_data(cell.children['mc_0'].uid,
-                                 (np.random.rand(sizes[ii]),
-                                  np.cumsum(np.random.rand(sizes[ii]))))
+        for ii, cell in enumerate(mdict['mitral_cells']):
+            data = np.random.rand(sizes[ii])
+            times = np.cumsum(np.random.rand(sizes[ii]))
+            assert len(data) == len(times)
+            nonuniform_data.put_data(cell.children['mc_0'].uid,
+                                     (data, times))
     sizes = 200 + np.random.randint(-50, 50, len(mdict['cells']))
-    event_data = nsdf.EventData('spike', unit='ms')
+    event_data = nsdf.EventData('spike', unit='ms', dtype=np.float32)
     for ii, cell in enumerate(mdict['cells']):
         times = np.cumsum(np.random.exponential(scale=0.01, size=sizes[ii]))
         event_data.put_data(cell.uid, times)
@@ -120,14 +127,12 @@ def create_test_data_file(filename, dialect):
     return {'uniform_data': uniform_data,
             'nonuniform_data': nonuniform_data,
             'event_data': event_data}
-    
-
 
 
 class TestNSDFReaderOneD(unittest.TestCase):
     """Check that file written in ONED dialect is read correctly"""
     def setUp(self):
-        self.filename = '{}.h5'.format(self.id)
+        self.filename = '{}.h5'.format(self.id())
         self.data_dict = create_test_data_file(self.filename,
                                                nsdf.dialect.ONED)
 
@@ -180,6 +185,175 @@ class TestNSDFReaderOneD(unittest.TestCase):
             np.testing.assert_allclose(var, fvar)
 
 
+class TestNSDFReaderNAN(unittest.TestCase):
+    """Check that file written in ONED dialect is read correctly"""
+    def setUp(self):
+        self.filename = '{}.h5'.format(self.id())
+        self.data_dict = create_test_data_file(self.filename,
+                                               nsdf.dialect.NANPADDED)
+
+    def test_get_uniform_data(self):
+        reader = nsdf.NSDFReader(self.filename)
+        file_data = reader.get_uniform_data('granule', 'Vm')
+        data = self.data_dict['uniform_data']
+        self.assertEqual(set(file_data.get_sources()),
+                         set(data.get_sources()))
+        self.assertEqual(data.unit, file_data.unit)
+        self.assertEqual(data.name, file_data.name)
+        self.assertEqual(data.tunit, file_data.tunit)
+        self.assertAlmostEqual(data.dt, file_data.dt)
+        for src in data.get_sources():
+            np.testing.assert_allclose(data.get_data(src),
+                                       file_data.get_data(src))
+        
+    def test_get_uniform_ts(self):
+        raise NotImplementedError('Fix me')
+
+    def test_get_nonuniform_ts(self):
+        raise NotImplementedError('Fix me')
+
+    def test_get_nonuniform_data(self):
+        data = self.data_dict['nonuniform_data']
+        reader = nsdf.NSDFReader(self.filename)
+        file_data = reader.get_nonuniform_data('mitral', 'Im')
+        self.assertEqual(set(file_data.get_sources()),
+                         set(data.get_sources()))
+        self.assertEqual(data.unit, file_data.unit)
+        self.assertEqual(data.name, file_data.name)
+        self.assertEqual(data.tunit, file_data.tunit)
+        for src in data.get_sources():
+            var, times = data.get_data(src)
+            fvar, ftimes = file_data.get_data(src)
+            np.testing.assert_allclose(var, fvar)
+            np.testing.assert_allclose(times, ftimes)
+        
+    def test_get_event_data(self):
+        data = self.data_dict['event_data']
+        reader = nsdf.NSDFReader(self.filename)
+        file_data = reader.get_event_data('cells', 'spike')
+        self.assertEqual(set(file_data.get_sources()),
+                         set(data.get_sources()))
+        self.assertEqual(data.unit, file_data.unit)
+        self.assertEqual(data.name, file_data.name)
+        for src in data.get_sources():
+            var = data.get_data(src)
+            fvar = file_data.get_data(src)
+            np.testing.assert_allclose(var, fvar)
+
+class TestNSDFReaderVLEN(unittest.TestCase):
+    """Check that file written in ONED dialect is read correctly"""
+    def setUp(self):
+        self.filename = '{}.h5'.format(self.id())
+        self.data_dict = create_test_data_file(self.filename,
+                                               nsdf.dialect.VLEN)
+
+    # def test_get_uniform_data(self):
+    #     reader = nsdf.NSDFReader(self.filename)
+    #     file_data = reader.get_uniform_data('granule', 'Vm')
+    #     data = self.data_dict['uniform_data']
+    #     self.assertEqual(set(file_data.get_sources()),
+    #                      set(data.get_sources()))
+    #     self.assertEqual(data.unit, file_data.unit)
+    #     self.assertEqual(data.name, file_data.name)
+    #     self.assertEqual(data.tunit, file_data.tunit)
+    #     self.assertAlmostEqual(data.dt, file_data.dt)
+    #     for src in data.get_sources():
+    #         np.testing.assert_allclose(data.get_data(src),
+    #                                    file_data.get_data(src))
+        
+    # def test_get_uniform_ts(self):
+    #     raise NotImplementedError('Fix me')
+
+    # def test_get_nonuniform_ts(self):
+    #     raise NotImplementedError('Fix me')
+
+    def test_get_nonuniform_data(self):
+        data = self.data_dict['nonuniform_data']
+        reader = nsdf.NSDFReader(self.filename)
+        file_data = reader.get_nonuniform_data('mitral', 'Im')
+        self.assertEqual(set(file_data.get_sources()),
+                         set(data.get_sources()))
+        self.assertEqual(data.unit, file_data.unit)
+        self.assertEqual(data.name, file_data.name)
+        self.assertEqual(data.tunit, file_data.tunit)
+        for src in data.get_sources():
+            var, times = data.get_data(src)
+            fvar, ftimes = file_data.get_data(src)
+            np.testing.assert_allclose(var, fvar)
+            np.testing.assert_allclose(times, ftimes)
+        
+    def test_get_event_data(self):
+        data = self.data_dict['event_data']
+        reader = nsdf.NSDFReader(self.filename)
+        file_data = reader.get_event_data('cells', 'spike')
+        self.assertEqual(set(file_data.get_sources()),
+                         set(data.get_sources()))
+        self.assertEqual(data.unit, file_data.unit)
+        self.assertEqual(data.name, file_data.name)
+        for src in data.get_sources():
+            var = data.get_data(src)
+            fvar = file_data.get_data(src)
+            np.testing.assert_allclose(var, fvar)
+
+class TestNSDFReaderNUREGULAR(unittest.TestCase):
+    """Check that file written in NUREGULAR dialect is read correctly"""
+    def setUp(self):
+        self.filename = '{}.h5'.format(self.id())
+        self.data_dict = create_test_data_file(self.filename,
+                                               nsdf.dialect.NUREGULAR)
+
+    def test_get_uniform_data(self):
+        reader = nsdf.NSDFReader(self.filename)
+        file_data = reader.get_uniform_data('granule', 'Vm')
+        data = self.data_dict['uniform_data']
+        self.assertEqual(set(file_data.get_sources()),
+                         set(data.get_sources()))
+        self.assertEqual(data.unit, file_data.unit)
+        self.assertEqual(data.name, file_data.name)
+        self.assertEqual(data.tunit, file_data.tunit)
+        self.assertAlmostEqual(data.dt, file_data.dt)
+        for src in data.get_sources():
+            ddata = data.get_data(src)
+            fdata = file_data.get_data(src)
+            np.testing.assert_allclose(ddata, fdata)
+        
+    def test_get_uniform_ts(self):
+        raise NotImplementedError('Fix me')
+
+    def test_get_nonuniform_ts(self):
+        raise NotImplementedError('Fix me')
+
+    def test_get_nonuniform_data(self):
+        data = self.data_dict['nonuniform_data']
+        reader = nsdf.NSDFReader(self.filename)
+        file_data = reader.get_nonuniform_data('mitral', 'Im')
+        self.assertEqual(set(file_data.get_sources()),
+                         set(data.get_sources()))
+        self.assertEqual(data.unit, file_data.unit)
+        self.assertEqual(data.name, file_data.name)
+        self.assertEqual(data.tunit, file_data.tunit)
+        times = data.get_times()
+        ftimes = file_data.get_times()
+        np.testing.assert_allclose(times, ftimes)
+        for src in data.get_sources():
+            var = data.get_data(src)
+            fvar = file_data.get_data(src)
+            np.testing.assert_allclose(var, fvar)
+        
+    def test_get_event_data(self):
+        data = self.data_dict['event_data']
+        reader = nsdf.NSDFReader(self.filename)
+        file_data = reader.get_event_data('cells', 'spike')
+        self.assertEqual(set(file_data.get_sources()),
+                         set(data.get_sources()))
+        self.assertEqual(data.unit, file_data.unit)
+        self.assertEqual(data.name, file_data.name)
+        for src in data.get_sources():
+            var = data.get_data(src)
+            fvar = file_data.get_data(src)
+            np.testing.assert_allclose(var, fvar)
+            
+            
 if __name__ == '__main__':
     unittest.main()
 

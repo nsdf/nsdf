@@ -264,7 +264,7 @@ class NSDFReader(object):
             ret.put_data(src, row)
         return ret
 
-    def _get_nonuniform_1d_data(self, data, mapping):
+    def _get_nonuniform_1d_data(self, data):
         ret = NonuniformData(data.name.rpartition('/')[-1],
                              unit=data.attrs['unit'],
                              field=data.attrs['field'])
@@ -284,6 +284,7 @@ class NSDFReader(object):
                                     field=data.attrs['field'],
                                     tunit=times.attrs['unit'],
                                     dtype=data.dtype)
+        ret.set_times(times)
         for ii in range(data.shape[0]):
             ret.put_data(mapping[ii], data[ii])
         ret.set_times(np.asarray(times), tunit=times.attrs['unit'])
@@ -291,18 +292,19 @@ class NSDFReader(object):
 
     def _get_nonuniform_vlen_data(self, data):
         mapping = data.dims[0]['source']
-        times = data.dims[1]['time']
+        times = data.dims[0]['time']
         ret = NonuniformData(data.name.rpartition('/')[-1],
                              unit=data.attrs['unit'],
                              field=data.attrs['field'],
                              tunit=times.attrs['unit'],
-                             dtype=data.dtype)
+                             dtype=np.float64) # h5 only supports vlen with 32 bit float, we convert it to float64
         for ii in range(data.shape[0]):
             ret.put_data(mapping[ii], (np.asarray(data[ii]),
                                        np.asarray(times[ii])))
         return ret
         
-    def _get_nonuniform_nan_data(self, data, mapping):
+    def _get_nonuniform_nan_data(self, data):
+        mapping = data.dims[0]['source']
         times = data.dims[1]['time']
         ret = NonuniformData(data.name.rpartition('/')[-1],
                              unit=data.attrs['unit'],
@@ -340,17 +342,19 @@ class NSDFReader(object):
             nsdf.NonuniformRegularData if dialect of the file is NUREGULAR.
             nsdf.NonuniformData otherwise.
 
+        Note: Data is converted to float64 for VLEN dialect.
+
         """
         data = self.data[NONUNIFORM][population][variable]
         mapping = self.mapping[NONUNIFORM][population]
         if self.dialect == dialect.NUREGULAR:
-            return self._get_nonuniform_regular_data(data, mapping)
+            return self._get_nonuniform_regular_data(data)
         elif self.dialect == dialect.VLEN:
-            return self._get_nonuniform_vlen_data(data, mapping)
+            return self._get_nonuniform_vlen_data(data)
         elif self.dialect == dialect.NANPADDED:
-            return self._get_nonuniform_nan_data(data, mapping)
+            return self._get_nonuniform_nan_data(data)
         else:
-            return self._get_nonuniform_1d_data(data, mapping)
+            return self._get_nonuniform_1d_data(data)
 
     def _get_event_1d_data(self, datagroup):
         ret = EventData(datagroup.name.rpartition('/')[-1],
@@ -366,10 +370,11 @@ class NSDFReader(object):
         ret = EventData(data.name.rpartition('/')[-1],
                         unit=data.attrs['unit'],
                         field=data.attrs['field'],
-                        dtype=data.dtype)
+                        dtype=np.float64) # h5 only supports vlen with 32 bit float, we convert it to float64
         mapping = data.dims[0]['source']
         for iii in range(data.shape[0]):
-            ret.put_data(mapping[iii], np.asarray(data[iii]))
+            row = np.asarray(data[iii])
+            ret.put_data(mapping[iii], row)
         return ret
 
     def _get_event_nan_data(self, data):
@@ -393,7 +398,7 @@ class NSDFReader(object):
         In NSDF a variable is recorded from a population of sources
         and data is organized as `population/variable`. This function
         retrieve this dataset and creates EventData object
-        containing (source, data) pairs. 
+        containing (source, data) pairs.         
 
         Args:
             population (str): name of the population from which this
@@ -402,6 +407,8 @@ class NSDFReader(object):
             variable (str): name of the variable this data represents.
 
         Returns: nsdf.EventData
+
+        Note: Data is converted to float64 for VLEN dialect.
 
         """
         data = self.data[EVENT][population][variable]

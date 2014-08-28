@@ -887,8 +887,8 @@ class NSDFWriter(object):
                 dtype=VLENFLOAT,
                 **self.h5args)
             dataset.dims.create_scale(time_ds, 'time')
-            dataset.dims[1].attach_scale(time_ds)
-            dataset.dims[1].label = 'time'            
+            dataset.dims[0].attach_scale(time_ds)
+            dataset.dims[0].label = 'time'            
             time_ds.attrs['unit'] = data_object.tunit
         for iii, source in enumerate(source_ds):
             data, time, = data_object.get_data(source)
