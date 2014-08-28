@@ -82,7 +82,7 @@ class NSDFReader(object):
         with uniform sampling.
 
         """
-        return self.data['uniform'].keys()
+        return self.data[UNIFORM].keys()
     
     @property
     def nonuniform_populations(self):
@@ -110,7 +110,7 @@ class NSDFReader(object):
             list of str: names of the datasets storing uniform variables.
 
         """
-        return self.data['uniform'][population].keys()
+        return self.data[UNIFORM][population].keys()
 
     def get_nonuniform_vars(self, population):
         """Returns the names of nonuniform variables recorded for `population`.
@@ -153,8 +153,8 @@ class NSDFReader(object):
                 row is the data from the i-th entry in `sources`.
 
         """
-        return (self.mapping['uniform'][population][varname],
-                self.data['uniform'][population][varname])
+        return (self.mapping[UNIFORM][population][varname],
+                self.data[UNIFORM][population][varname])
 
     def _get_or_create_uniform_ts(self, dataset):
         try:
@@ -183,7 +183,7 @@ class NSDFReader(object):
                 unit is a string representing the unit of time.
 
         """
-        data = self.data['uniform'][population][varname]
+        data = self.data[UNIFORM][population][varname]
         return self._get_or_create_uniform_ts(data)
 
     def get_uniform_dt(self, population, varname):
@@ -200,7 +200,7 @@ class NSDFReader(object):
                 unit is a string representing the unit of time.
 
         """
-        data = self.data['uniform'][population][varname]
+        data = self.data[UNIFORM][population][varname]
         try:
             dt = data.attrs['dt']
             tunit = data.attrs['tunit']
@@ -223,7 +223,7 @@ class NSDFReader(object):
             (data, unit, times, timeunit)
 
         """
-        for srcmap in self.mapping['uniform']:
+        for srcmap in self.mapping[UNIFORM]:
             sources = np.asarray(srcmap, dtype=str)
             indices = np.where(sources == srcid)[0]
             if indices:
@@ -252,19 +252,165 @@ class NSDFReader(object):
                 source, data, dt and units.
 
         """
-        data = self.data['uniform'][population][variable]
-        mapping = self.mapping['uniform'][population]
+        data = self.data[UNIFORM][population][variable]
+        mapping = self.mapping[UNIFORM][population]
         ret = UniformData(data.name.rpartition('/')[-1],
-                               unit=data.attrs['unit'],
-                               field=data.attrs['field'],
-                               dt=data.attrs['dt'],
-                               tunit=data.attrs['tunit'])
+                          unit=data.attrs['unit'],
+                          field=data.attrs['field'],
+                          dt=data.attrs['dt'],
+                          tunit=data.attrs['tunit'],
+                          dtype=data.dtype)
         for src, row in izip(mapping, data):
             ret.put_data(src, row)
         return ret
+
+    def _get_nonuniform_1d_data(self, data, mapping):
+        ret = NonuniformData(data.name.rpartition('/')[-1],
+                             unit=data.attrs['unit'],
+                             field=data.attrs['field'])
+        for name, dset in data.items():
+            times = dset.dims[0]['time']
+            ret.put_data(dset.attrs['source'], (np.asarray(dset),
+                                                np.asarray(times)))
+        ret.tunit = times.attrs['unit']
+        ret.dtype = dset.dtype
+        return ret
+
+    def _get_nonuniform_regular_data(self, data):
+        mapping = data.dims[0]['source']
+        times = data.dims[1]['time']
+        ret = NonuniformRegularData(data.name.rpartition('/')[-1],
+                                    unit=data.attrs['unit'],
+                                    field=data.attrs['field'],
+                                    tunit=times.attrs['unit'],
+                                    dtype=data.dtype)
+        for ii in range(data.shape[0]):
+            ret.put_data(mapping[ii], data[ii])
+        ret.set_times(np.asarray(times), tunit=times.attrs['unit'])
+        return ret
+
+    def _get_nonuniform_vlen_data(self, data):
+        mapping = data.dims[0]['source']
+        times = data.dims[1]['time']
+        ret = NonuniformData(data.name.rpartition('/')[-1],
+                             unit=data.attrs['unit'],
+                             field=data.attrs['field'],
+                             tunit=times.attrs['unit'],
+                             dtype=data.dtype)
+        for ii in range(data.shape[0]):
+            ret.put_data(mapping[ii], (np.asarray(data[ii]),
+                                       np.asarray(times[ii])))
+        return ret
         
-                                
-                
+    def _get_nonuniform_nan_data(self, data, mapping):
+        times = data.dims[1]['time']
+        ret = NonuniformData(data.name.rpartition('/')[-1],
+                             unit=data.attrs['unit'],
+                             field=data.attrs['field'],
+                             tunit=times.attrs['unit'])
+        for iii in range(data.shape[0]):
+            try:
+                starts = next(find(data[iii], np.isnan))[0][0]
+            except StopIteration:
+                starts = len(data[iii])                
+            cleaned_data = np.asarray(data[iii,:starts])
+            cleaned_times = np.asarray(times[iii,:starts])
+            ret.put_data(mapping[iii], (cleaned_data, cleaned_times))
+        return ret
+
+    def get_nonuniform_data(self, population, variable):
+        """Get nonuniform data `variable` under `population`.
+
+        In NSDF a variable is recorded from a population of sources
+        and data is organized as `population/variable`. This function
+        retrieve this dataset and creates NonuniformData object
+        containing (source, data) pairs. In case all the sources share
+        the same sampling times, it is the NonuniformRegularData, a
+        subclass of NonuniformData and contains the sampling times as
+        a separate array. Otherwise, `data` is tuple of variable
+        values and sampling times.
+
+        Args:
+            population (str): name of the population from which this
+                data was recorded.
+
+            variable (str): name of the variable this data represents.
+
+        Returns:
+            nsdf.NonuniformRegularData if dialect of the file is NUREGULAR.
+            nsdf.NonuniformData otherwise.
+
+        """
+        data = self.data[NONUNIFORM][population][variable]
+        mapping = self.mapping[NONUNIFORM][population]
+        if self.dialect == dialect.NUREGULAR:
+            return self._get_nonuniform_regular_data(data, mapping)
+        elif self.dialect == dialect.VLEN:
+            return self._get_nonuniform_vlen_data(data, mapping)
+        elif self.dialect == dialect.NANPADDED:
+            return self._get_nonuniform_nan_data(data, mapping)
+        else:
+            return self._get_nonuniform_1d_data(data, mapping)
+
+    def _get_event_1d_data(self, datagroup):
+        ret = EventData(datagroup.name.rpartition('/')[-1],
+                        unit=datagroup.attrs['unit'],
+                        field=datagroup.attrs['field'])
+        for name, dataset in datagroup.items():
+            ret.put_data(dataset.attrs['source'],
+                         np.asarray(dataset))
+        ret.dtype = dataset.dtype
+        return ret
+
+    def _get_event_vlen_data(self, data):
+        ret = EventData(data.name.rpartition('/')[-1],
+                        unit=data.attrs['unit'],
+                        field=data.attrs['field'],
+                        dtype=data.dtype)
+        mapping = data.dims[0]['source']
+        for iii in range(data.shape[0]):
+            ret.put_data(mapping[iii], np.asarray(data[iii]))
+        return ret
+
+    def _get_event_nan_data(self, data):
+        ret = EventData(data.name.rpartition('/')[-1],
+                        unit=data.attrs['unit'],
+                        field=data.attrs['field'],
+                        dtype=data.dtype)
+        mapping = data.dims[0]['source']
+        for iii in range(data.shape[0]):
+            try:
+                starts = next(find(data[iii], np.isnan))[0][0]
+            except StopIteration:
+                starts = len(data[iii])                
+            cleaned_data = np.asarray(data[iii,:starts])
+            ret.put_data(mapping[iii], cleaned_data)
+        return ret
+
+    def get_event_data(self, population, variable):
+        """Get event variable recorded from population.
+
+        In NSDF a variable is recorded from a population of sources
+        and data is organized as `population/variable`. This function
+        retrieve this dataset and creates EventData object
+        containing (source, data) pairs. 
+
+        Args:
+            population (str): name of the population from which this
+                data was recorded.
+
+            variable (str): name of the variable this data represents.
+
+        Returns: nsdf.EventData
+
+        """
+        data = self.data[EVENT][population][variable]
+        if self.dialect == dialect.VLEN:
+            return self._get_event_vlen_data(data)
+        elif self.dialect == dialect.NANPADDED:
+            return self._get_event_nan_data(data)
+        else:
+            return self._get_event_1d_data(data)
             
         
 # 

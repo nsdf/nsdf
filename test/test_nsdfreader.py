@@ -93,7 +93,7 @@ def create_test_data_file(filename, dialect):
     
     if dialect == nsdf.dialect.ONED:
         nonuniform_ds = writer.add_nonuniform_ds_1d(
-            'mitral', 'Vm',
+            'mitral', 'Im',
             nonuniform_data.get_sources())
     else:
         nonuniform_ds = writer.add_nonuniform_ds('mitral',
@@ -145,21 +145,39 @@ class TestNSDFReaderOneD(unittest.TestCase):
             np.testing.assert_allclose(data.get_data(src),
                                        file_data.get_data(src))
         
-
     def test_get_uniform_ts(self):
         raise NotImplementedError('Fix me')
 
     def test_get_nonuniform_ts(self):
         raise NotImplementedError('Fix me')
 
-    def get_uniform_data(self):
-        raise NotImplementedError('Fix me')
-
-    def get_nonuniform_data(self):
-        raise NotImplementedError('Fix me')
-
-    def get_event_data(self):
-        raise NotImplementedError('Fix me')
+    def test_get_nonuniform_data(self):
+        data = self.data_dict['nonuniform_data']
+        reader = nsdf.NSDFReader(self.filename)
+        file_data = reader.get_nonuniform_data('mitral', 'Im')
+        self.assertEqual(set(file_data.get_sources()),
+                         set(data.get_sources()))
+        self.assertEqual(data.unit, file_data.unit)
+        self.assertEqual(data.name, file_data.name)
+        self.assertEqual(data.tunit, file_data.tunit)
+        for src in data.get_sources():
+            var, times = data.get_data(src)
+            fvar, ftimes = file_data.get_data(src)
+            np.testing.assert_allclose(var, fvar)
+            np.testing.assert_allclose(times, ftimes)
+        
+    def test_get_event_data(self):
+        data = self.data_dict['event_data']
+        reader = nsdf.NSDFReader(self.filename)
+        file_data = reader.get_event_data('cells', 'spike')
+        self.assertEqual(set(file_data.get_sources()),
+                         set(data.get_sources()))
+        self.assertEqual(data.unit, file_data.unit)
+        self.assertEqual(data.name, file_data.name)
+        for src in data.get_sources():
+            var = data.get_data(src)
+            fvar = file_data.get_data(src)
+            np.testing.assert_allclose(var, fvar)
 
 
 if __name__ == '__main__':
