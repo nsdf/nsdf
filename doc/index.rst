@@ -16,6 +16,7 @@ Contents:
    nsdfdata
    model
    nsdfwriter
+   nsdfreader
    util
 
 
