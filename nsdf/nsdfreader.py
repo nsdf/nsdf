@@ -53,6 +53,7 @@ import numpy as np
 from .model import ModelComponent, common_prefix
 from .constants import *
 from .util import *
+from .nsdfdata import *
 from datetime import datetime
 
 
@@ -209,7 +210,7 @@ class NSDFReader(object):
             tunit = ts.attrs['unit']
         return (ts[1]-ts[0], tunit)
 
-    def get_uniform_data(self, srcid, field):
+    def get_uniform_row(self, srcid, field):
         """Get the data for `field` variable recorded from source with
         unique id `srcid`.
 
@@ -235,6 +236,33 @@ class NSDFReader(object):
                         unit =  dataset.attrs['unit']
                         ts, tunit = self._get_or_create_uniform_ts(dataset)
                         return (data, unit, ts, tunit)
+
+    def get_uniform_data(self, population, variable):
+        """Returns a UniformData object contents for recorded `variable`
+        from `population`.
+
+        Args:
+            population (str): name of the population.
+
+            variable (str): name of the variable.
+
+        Returns:
+
+            dataobject (nsdf.UniformData): data container filled with
+                source, data, dt and units.
+
+        """
+        data = self.data['uniform'][population][variable]
+        mapping = self.mapping['uniform'][population]
+        ret = UniformData(data.name.rpartition('/')[-1],
+                               unit=data.attrs['unit'],
+                               field=data.attrs['field'],
+                               dt=data.attrs['dt'],
+                               tunit=data.attrs['tunit'])
+        for src, row in izip(mapping, data):
+            ret.put_data(src, row)
+        return ret
+        
                                 
                 
             

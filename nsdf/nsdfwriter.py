@@ -602,7 +602,7 @@ class NSDFWriter(object):
             dataset.attrs['dt'] = data_object.dt
             dataset.attrs['field'] = data_object.field
             dataset.attrs['unit'] = data_object.unit
-            dataset.attrs['timeunit'] = data_object.tunit
+            dataset.attrs['tunit'] = data_object.tunit
         return dataset
 
     def add_nonuniform_regular(self, source_ds, data_object,

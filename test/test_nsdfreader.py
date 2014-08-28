@@ -48,6 +48,7 @@
 
 import sys
 from collections import defaultdict
+import itertools as it
 import numpy as np
 from numpy import testing as nptest
 import h5py as h5
@@ -56,6 +57,7 @@ import unittest
 import os
 
 sys.path.append('..')
+
 import nsdf
 
 from util import *
@@ -70,7 +72,7 @@ def create_test_data_file(filename, dialect):
     for cell in mdict['granule_cells']:
         uniform_data.put_data(cell.children['gc_0'].uid, np.random.uniform(-63, -57, 100))
         
-    nonuniform_data = nsdf.NonuniformData('Im', unit='pA', field='Im')
+    nonuniform_data = nsdf.NonuniformData('Im', unit='pA', field='Im', tunit='ms')
     if dialect == nsdf.dialect.NUREGULAR:
         sizes = [150] * len(mdict['mitral_cells'])
     else:
@@ -82,11 +84,11 @@ def create_test_data_file(filename, dialect):
     sizes = 200 + np.random.randint(-50, 50, len(mdict['cells']))
     event_data = nsdf.EventData('spike', unit='ms')
     for ii, cell in enumerate(mdict['cells']):
-        times = np.cumsum(np.exponential(scale=0.01, size=sizes[ii]))
+        times = np.cumsum(np.random.exponential(scale=0.01, size=sizes[ii]))
         event_data.put_data(cell.uid, times)
     writer = nsdf.NSDFWriter(filename, dialect=dialect, mode='w')
     writer.add_modeltree(mdict['model_tree'])
-    uniform_ds = writer.add_uniform_ds('Vm', uniform_data.get_sources())
+    uniform_ds = writer.add_uniform_ds('granule', uniform_data.get_sources())
     writer.add_uniform_data(uniform_ds, uniform_data)
     
     if dialect == nsdf.dialect.ONED:
@@ -125,12 +127,24 @@ def create_test_data_file(filename, dialect):
 class TestNSDFReaderOneD(unittest.TestCase):
     """Check that file written in ONED dialect is read correctly"""
     def setUp(self):
-        filename = '{}.h5'.format(self.id)
-        self.data_dict = create_test_data_file(filename,
+        self.filename = '{}.h5'.format(self.id)
+        self.data_dict = create_test_data_file(self.filename,
                                                nsdf.dialect.ONED)
 
     def test_get_uniform_data(self):
-        raise NotImplementedError('Fix me')
+        reader = nsdf.NSDFReader(self.filename)
+        file_data = reader.get_uniform_data('granule', 'Vm')
+        data = self.data_dict['uniform_data']
+        self.assertEqual(set(file_data.get_sources()),
+                         set(data.get_sources()))
+        self.assertEqual(data.unit, file_data.unit)
+        self.assertEqual(data.name, file_data.name)
+        self.assertEqual(data.tunit, file_data.tunit)
+        self.assertAlmostEqual(data.dt, file_data.dt)
+        for src in data.get_sources():
+            np.testing.assert_allclose(data.get_data(src),
+                                       file_data.get_data(src))
+        
 
     def test_get_uniform_ts(self):
         raise NotImplementedError('Fix me')
@@ -148,7 +162,8 @@ class TestNSDFReaderOneD(unittest.TestCase):
         raise NotImplementedError('Fix me')
 
 
-                                               
+if __name__ == '__main__':
+    unittest.main()
 
 # 
 # test_nsdfreader.py ends here
