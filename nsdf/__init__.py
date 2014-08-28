@@ -183,5 +183,6 @@ from .util import *
 from .model import *
 from .nsdfdata import *
 from .nsdfwriter import *
+from .nsdfreader import *
 
 # from .NSDFWriter import NSDFWriter as writer

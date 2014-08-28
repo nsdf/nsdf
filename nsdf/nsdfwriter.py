@@ -602,7 +602,7 @@ class NSDFWriter(object):
             dataset.attrs['dt'] = data_object.dt
             dataset.attrs['field'] = data_object.field
             dataset.attrs['unit'] = data_object.unit
-            dataset.attrs['timeunit'] = data_object.tunit
+            dataset.attrs['tunit'] = data_object.tunit
         return dataset
 
     def add_nonuniform_regular(self, source_ds, data_object,
@@ -751,6 +751,8 @@ class NSDFWriter(object):
             'sources in mapping dataset do not match those with data'
         datagrp = ngrp.require_group(data_object.name)
         datagrp.attrs['source'] = source_ds.ref
+        datagrp.attrs['unit'] = data_object.unit
+        datagrp.attrs['field'] = data_object.field
         ret = {}
         for iii, source in enumerate(source_ds['source']):
             data, time = data_object.get_data(source)
@@ -885,8 +887,8 @@ class NSDFWriter(object):
                 dtype=VLENFLOAT,
                 **self.h5args)
             dataset.dims.create_scale(time_ds, 'time')
-            dataset.dims[1].attach_scale(time_ds)
-            dataset.dims[1].label = 'time'            
+            dataset.dims[0].attach_scale(time_ds)
+            dataset.dims[0].label = 'time'            
             time_ds.attrs['unit'] = data_object.tunit
         for iii, source in enumerate(source_ds):
             data, time, = data_object.get_data(source)
@@ -1043,6 +1045,8 @@ class NSDFWriter(object):
             'number of sources do not match number of datasets'
         datagrp = ngrp.require_group(data_object.name)
         datagrp.attrs['source'] = source_ds.ref
+        datagrp.attrs['unit'] = data_object.unit
+        datagrp.attrs['field'] = data_object.field
         ret = {}
         for iii, source in enumerate(source_ds['source']):
             data = data_object.get_data(source)
@@ -1055,6 +1059,8 @@ class NSDFWriter(object):
             except KeyError:
                 if data_object.unit is None:
                     raise ValueError('`unit` is required for creating dataset.')
+                if data_object.field is None:
+                    raise ValueError('`field` is required for creating dataset.')
                 maxrows = len(data) if fixed else None
                 dset = datagrp.create_dataset(
                     dsetname,

@@ -126,7 +126,8 @@ def create_ob_model_tree():
                 'granule_population': granule,
                 'mitral_population': mitral,
                 'granule_cells': granule_cells,
-                'mitral_cells': mitral_cells}
+                'mitral_cells': mitral_cells,
+                'cells': granule_cells + mitral_cells}
 
 
 # 
