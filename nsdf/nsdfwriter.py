@@ -121,7 +121,8 @@ def write_binary_file(group, name, fname, **compression_opts):
     dataset = group.create_dataset(name, shape=(1,), data=data, dtype=np.void)
     return dataset
 
-def write_dir_contents(root_group, root_dir, ascii):
+
+def write_dir_contents(root_group, root_dir, ascii, **compression_opts):
     """Walk the directory tree rooted at `root_dir` and replicate it under
     `root_group` in HDF5 file. 
 
@@ -148,12 +149,13 @@ def write_dir_contents(root_group, root_dir, ascii):
             file_path = os.path.join(root, fname)
             if ascii:
                 try:
-                    dset = write_ascii_file(grp, dset_name, file_path)
+                    dset = write_ascii_file(grp, dset_name, file_path, **compression_opts)
                 except ValueError:
                     print 'Skipping binary file', file_path
             else:
-                dset = write_binary_file(grp, dset_name, file_path)
-        
+                dset = write_binary_file(grp, dset_name, file_path, **compression_opts)
+
+
 class NSDFWriter(object):
     """Writer for NSDF files.
 
@@ -451,11 +453,11 @@ class NSDFWriter(object):
                 for name in components[:0:-1]:
                     grp = filecontents.require_group(name)
                 if ascii:
-                    fdata = write_ascii_file(grp, components[-1], fname)
+                    fdata = write_ascii_file(grp, components[-1], fname, **self.h5args)
                 else:
-                    fdata = write_binary_file(grp, components[-1], fname)
+                    fdata = write_binary_file(grp, components[-1], fname, **self.h5args)
             elif os.path.isdir(fname):
-                write_dir_contents(filecontents, fname, ascii=ascii)                        
+                write_dir_contents(filecontents, fname, ascii=ascii, **self.h5args)                        
 
     def add_uniform_ds(self, name, idlist):
 
