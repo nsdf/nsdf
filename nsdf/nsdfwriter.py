@@ -104,19 +104,21 @@ def add_model_component(component, parentgroup):
 def write_ascii_file(group, name, fname, **compression_opts):
     """Add a dataset `name` under `group` and store the contents of text
     file `fname` in it."""
-    dataset = group.create_dataset(name, shape=(1,), dtype=VLENBYTE,
-                                   **compression_opts)
     with open(fname, 'rt') as fhandle:
-        dataset[0] = fhandle.read()
+        data = fhandle.read()            
+    if '\x00' in data:
+        raise ValueError('Cannot handle NULL byte in ascii data')
+    dataset = group.create_dataset(name, shape=(1,), data=data, dtype=VLENBYTE,
+                                   **compression_opts)
     return dataset
 
 
 def write_binary_file(group, name, fname, **compression_opts):
     """Add a dataset `name` under `group` and store the contents of binary
     file `fname` in it."""
-    dataset = group.create_dataset(name, shape=(1,), dtype=np.void)
     with open(fname, 'rb') as fhandle:
-        dataset[0] = np.void(fhandle.read())
+        data = np.void(fhandle.read())
+    dataset = group.create_dataset(name, shape=(1,), data=data, dtype=np.void)
     return dataset
 
 def write_dir_contents(root_group, root_dir, ascii):
@@ -139,12 +141,18 @@ def write_dir_contents(root_group, root_dir, ascii):
 
     """
     for root, dirs, files in os.walk(root_dir):
-        grp = root_group.require_group(root)
+        relative_root = root[root.find(os.path.basename(root_dir)):]
+        grp = root_group.require_group(relative_root)
         for fname in files:
+            dset_name = os.path.basename(fname)
+            file_path = os.path.join(root, fname)
             if ascii:
-                write_ascii_file(grp, fname, os.path.join(root, fname))
+                try:
+                    dset = write_ascii_file(grp, dset_name, file_path)
+                except ValueError:
+                    print 'Skipping binary file', file_path
             else:
-                write_binary_file(grp, fname, os.path.join(root, fname))
+                dset = write_binary_file(grp, dset_name, file_path)
         
 class NSDFWriter(object):
     """Writer for NSDF files.
