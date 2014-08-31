@@ -77,6 +77,63 @@ class NSDFReader(object):
         self._fd.close()
 
     @property
+    def title(self):
+        """Title of the file"""
+        try:
+            return self._fd.attrs['title']
+        except KeyError:
+            return None
+
+    @property
+    def creator(self):
+        return self._fd.attrs['creator']
+        
+    @property
+    def license(self):
+        """License information about the file. This is text string."""
+        return self._fd.attrs['license']
+
+    @property
+    def software(self):
+        """Software (one or more) used to generate the data in the file.
+
+        """
+        return self._fd.attrs['software']
+
+    @property
+    def method(self):
+        """(numerical) methods applied in generating the data."""
+        return self._fd.attrs['method']
+
+    @property
+    def description(self):
+        """Description of the file. A text string."""
+        return self._fd.attrs['description']
+
+    @property
+    def rights(self):
+        """The rights of the file contents."""
+        return self._fd.attrs['rights']
+
+    @property
+    def tstart(self):
+        """Start time of the simulation / data recording. A string
+        representation of the timestamp in ISO format
+
+        """
+        return self._fd.attrs['tstart']
+
+    @property
+    def tend(self):
+        """End time of the simulation/recording."""
+        return self._fd.attrs['tend']
+
+    @property
+    def contributor(self):
+        """List of contributors to the content of this file."""
+        return self._fd.attrs['contributor']
+
+    @property
     def uniform_populations(self):
         """Names of the populations for which variables have been recorded
         with uniform sampling.

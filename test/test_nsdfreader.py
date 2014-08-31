@@ -66,6 +66,7 @@ def create_test_data_file(filename, dialect):
     """Create a datafile at path `filename` using dialect `dialect`. 
 
     """
+    tstart = datetime.now()
     mdict = create_ob_model_tree()
     uniform_data = nsdf.UniformData('Vm', unit='mV', field='Vm',
                                     dt=1e-2, tunit='ms')
@@ -124,9 +125,39 @@ def create_test_data_file(filename, dialect):
         writer.add_event_nan(event_ds, event_data)
     else:
         raise Exception('unknown dialect: {}'.format(dialect))
+    tend = datetime.now()
+    description = 'Testing nsdf reader'
+    title = 'NSDFReader.test'
+    creator = ['Subhasis Ray']
+    contributor = ['Chaitanya Chintaluri', 'Daniel Wojcik', 'Upinder Bhalla']
+    software = ['Python']
+    method = ['manual']
+    license = 'CC-BY-SA'
+    rights = 'Subhasis Ray, 2014'
+    writer.tstart = tstart
+    writer.tend = tend
+    writer.title = title
+    writer.creator = creator
+    writer.description = description
+    writer.contributor = contributor
+    writer.software = software
+    writer.method = method
+    writer.rights = rights
+    writer.license = license
     return {'uniform_data': uniform_data,
             'nonuniform_data': nonuniform_data,
-            'event_data': event_data}
+            'event_data': event_data,
+            'title': title,
+            'creator': creator,
+            'contributor': contributor,
+            'software': software,
+            'tstart': tstart,
+            'tend': tend,
+            'description': description,
+            'method': method,
+            'rights': rights,
+            'license': license,
+    }
 
 
 class TestNSDFReaderOneD(unittest.TestCase):
@@ -183,6 +214,27 @@ class TestNSDFReaderOneD(unittest.TestCase):
             var = data.get_data(src)
             fvar = file_data.get_data(src)
             np.testing.assert_allclose(var, fvar)
+
+    def test_attributes(self):
+        self.assertEqual(reader.title, self.data_dict['title'])
+        self.assertEqual(reader.description, self.data_dict['description'])
+        for left, right in it.izip_longest(reader.creator,
+                                           self.data_dict['creator']):
+            self.assertEqual(left, right)
+        for left, right in it.izip_longest(reader.contributor,
+                                           self.data_dict['contributor']):
+            self.assertEqual(left, right)
+        for left, right in it.izip_longest(reader.software,
+                                           self.data_dict['software']):
+            self.assertEqual(left, right)
+        for left, right in it.izip_longest(reader.method,
+                                           self.data_dict['method']):
+            self.assertEqual(left, right)
+        self.assertEqual(reader.tstart, self.data_dict['tstart'].isoformat())
+        self.assertEqual(reader.tend, self.data_dict['tend'].isoformat())
+        self.assertEqual(reader.license, self.data_dict['license'])
+        self.assertEqual(reader.rights, self.data_dict['rights'])
+            
 
 
 class TestNSDFReaderNAN(unittest.TestCase):
