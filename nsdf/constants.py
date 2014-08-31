@@ -54,6 +54,7 @@ VLENFLOAT = h5.special_dtype(vlen=np.dtype('float32'))
 VLENDOUBLE = h5.special_dtype(vlen=np.dtype('float64'))
 VLENSTR = h5.special_dtype(vlen=str)
 REFTYPE = h5.special_dtype(ref=h5.Reference)
+VLENBYTE = h5.special_dtype(vlen=bytes)
 SRCDATAMAPTYPE = np.dtype([('source', VLENSTR), ('data', REFTYPE)])
 
 # NonuniformRec = namedtuple('NonuniformRec', ['sid', 'data', 'time'])

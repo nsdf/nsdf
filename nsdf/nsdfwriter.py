@@ -50,6 +50,7 @@ Writer for NSDF file format.
 
 import h5py as h5
 import numpy as np
+import os
 
 from .model import ModelComponent, common_prefix
 from .constants import *
@@ -99,6 +100,51 @@ def add_model_component(component, parentgroup):
         grp.attrs[key] = value
     return grp
 
+
+def write_ascii_file(group, name, fname, **compression_opts):
+    """Add a dataset `name` under `group` and store the contents of text
+    file `fname` in it."""
+    dataset = group.create_dataset(name, shape=(1,), dtype=VLENBYTE,
+                                   **compression_opts)
+    with open(fname, 'rt') as fhandle:
+        dataset[0] = fhandle.read()
+    return dataset
+
+
+def write_binary_file(group, name, fname, **compression_opts):
+    """Add a dataset `name` under `group` and store the contents of binary
+    file `fname` in it."""
+    dataset = group.create_dataset(name, shape=(1,), dtype=np.void)
+    with open(fname, 'rb') as fhandle:
+        dataset[0] = np.void(fhandle.read())
+    return dataset
+
+def write_dir_contents(root_group, root_dir, ascii):
+    """Walk the directory tree rooted at `root_dir` and replicate it under
+    `root_group` in HDF5 file. 
+
+    This is a helper function for copying model directory structure
+    and file contents into an hdf5 file. If ascii=True all files are
+    considered ascii text else all files are taken as binary blob.
+
+    Args:
+
+        root_group (h5py.Group): group under which the directory tree
+            is to be created.
+
+        root_dir (str): path of the directory from which to start
+           traversal.
+
+        ascii (bool): whether to treat each file as ascii text file.
+
+    """
+    for root, dirs, files in os.walk(root_dir):
+        grp = root_group.require_group(root)
+        for fname in files:
+            if ascii:
+                write_ascii_file(grp, fname, os.path.join(root, fname))
+            else:
+                write_binary_file(grp, fname, os.path.join(root, fname))
         
 class NSDFWriter(object):
     """Writer for NSDF files.
@@ -359,7 +405,52 @@ class NSDFWriter(object):
         node.add_child(root)
         self.modelroot.visit(write_absolute, self.model)
 
+
+    def add_model_filecontents(self, filenames, ascii=True, recursive=True):
+        """Add the files and directories listed in `filenames` to
+        ``/model/filecontents``.
+        
+        This function is for storing the contents of model files in
+        the NSDF file. In case of external formats like NeuroML,
+        NineML, SBML and NEURON/GENESIS scripts, this function is
+        useful. Each directory is stored as a group and each file is
+        stored as a dataset.
+
+        Args: 
+            filenames (sequence): the paths of files and/or
+                directories which contain model information.
+
+            ascii (bool): whether the files are in ascii.
+
+            recursive (bool): whether to recursively store
+                subdirectories.
+
+        """
+        filecontents = self.model.require_group('filecontents')
+        for fname in filenames:
+            if os.path.isfile(fname):
+                buf = bytearray(os.path.getsize(fname))
+                with open(fname, 'rb') as fhandle:
+                    fhandle.readinto(buf)
+                components = []
+                while True:
+                    head, tail = os.path.split(fame)
+                    if tail:
+                        components.append(tail)
+                    if not head:
+                        break
+                grp = filecontents
+                for name in components[:0:-1]:
+                    grp = filecontents.require_group(name)
+                if ascii:
+                    fdata = write_ascii_file(grp, components[-1], fname)
+                else:
+                    fdata = write_binary_file(grp, components[-1], fname)
+            elif os.path.isdir(fname):
+                write_dir_contents(filecontents, fname, ascii=ascii)                        
+
     def add_uniform_ds(self, name, idlist):
+
         """Add the sources listed in idlist under /map/uniform.
 
         Args: 
