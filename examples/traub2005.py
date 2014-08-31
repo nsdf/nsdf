@@ -237,13 +237,13 @@ def create_example(dialect=nsdf.dialect.ONED, simtime=10.0, dt=1e-4):
         vm_ds = writer.add_uniform_ds(celltype, vm_data.get_sources())
         writer.add_uniform_data(vm_ds, vm_data)
     end_time = datetime.now()
-    writer.set_title('Sample NSDF file for Traub et al 2005 model')
-    writer.set_description('This file uses {} dialect of NSDF'.format(dialect))
-    writer.set_tstart(start_time)
-    writer.set_tend(end_time)
-    writer.set_creator([os.environ['USER']])
-    writer.set_license('CC BY-SA')
-    writer.set_software(['Python2.7', 'nsdf python library'])
+    writer.title = 'Sample NSDF file for Traub et al 2005 model'
+    writer.description = 'This file uses {} dialect of NSDF'.format(dialect)
+    writer.tstart = start_time
+    writer.tend = end_time
+    writer.creator = [os.environ['USER']]
+    writer.license = 'CC BY-SA'
+    writer.software = ['Python2.7', 'nsdf python library']
     print 'Finished writing example NSDF file for dialect {}'.format(dialect)
 
 
