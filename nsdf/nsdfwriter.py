@@ -233,7 +233,16 @@ class NSDFWriter(object):
     def __del__(self):
         self._fd.close()
 
-    def set_title(self, title):
+    @property
+    def title(self):
+        """Title of the file"""
+        try:
+            return self._fd.attrs['title']
+        except KeyError:
+            return None
+
+    @title.setter
+    def title(self, title):
         """Set the title of the file.
 
         Args:
@@ -242,7 +251,12 @@ class NSDFWriter(object):
         """
         self._fd.attrs['title'] = title
 
-    def set_creator(self, creator_list):
+    @property
+    def creator(self):
+        return self._fd.attrs['creator']
+        
+    @creator.setter
+    def creator(self, creator_list):
         """Set the creator (one or more authors) of the file.
 
         Args:
@@ -253,10 +267,24 @@ class NSDFWriter(object):
         attr[:] = creator_list
         self._fd.attrs['creator'] = attr                
 
-    def set_license(self, text):
+    @property
+    def license(self):
+        """License information about the file. This is text string."""
+        return self._fd.attrs['license']
+
+    @license.setter
+    def license(self, text):
         self._fd.attrs['license'] = text
 
-    def set_software(self, software_list):       
+    @property
+    def software(self):
+        """Software (one or more) used to generate the data in the file.
+
+        """
+        return self._fd.attrs['software']
+
+    @software.setter
+    def software(self, software_list):       
         """Set the software (one or more) used to generate the data in the
         file.
 
@@ -269,7 +297,13 @@ class NSDFWriter(object):
         attr[:] = software_list
         self._fd.attrs['software'] = attr
 
-    def set_method(self, method_list):
+    @property
+    def method(self):
+        """(numerical) methods applied in generating the data."""
+        return self._fd.attrs['method']
+
+    @method.setter
+    def method(self, method_list):
         """Set the (numerical) methods applied in generating the data.
 
         Args:
@@ -281,7 +315,13 @@ class NSDFWriter(object):
         attr[:] = method_list
         self._fd.attrs['method'] = attr                
 
-    def set_description(self, description):
+    @property
+    def description(self):
+        """Description of the file. A text string."""
+        return self._fd.attrs['description']
+
+    @description.setter
+    def description(self, description):
         """Set the description of the file.
 
         Args:
@@ -291,7 +331,13 @@ class NSDFWriter(object):
         """
         self._fd.attrs['description'] = description
 
-    def set_rights(self, rights):
+    @property
+    def rights(self):
+        """The rights of the file contents."""
+        return self._fd.attrs['rights']
+
+    @rights.setter
+    def rights(self, rights):
         """Set the rights of the file contents.
 
         Args:
@@ -302,7 +348,16 @@ class NSDFWriter(object):
         """
         self._fd.attrs['rights'] = rights
 
-    def set_tstart(self, tstart):
+    @property
+    def tstart(self):
+        """Start time of the simulation / data recording. A string
+        representation of the timestamp in ISO format
+
+        """
+        return self._fd.attrs['tstart']
+
+    @tstart.setter    
+    def tstart(self, tstart):
         """Set the start time of simulation/recording
 
         Args:
@@ -312,7 +367,13 @@ class NSDFWriter(object):
         """
         self._fd.attrs['tstart'] = tstart.isoformat()
 
-    def set_tend(self, tend):
+    @property
+    def tend(self):
+        """End time of the simulation/recording."""
+        return self._fd.attrs['tend']
+
+    @tend.setter
+    def tend(self, tend):
         """Set the end time of recording/simulation.
 
         Args: 
@@ -322,7 +383,13 @@ class NSDFWriter(object):
         """
         self._fd.attrs['tend'] = tend.isoformat()
 
-    def set_contributor(self, contributor_list):
+    @property
+    def contributor(self):
+        """List of contributors to the content of this file."""
+        return self._fd.attrs['contributor']
+
+    @contributor.setter
+    def contributor(self, contributor_list):
         """Set the list of contributors to the contents of the file.
 
         Args: 

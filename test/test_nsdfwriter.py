@@ -154,7 +154,7 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
         self.filepath = '{}.h5'.format(self.id())
         writer = nsdf.NSDFWriter(self.filepath, mode='w',
                                  dialect=nsdf.dialect.ONED)
-        writer.set_title(self.id())
+        writer.title  = self.id()
         mitral_somata = []
         for cell in self.mdict['mitral_cells']:
             for name, comp in cell.children.items():
@@ -269,7 +269,7 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
         self.filepath = '{}.h5'.format(self.id())
         writer = nsdf.NSDFWriter(self.filepath, mode='w',
                                       dialect=nsdf.dialect.VLEN)
-        writer.set_title(self.id())
+        writer.title = self.id()
         mitral_somata = []
         for cell in self.mdict['mitral_cells']:
             for name, comp in cell.children.items():
@@ -382,7 +382,7 @@ class TestNSDFWriterNonuniformRegular(unittest.TestCase):
         self.filepath = '{}.h5'.format(self.id())
         writer = nsdf.NSDFWriter(self.filepath, mode='w',
                                       dialect=nsdf.dialect.NUREGULAR)
-        writer.set_title(self.id())
+        writer.title = self.id()
         mitral_somata = []
         for cell in self.mdict['mitral_cells']:
             for name, comp in cell.children.items():
@@ -470,7 +470,8 @@ class TestNSDFWriterNonuniformNan(unittest.TestCase):
         self.filepath = '{}.h5'.format(self.id())
         writer = nsdf.NSDFWriter(self.filepath, mode='w',
                                       dialect=nsdf.dialect.NANPADDED)
-        writer.set_title(self.id())
+        writer.creator = ['Subhasis Ray']
+        writer.title = self.id()
         mitral_somata = []
         for cell in self.mdict['mitral_cells']:
             for name, comp in cell.children.items():
@@ -591,7 +592,7 @@ class TestNSDFWriterEvent1D(unittest.TestCase):
         self.filepath = '{}.h5'.format(self.id())
         writer = nsdf.NSDFWriter(self.filepath, mode='w',
                                       dialect=nsdf.dialect.ONED)
-        writer.set_title(self.id())
+        writer.title = self.id()
         self.sources = [cell.uid for cell in self.mdict['mitral_cells']]
         self.popname = 'pop1'
         self.field = 'spike'
@@ -695,7 +696,7 @@ class TestNSDFWriterEventVlen(unittest.TestCase):
         self.filepath = '{}.h5'.format(self.id())
         self.writer = nsdf.NSDFWriter(self.filepath, mode='w',
                                       dialect=nsdf.dialect.VLEN)
-        self.writer.set_title(self.id())
+        self.writer.title = self.id()
         self.sources = [cell.uid for cell in self.mdict['mitral_cells']]
         self.popname = 'pop1'
         self.field = 'spike'
@@ -765,7 +766,7 @@ class TestNSDFWriterEventNanPadded(unittest.TestCase):
         self.filepath = '{}.h5'.format(self.id())
         writer = nsdf.NSDFWriter(self.filepath, mode='w',
                                       dialect=nsdf.dialect.NANPADDED)
-        writer.set_title(self.id())
+        writer.title = self.id()
         self.sources = [cell.uid for cell in self.mdict['mitral_cells']]
         self.popname = 'pop1'
         self.field = 'spike'
