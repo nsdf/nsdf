@@ -205,7 +205,7 @@ def benchmark_write_vlen_uncompressed():
 def benchmark_write_nan_compressed():
     benchmark_write_nanpadded(compression='gzip', compression_opts=6, fletcher32=True, shuffle=True)
 
-    @profile
+@profile
 def benchmark_write_nan_uncompressed():
     benchmark_write_nanpadded()
 
