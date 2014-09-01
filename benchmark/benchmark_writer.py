@@ -134,7 +134,8 @@ Vm_data = nsdf.UniformData('Vm', field='Vm', unit='V', dt=DATA['dt'],
 Vm_data.update_source_data_dict(DATA['Vm'])
 spike_data = nsdf.EventData('spike', field='spiketime', unit='s')
 spike_data.update_source_data_dict(DATA['spike'])
-    
+
+@profile
 def benchmark_write_oned(**kwargs):
     """Write LFP, Vm, spike trains, and any other data."""
     compression = kwargs.get('compression', '')
@@ -149,11 +150,33 @@ def benchmark_write_oned(**kwargs):
     spike_sources = writer.add_event_ds_1d('all_cells', 'spike', spike_data.get_sources())
     writer.add_event_1d(spike_sources, spike_data)    
 
-def benchmark_write_vlen(compressed):
-    pass
-
+@profile    
+def benchmark_write_vlen(**kwargs):
+    compression = kwargs.get('compression', '')
+    writer =    \
+    nsdf.NSDFWriter('{}_VLEN_{}.h5'.format(DATAFILE.split('.')[0], compression),
+                    mode='w',
+                    dialect=nsdf.dialect.VLEN, **kwargs)
+    cont_rec_sources = writer.add_uniform_ds('continuous_recorded',
+                                             ca_data.get_sources())
+    writer.add_uniform_data(cont_rec_sources, ca_data)
+    writer.add_uniform_data(cont_rec_sources, Vm_data)
+    spike_sources = writer.add_event_ds('all_cells', 'spike', spike_data.get_sources())
+    writer.add_event_vlen(spike_sources, spike_data)    
+    
+@profile
 def benchmark_write_nanpadded(compressed):
-    pass
+    compression = kwargs.get('compression', '')
+    writer =    \
+    nsdf.NSDFWriter('{}_NAN_{}.h5'.format(DATAFILE.split('.')[0], compression),
+                    mode='w',
+                    dialect=nsdf.dialect.VLEN, **kwargs)
+    cont_rec_sources = writer.add_uniform_ds('continuous_recorded',
+                                             ca_data.get_sources())
+    writer.add_uniform_data(cont_rec_sources, ca_data)
+    writer.add_uniform_data(cont_rec_sources, Vm_data)
+    spike_sources = writer.add_event_ds('all_cells', 'spike', spike_data.get_sources())
+    writer.add_event_vlen(spike_sources, spike_data)    
 
 def benchmark_read_oned(compressed):
     pass
@@ -167,6 +190,10 @@ def benchmark_read_nanpadded(compressed):
 if __name__ == '__main__':
     benchmark_write_oned(compression='gzip', compression_opts=6, fletcher32=True, shuffle=True)
     benchmark_write_oned()
+    benchmark_write_vlen(compression='gzip', compression_opts=6, fletcher32=True, shuffle=True)
+    benchmark_write_vlen()
+    benchmark_write_nanpadded(compression='gzip', compression_opts=6, fletcher32=True, shuffle=True)
+    benchmark_write_nanpadded()
 
 # 
 # benchmark_writer.py ends here
