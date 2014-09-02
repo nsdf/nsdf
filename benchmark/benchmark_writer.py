@@ -59,6 +59,7 @@ import numpy as np
 sys.path.append('..')
 import nsdf
 
+INCREMENTAL_STEP = 1024
 DATAFILE = 'data_20120522_152734_10973.h5'
 DATADIR = '/data/subha/nsdf_samples/benchmark'
 
@@ -117,13 +118,16 @@ def read_data():
         cell_ids = [str(key) for key in spike.keys()]
         electrode_ids = [str(key) for key in lfp.keys()]
         schedinfo = dict(datafile['runconfig/scheduling'])
+        simtime = float(schedinfo['simtime'])
+        plotdt = float(schedinfo['plotdt'])
         return {'cell_ids': cell_ids,
                 'electrode_ids': electrode_ids,
                 'spike': spike,
                 'ca': ca,
                 'Vm': Vm,
                 'lfp': lfp,
-                'dt': float(schedinfo['plotdt'])} # notice that stim has a difrferent dt
+                'dt': plotdt,    # note that stim has a difrferent dt
+                'simtime': simtime}
 
 DATA = read_data()
 ca_data = nsdf.UniformData('Ca', field='conc', unit='mM',
@@ -174,7 +178,121 @@ def benchmark_write_nanpadded(**kwargs):
     writer.add_uniform_data(cont_rec_sources, ca_data)
     writer.add_uniform_data(cont_rec_sources, Vm_data)
     spike_sources = writer.add_event_ds('all_cells', spike_data.get_sources())
-    writer.add_event_vlen(spike_sources, spike_data)    
+    writer.add_event_vlen(spike_sources, spike_data)
+
+def benchmark_write_oned_incremental(**kwargs):
+    compression = kwargs.get('compression', '')
+    prefix = DATAFILE.split('.')[0]
+    filename = '{}_ONED_{}_incr.h5'.format(prefix, compression)
+    filepath = os.path.join(DATADIR, filename)
+    writer = nsdf.NSDFWriter(filepath, dialect=nsdf.dialect.ONED,
+                             mode='w', **kwargs)
+    cont_src = writer.add_uniform_ds('continuous_recorded',
+                                     ca_data.get_sources())
+    spike_sources = writer.add_event_ds_1d('all_cells', 'spike',
+                                           spike_data.get_sources())
+    for ii in range(0, int(DATA['simtime']/DATA['dt'] + 0.5) +
+                    INCREMENTAL_STEP/2, INCREMENTAL_STEP):
+        ca_data_tmp = nsdf.UniformData(ca_data.name,
+                                       unit=ca_data.unit,
+                                       dt=ca_data.dt,
+                                       tunit=ca_data.tunit)
+        for src, data in ca_data.get_source_data_dict().items():
+            ca_data_tmp.put_data(src, data[ii:INCREMENTAL_STEP])
+        writer.add_uniform_data(cont_src, ca_data_tmp)
+        Vm_data_tmp = nsdf.UniformData(Vm_data.name,
+                                       unit=Vm_data.unit,
+                                       dt=Vm_data.dt,
+                                       tunit=Vm_data.tunit)
+        for src, data in Vm_data.get_source_data_dict().items():
+            Vm_data_tmp.put_data(src, data[ii:ii+INCREMENTAL_STEP])
+        writer.add_uniform_data(cont_src, Vm_data_tmp)
+        tstart = ii * Vm_data.dt
+        tend = (ii + INCREMENTAL_STEP) * Vm_data.dt
+        spike_data_tmp = nsdf.EventData(spike_data.name,
+                                        unit=spike_data.unit,
+                                        dtype=spike_data.dtype)
+        for src, data in spike_data.get_source_data_dict().items():
+            spike_data_tmp.put_data(src,
+                                    data[(data >= tstart) & (data < tend)])
+        writer.add_event_1d(spike_sources, spike_data_tmp)
+
+
+def benchmark_write_vlen_incremental(**kwargs):
+    compression = kwargs.get('compression', '')
+    prefix = DATAFILE.split('.')[0]
+    filename = '{}_VLEN_{}_incr.h5'.format(prefix, compression)
+    filepath = os.path.join(DATADIR, filename)
+    writer = nsdf.NSDFWriter(filepath, dialect=nsdf.dialect.VLEN,
+                             mode='w', **kwargs)
+    cont_src = writer.add_uniform_ds('continuous_recorded',
+                                     ca_data.get_sources())
+    spike_sources = writer.add_event_ds('all_cells',
+                                        spike_data.get_sources())
+    for ii in range(0, int(DATA['simtime']/DATA['dt'] + 0.5) +
+                    INCREMENTAL_STEP/2, INCREMENTAL_STEP):
+        ca_data_tmp = nsdf.UniformData(ca_data.name,
+                                       unit=ca_data.unit,
+                                       dt=ca_data.dt,
+                                       tunit=ca_data.tunit)
+        for src, data in ca_data.get_source_data_dict().items():
+            ca_data_tmp.put_data(src, data[ii:INCREMENTAL_STEP])
+        writer.add_uniform_data(cont_src, ca_data_tmp)
+        Vm_data_tmp = nsdf.UniformData(Vm_data.name,
+                                       unit=Vm_data.unit,
+                                       dt=Vm_data.dt,
+                                       tunit=Vm_data.tunit)
+        for src, data in Vm_data.get_source_data_dict().items():
+            Vm_data_tmp.put_data(src, data[ii:ii+INCREMENTAL_STEP])
+        writer.add_uniform_data(cont_src, Vm_data_tmp)
+        tstart = ii * Vm_data.dt
+        tend = (ii + INCREMENTAL_STEP) * Vm_data.dt
+        spike_data_tmp = nsdf.EventData(spike_data.name,
+                                        unit=spike_data.unit,
+                                        dtype=spike_data.dtype)
+        for src, data in spike_data.get_source_data_dict().items():
+            spike_data_tmp.put_data(src,
+                                    data[(data >= tstart) & (data < tend)])
+        writer.add_event_vlen(spike_sources, spike_data_tmp)
+
+
+def benchmark_write_nan_incremental(**kwargs):
+    compression = kwargs.get('compression', '')
+    prefix = DATAFILE.split('.')[0]
+    filename = '{}_NAN_{}_incr.h5'.format(prefix, compression)
+    filepath = os.path.join(DATADIR, filename)
+    writer = nsdf.NSDFWriter(filepath, dialect=nsdf.dialect.NANPADDED,
+                             mode='w', **kwargs)
+    cont_src = writer.add_uniform_ds('continuous_recorded',
+                                     ca_data.get_sources())
+    spike_sources = writer.add_event_ds('all_cells',
+                                        spike_data.get_sources())
+    for ii in range(0, int(DATA['simtime']/DATA['dt'] + 0.5) +
+                    INCREMENTAL_STEP/2, INCREMENTAL_STEP):
+        ca_data_tmp = nsdf.UniformData(ca_data.name,
+                                       unit=ca_data.unit,
+                                       dt=ca_data.dt,
+                                       tunit=ca_data.tunit)
+        for src, data in ca_data.get_source_data_dict().items():
+            ca_data_tmp.put_data(src, data[ii:INCREMENTAL_STEP])
+        writer.add_uniform_data(cont_src, ca_data_tmp)
+        Vm_data_tmp = nsdf.UniformData(Vm_data.name,
+                                       unit=Vm_data.unit,
+                                       dt=Vm_data.dt,
+                                       tunit=Vm_data.tunit)
+        for src, data in Vm_data.get_source_data_dict().items():
+            Vm_data_tmp.put_data(src, data[ii:ii+INCREMENTAL_STEP])
+        writer.add_uniform_data(cont_src, Vm_data_tmp)
+        tstart = ii * Vm_data.dt
+        tend = (ii + INCREMENTAL_STEP) * Vm_data.dt
+        spike_data_tmp = nsdf.EventData(spike_data.name,
+                                        unit=spike_data.unit,
+                                        dtype=spike_data.dtype)
+        for src, data in spike_data.get_source_data_dict().items():
+            spike_data_tmp.put_data(src,
+                                    data[(data >= tstart) & (data < tend)])
+        writer.add_event_nan(spike_sources, spike_data_tmp)
+
 
 def benchmark_read_oned(compressed):
     pass
@@ -185,38 +303,74 @@ def benchmark_read_vlen(compressed):
 def benchmark_read_nanpadded(compressed):
     pass
 
-@profile
+
 def benchmark_write_oned_compressed():
     benchmark_write_oned(compression='gzip', compression_opts=6, fletcher32=True, shuffle=True)
 
-@profile
+
 def benchmark_write_oned_uncompressed():
     benchmark_write_oned()
 
-@profile
+
 def benchmark_write_vlen_compressed():
     benchmark_write_vlen(compression='gzip', compression_opts=6, fletcher32=True, shuffle=True)
 
-@profile
+
 def benchmark_write_vlen_uncompressed():
     benchmark_write_vlen()
 
-@profile
+
 def benchmark_write_nan_compressed():
     benchmark_write_nanpadded(compression='gzip', compression_opts=6, fletcher32=True, shuffle=True)
 
-@profile
+
 def benchmark_write_nan_uncompressed():
     benchmark_write_nanpadded()
 
+def benchmark_write_oned_incr_uncompressed():
+    benchmark_write_oned_incremental()
+
+def benchmark_write_oned_incr_compressed():
+    benchmark_write_oned_incremental(compression='gzip',
+                                     compression_opts=6,
+                                     fletcher32=True, shuffle=True)
+
+def benchmark_write_nan_incr_uncompressed():
+    benchmark_write_nan_incremental()
+
+def benchmark_write_nan_incr_compressed():
+    benchmark_write_nan_incremental(compression='gzip',
+                                     compression_opts=6,
+                                     fletcher32=True, shuffle=True)
+def benchmark_write_vlen_incr_uncompressed():
+    benchmark_write_vlen_incremental()
+
+def benchmark_write_vlen_incr_compressed():
+    benchmark_write_vlen_incremental(compression='gzip',
+                                     compression_opts=6,
+                                     fletcher32=True, shuffle=True)
     
-if __name__ == '__main__':
+    
+@profile
+def main():
+    # Immediate writing
     benchmark_write_oned_compressed()
     benchmark_write_oned_uncompressed()
     benchmark_write_vlen_compressed()
     benchmark_write_vlen_uncompressed()
     benchmark_write_nan_compressed()
     benchmark_write_nan_uncompressed()
+    # Incremental writing
+    benchmark_write_oned_incr_uncompressed()
+    benchmark_write_oned_incr_compressed()
+    benchmark_write_nan_incr_uncompressed()
+    benchmark_write_nan_incr_compressed()
+    benchmark_write_vlen_incr_uncompressed()
+    benchmark_write_vlen_incr_compressed()
+    
+
+if __name__ == '__main__':
+    main()
 
 # 
 # benchmark_writer.py ends here
