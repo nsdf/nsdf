@@ -205,7 +205,7 @@ def benchmark_write_oned_incremental(**kwargs):
                                        dt=ca_data.dt,
                                        tunit=ca_data.tunit)
         for src, data in ca_data.get_source_data_dict().items():
-            ca_data_tmp.put_data(src, data[ii:INCREMENTAL_STEP])
+            ca_data_tmp.put_data(src, data[ii:ii+INCREMENTAL_STEP])
         writer.add_uniform_data(cont_src, ca_data_tmp)
         Vm_data_tmp = nsdf.UniformData(Vm_data.name,
                                        unit=Vm_data.unit,
@@ -243,7 +243,7 @@ def benchmark_write_vlen_incremental(**kwargs):
                                        dt=ca_data.dt,
                                        tunit=ca_data.tunit)
         for src, data in ca_data.get_source_data_dict().items():
-            ca_data_tmp.put_data(src, data[ii:INCREMENTAL_STEP])
+            ca_data_tmp.put_data(src, data[ii:ii+INCREMENTAL_STEP])
         writer.add_uniform_data(cont_src, ca_data_tmp)
         Vm_data_tmp = nsdf.UniformData(Vm_data.name,
                                        unit=Vm_data.unit,
@@ -281,7 +281,7 @@ def benchmark_write_nan_incremental(**kwargs):
                                        dt=ca_data.dt,
                                        tunit=ca_data.tunit)
         for src, data in ca_data.get_source_data_dict().items():
-            ca_data_tmp.put_data(src, data[ii:INCREMENTAL_STEP])
+            ca_data_tmp.put_data(src, data[ii:ii+INCREMENTAL_STEP])
         writer.add_uniform_data(cont_src, ca_data_tmp)
         Vm_data_tmp = nsdf.UniformData(Vm_data.name,
                                        unit=Vm_data.unit,
