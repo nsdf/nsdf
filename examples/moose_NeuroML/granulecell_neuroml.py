@@ -56,9 +56,10 @@ the model in MOOSE.
 import os
 import numpy as np
 import sys
-sys.path.append('..')
-sys.path.append('/home/subha/src/moose_async13/python')
-sys.path.append('/home/subha/src/moose_async13/Demos/neuroml/GranuleCell')
+sys.path.append('../..')
+#sys.path.append('./moose_NeuroML')
+#sys.path.append('/home/subha/src/moose_async13/python')
+#sys.path.append('/home/subha/src/moose_async13/Demos/neuroml/GranuleCell')
 
 import nsdf
 

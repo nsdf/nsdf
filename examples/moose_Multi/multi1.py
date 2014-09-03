@@ -29,7 +29,7 @@
 # Code:
 
 import sys
-sys.path.append('../../python')
+#sys.path.append('../../python')
 import os
 os.environ['NUMPTHREADS'] = '1'
 import math
@@ -279,7 +279,7 @@ def makeGraphics():
         fig.canvas.draw()
         return ( chem, elec, ca, lenplot, fig, line1, line2, line3, line4, line5 )
 
-def find_max_voxel():
+def find_max_voxel(): #added by Chaitanya
     spineCa = len(moose.vec( '/model/chem/spine/Ca' ))
     dendCa = len(moose.vec( '/model/chem/dend/DEND/Ca' ))
     Ca = len([ x.Ca * 0.0001 for x in moose.wildcardFind( '/model/elec/##[ISA=CaConcBase]') ])
@@ -287,7 +287,7 @@ def find_max_voxel():
     psdCaM = len(moose.vec( '/model/chem/psd/Ca_CaM' ))
     return max(spineCa, dendCa, Ca, spineCaM, psdCaM)
 
-def save_NSDF( cPlotDt, ePlotDt, voxel_val_dict, vox_info ):
+def save_NSDF( cPlotDt, ePlotDt, voxel_val_dict, vox_info ): #added by Chaitanya
     sys.path.append('../..')
     import nsdf
     chem_sources = []
@@ -318,7 +318,7 @@ def save_NSDF( cPlotDt, ePlotDt, voxel_val_dict, vox_info ):
     data_obj.set_dt(ePlotDt, unit='s')
     writer.add_uniform_data(ca_source_ds, data_obj)
 
-    h5 = writer._fd
+    h5 = writer._fd #Falling back to using native h5py operations. Multidimensional uniform dataset.
     ds = h5.create_dataset('/data/uniform/chem/voxel', dtype=numpy.float32, shape=(vox_info[0], vox_info[1] ,len(voxel_val_dict)))
     idx = 0
     label_list = []
@@ -336,14 +336,13 @@ def save_NSDF( cPlotDt, ePlotDt, voxel_val_dict, vox_info ):
     ds.attrs.create('unit', data='mM')
     ds.attrs.create('timeunit', data='s')
 		    
-
-def tie_data_map(d_set, m_set, name, axis=0):
+def tie_data_map(d_set, m_set, name, axis=0): #Added by Chaitanya
     d_set.dims[axis].label = name
     d_set.dims.create_scale(m_set, name)
     d_set.dims[axis].attach_scale(m_set)
     m_set.attrs.create('NAME', data='source')
 
-def updateGraphics( plotlist, voxel_val_dict, idx ):
+def updateGraphics( plotlist, voxel_val_dict, idx ): #Edited by Chaitanya
 	spineCa = moose.vec( '/model/chem/spine/Ca' )
 	dendCa = moose.vec( '/model/chem/dend/DEND/Ca' )
         plotlist[5].set_ydata( spineCa.conc )
@@ -356,12 +355,12 @@ def updateGraphics( plotlist, voxel_val_dict, idx ):
         plotlist[9].set_ydata( psdCaM.conc )
         plotlist[4].canvas.draw()
 
-	voxel_val_dict['spine'][:len(spineCa.conc), idx] = spineCa.conc
-	voxel_val_dict['dend'][:len(dendCa.conc), idx] = dendCa.conc
-	voxel_val_dict['elec'][:len(ca), idx] = ca
-	voxel_val_dict['spineCaM'][:len(spineCaM.conc), idx] = spineCaM.conc
-	voxel_val_dict['psdCaM'][:len(psdCaM.conc), idx] = psdCaM.conc
-	return voxel_val_dict
+	voxel_val_dict['spine'][:len(spineCa.conc), idx] = spineCa.conc #
+	voxel_val_dict['dend'][:len(dendCa.conc), idx] = dendCa.conc #
+	voxel_val_dict['elec'][:len(ca), idx] = ca #
+	voxel_val_dict['spineCaM'][:len(spineCaM.conc), idx] = spineCaM.conc #
+	voxel_val_dict['psdCaM'][:len(psdCaM.conc), idx] = psdCaM.conc #
+	return voxel_val_dict #
 
 def finalizeGraphics( plotlist, cPlotDt, ePlotDt ):
         for x in moose.wildcardFind( '/graphs/chem/#[ISA=Table]' ):
@@ -424,12 +423,12 @@ def testNeuroMeshMultiscale():
 			  'psdCaM':numpy.zeros((max_voxel, numDivs))}
         for i in range( numDivs ):
 	    moose.start( partialRuntime )
-            voxel_val_dict = updateGraphics( plotlist, voxel_val_dict, i )
+            voxel_val_dict = updateGraphics( plotlist, voxel_val_dict, i ) #Edited by Chaitanya
 	    
 #        moose.element( '/model/elec/soma' ).inject = 0
 #	moose.start( 0.25 )
-	save_NSDF(cPlotDt, ePlotDt, voxel_val_dict, [max_voxel, numDivs, partialRuntime])
-	finalizeGraphics( plotlist, cPlotDt, ePlotDt )
+	save_NSDF(cPlotDt, ePlotDt, voxel_val_dict, [max_voxel, numDivs, partialRuntime]) #Edited by Chaitanya
+	finalizeGraphics( plotlist, cPlotDt, ePlotDt ) 
 
 def main():
 	testNeuroMeshMultiscale()
