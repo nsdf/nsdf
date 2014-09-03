@@ -1,6 +1,6 @@
-# benchmark_writer.py --- 
+# benchmark_traub_data.py --- 
 # 
-# Filename: benchmark_writer.py
+# Filename: benchmark_traub_data.py
 # Description: 
 # Author: Subhasis Ray
 # Maintainer: 
@@ -143,43 +143,50 @@ spike_data.update_source_data_dict(DATA['spike'])
 def benchmark_write_oned(**kwargs):
     """Write LFP, Vm, spike trains, and any other data."""
     compression = kwargs.get('compression', '')
-    writer =    \
-    nsdf.NSDFWriter('{}_ONED_{}.h5'.format(DATAFILE.split('.')[0], compression),
-                    mode='w',
-                    dialect=nsdf.dialect.ONED, **kwargs)
+    filename = '{}_ONED_{}.h5'.format(DATAFILE.split('.')[0],
+                                  compression)
+    filepath = os.path.join(DATADIR, filename)
+    writer = nsdf.NSDFWriter(filepath, mode='w',
+                             dialect=nsdf.dialect.ONED, **kwargs)
     cont_rec_sources = writer.add_uniform_ds('continuous_recorded',
                                              ca_data.get_sources())
     writer.add_uniform_data(cont_rec_sources, ca_data)
     writer.add_uniform_data(cont_rec_sources, Vm_data)
-    spike_sources = writer.add_event_ds_1d('all_cells', 'spike', spike_data.get_sources())
+    spike_sources = writer.add_event_ds_1d('all_cells', 'spike',
+                                           spike_data.get_sources())
     writer.add_event_1d(spike_sources, spike_data)    
 
+    
 def benchmark_write_vlen(**kwargs):
     compression = kwargs.get('compression', '')
-    writer =    \
-    nsdf.NSDFWriter('{}_VLEN_{}.h5'.format(DATAFILE.split('.')[0], compression),
-                    mode='w',
-                    dialect=nsdf.dialect.VLEN, **kwargs)
+    filename = '{}_VLEN_{}.h5'.format(DATAFILE.split('.')[0],
+                                           compression)
+    filepath = os.path.join(DATADIR, filename)
+    writer = nsdf.NSDFWriter(filepath, mode='w', dialect=nsdf.dialect.VLEN,
+                             **kwargs)
     cont_rec_sources = writer.add_uniform_ds('continuous_recorded',
                                              ca_data.get_sources())
-    writer.add_uniform_data(cont_rec_sources, ca_data)
-    writer.add_uniform_data(cont_rec_sources, Vm_data)
+    writer.add_uniform_data(cont_rec_sources, ca_data, fixed=True)
+    writer.add_uniform_data(cont_rec_sources, Vm_data, fixed=True)
     spike_sources = writer.add_event_ds('all_cells', spike_data.get_sources())
-    writer.add_event_vlen(spike_sources, spike_data)    
-    
+    writer.add_event_vlen(spike_sources, spike_data, fixed=True)    
+
+
 def benchmark_write_nanpadded(**kwargs):
     compression = kwargs.get('compression', '')
-    writer =    \
-    nsdf.NSDFWriter('{}_NAN_{}.h5'.format(DATAFILE.split('.')[0], compression),
-                    mode='w',
-                    dialect=nsdf.dialect.VLEN, **kwargs)
+    filename = '{}_NAN_{}.h5'.format(DATAFILE.split('.')[0],
+                                          compression)
+    filepath = os.path.join(DATADIR, filename)    
+    writer = nsdf.NSDFWriter(filepath, mode='w',
+                             dialect=nsdf.dialect.VLEN, **kwargs)
     cont_rec_sources = writer.add_uniform_ds('continuous_recorded',
                                              ca_data.get_sources())
-    writer.add_uniform_data(cont_rec_sources, ca_data)
-    writer.add_uniform_data(cont_rec_sources, Vm_data)
+    writer.add_uniform_data(cont_rec_sources, ca_data, fixed=True)
+    writer.add_uniform_data(cont_rec_sources, Vm_data, fixed=True)
     spike_sources = writer.add_event_ds('all_cells', spike_data.get_sources())
-    writer.add_event_vlen(spike_sources, spike_data)
+    writer.add_event_vlen(spike_sources, spike_data, fixed=True)
 
+    
 def benchmark_write_oned_incremental(**kwargs):
     compression = kwargs.get('compression', '')
     prefix = DATAFILE.split('.')[0]
@@ -373,4 +380,4 @@ if __name__ == '__main__':
     main()
 
 # 
-# benchmark_writer.py ends here
+# benchmark_traub_data.py ends here
