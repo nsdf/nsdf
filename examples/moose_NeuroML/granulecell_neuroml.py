@@ -56,10 +56,11 @@ the model in MOOSE.
 import os
 import numpy as np
 import sys
-sys.path.append('../..')
-#sys.path.append('./moose_NeuroML')
-#sys.path.append('/home/subha/src/moose_async13/python')
-#sys.path.append('/home/subha/src/moose_async13/Demos/neuroml/GranuleCell')
+from datetime import datetime
+
+sys.path.append('..')
+sys.path.append('/home/subha/src/moose_async13/python')
+sys.path.append('/home/subha/src/moose_async13/Demos/neuroml/GranuleCell')
 
 import nsdf
 
@@ -75,7 +76,9 @@ def example():
     directory = os.path.dirname(granule.__file__)
     current = os.getcwd()
     os.chdir(directory)
+    start_time = datetime.now()    
     granule.loadGran98NeuroML_L123(granule.filename)
+    end_time = datetime.now()
     tvec = np.arange(0.0, granule.runtime, granule.plotdt)
     soma_path = '/cells[0]/Gran_0[0]/Soma_0[0]'
     ca = moose.element('{}/Gran_CaPool_98/data/somaCa'.format(soma_path))
@@ -90,6 +93,17 @@ def example():
     vm_data = nsdf.UniformData('Vm', unit='V', dt=granule.plotdt, tunit='s')
     vm_data.put_data(soma_path, vm.vector)
     writer.add_uniform_data(source_ds, vm_data)
+    writer.title = 'Sample NSDF file for olfactory bulb granule cell model'
+    writer.description = 'This file stores the entire model'    \
+                         ' directory in `/model/filecontent`'
+    writer.tstart = start_time
+    writer.tend = end_time
+    writer.creator = [os.environ['USER']]
+    writer.contributor = ['Subhasis Ray', 'Aditya Gilra']
+    writer.license = 'CC BY-SA'
+    writer.software = ['Python2.7', 'moose', 'nsdf python library']
+    writer.method = ['exponential Euler']
+    print 'Finished writing example NSDF file for GranuleCell demo'
     
 
 if __name__ == '__main__':
