@@ -5,14 +5,13 @@
 # using h5py. This was used to benchmark performance of different flavours of 
 # storing the spike time information.
 
-# Use h5py >= 2.3
+# Use h5py >= 2.3, and optional native h5py usage to store data or NSDF library
 
 import h5py
 import numpy as np
 from brian import *
-import sys
-sys.path.append('../..')
-import nsdf
+
+USE_NSDF = TRUE
 
 seed_no = 500
 np.random.seed(seed_no)
@@ -36,17 +35,18 @@ Me = SpikeMonitor(Pe)
 Mi = SpikeMonitor(Pi)
 run(sim_time*second)
 
+e_spikes = len(Me.spiketimes)
+i_spikes = len(Mi.spiketimes)
+
 def tie_data_map(d_set, m_set, name, axis=0):
     d_set.dims[axis].label = name
     d_set.dims.create_scale(m_set, name)
     d_set.dims[axis].attach_scale(m_set)
-    m_set.attrs.create('NAME', data='SOURCE')
-e_spikes = len(Me.spiketimes)
-i_spikes = len(Mi.spiketimes)
+    m_set.attrs.create('NAME', data='source')
 
 ### vlen arrays
 def h5_vlen():
-    h = h5py.File('Brian_vlen_'+str(seed_no)+'.h5', 'a')
+    h = h5py.File('Brian_VLEN_'+str(seed_no)+'.h5', 'a')
     e_dset = h.create_dataset('/data/events/excitatory/spikes', dtype=h5py.special_dtype(vlen='float32'), shape=(e_spikes,))
     i_dset = h.create_dataset('/data/events/inhibitory/spikes', dtype=h5py.special_dtype(vlen='float32'), shape=(i_spikes,))
     e_list = []
@@ -59,13 +59,17 @@ def h5_vlen():
         i_list.append('nrn_'+str(ii))
     e_ref = h.create_dataset('/map/events/excitatory/spikes_name', data=e_list)
     i_ref = h.create_dataset('/map/events/inhibitory/spikes_name', data=i_list)
-    tie_data_map(e_dset, e_ref, 'SOURCE', 0)
-    tie_data_map(i_dset, i_ref, 'SOURCE', 0)
+    e_dset.attrs.create('unit', data='s')
+    e_dset.attrs.create('field', data='spikes')
+    i_dset.attrs.create('unit', data='s')
+    i_dset.attrs.create('field', data='spikes')
+    tie_data_map(e_dset, e_ref, 'source', 0)
+    tie_data_map(i_dset, i_ref, 'source', 0)
     h.close()
 
 ### NaN filled arrays
 def h5_nan():
-    h = h5py.File('Brian_NaN_'+str(seed_no)+'.h5', 'a')
+    h = h5py.File('Brian_NANPADDED_'+str(seed_no)+'.h5', 'a')
     e_max = 0
     i_max = 0
     for ii in range(e_spikes):
@@ -84,24 +88,28 @@ def h5_nan():
         i_list.append('nrn_'+str(ii))
     e_ref = h.create_dataset('/map/events/excitatory/output_name', data=e_list)
     i_ref = h.create_dataset('/map/events/inhibitory/output_name', data=i_list)
-    tie_data_map(e_dset, e_ref, 'SOURCE', 0)
-    tie_data_map(i_dset, i_ref, 'SOURCE', 0)
+    i_dset.attrs.create('unit', data='s')
+    i_dset.attrs.create('field', data='spikes')
+    e_dset.attrs.create('unit', data='s')
+    e_dset.attrs.create('field', data='spikes')
+    tie_data_map(e_dset, e_ref, 'source', 0)
+    tie_data_map(i_dset, i_ref, 'source', 0)
     h.close()
 
-### Compound arrays
+### Compound ONED arrays
 def h5_cmpd():
-    h = h5py.File('Brain_compound_'+str(seed_no)+'.h5', 'a')
+    h = h5py.File('Brain_ONED_'+str(seed_no)+'.h5', 'a')
     maping_ex = {}
     maping_in = {}
     for ii in range(len(Me.spiketimes)):
         if len(Me[ii]) != 0:
             dset = h.create_dataset('/data/events/excitatory/spikes/' + str(ii), data=Me[ii])
-            dset.attrs.create('SOURCE', data='nrn_'+str(ii))
+            dset.attrs.create('source', data='nrn_'+str(ii))
             maping_ex['nrn_'+str(ii)] = '/data/events/excitatory/spikes/' + str(ii)
     for ii in range(len(Mi.spiketimes)):
         if len(Mi[ii]) != 0:
             dset = h.create_dataset('/data/events/inhibitory/spikes/' + str(ii), data=Mi[ii])
-            dset.attrs.create('SOURCE', data='nrn_'+str(ii))
+            dset.attrs.create('source', data='nrn_'+str(ii))
             maping_in['nrn_'+str(ii)] = '/data/events/inhibitory/spikes/' + str(ii)
     sp_type = np.dtype([('name', h5py.special_dtype(vlen=str)),('reference', h5py.special_dtype(vlen=str))])
     m_ex = h.create_dataset('/map/events/excitatory/spikes', dtype=sp_type, shape=(len(maping_ex),))
@@ -161,7 +169,7 @@ def h5_nan_nsdf():
     source_ds = writer.add_event_ds('inhibitory', i_list)
     writer.add_event_nan(source_ds, dataobj)
 
-### Compound arrays - using NSDF library
+### Compound ONED arrays - using NSDF library
 def h5_cmpd_nsdf():
     writer = nsdf.NSDFWriter('brian_ONED_nsdf'+str(seed_no)+'.h5', mode='w', dialect=nsdf.dialect.ONED)
     e_list = []
@@ -187,10 +195,15 @@ def h5_cmpd_nsdf():
     source_ds = writer.add_event_ds_1d('inhibitory', 'spikes', i_list)
     writer.add_event_1d(source_ds, dataobj, source_name_dict)
 
-#h5_vlen()
-#h5_nan()
-#h5_cmpd()
-h5_vlen_nsdf()
-h5_cmpd_nsdf()
-h5_nan_nsdf()
+if USE_NSDF:
+    import sys
+    sys.path.append('..')
+    import nsdf
+    h5_vlen_nsdf()
+    h5_cmpd_nsdf()
+    h5_nan_nsdf()
+else:
+    h5_vlen()
+    h5_nan()
+    h5_cmpd()
 # End of test_brian.py
