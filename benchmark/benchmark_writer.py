@@ -118,7 +118,7 @@ def create_uniform_vars(num_vars, num_sources, num_cols, prefix='var'):
     """Note that they all share the same sources."""
     ret = []
     for ii in range(num_vars):
-        ret.append(create_uniform_data('{}_'.format(prefix),
+        ret.append(create_uniform_data('{}_{}'.format(prefix, ii),
                                        num_sources,
                                        num_cols))
     return ret
@@ -128,7 +128,7 @@ def create_nonuniform_vars(num_vars, num_sources, mincol, maxcol, prefix='var'):
     """Note that they all share the same sources."""
     ret = []
     for ii in range(num_vars):
-        ret.append(create_nonuniform_data('{}_'.format(prefix),
+        ret.append(create_nonuniform_data('{}_{}'.format(prefix, ii),
                                           num_sources,
                                           mincol, maxcol))
     return ret
@@ -138,16 +138,15 @@ def create_event_vars(num_vars, num_sources, mincol, maxcol, prefix='var'):
     """Note that they all share the same sources."""
     ret = []
     for ii in range(num_vars):
-        ret.append(create_event_data('{}_'.format(prefix),
-                                     num_sources,
-                                     mincol, maxcol))
+        ret.append(create_event_data('{}_{}'.format(prefix, ii),
+                                     num_sources, mincol, maxcol))
     return ret
 
 
 def create_datasets(args):
-    uvar_list = None
-    nvar_list = None
-    evar_list = None
+    uvar_list = []
+    nvar_list = []
+    evar_list = []
     
     if args.sampling:
         if args.sampling.startswith('u'):
@@ -189,7 +188,7 @@ def create_datasets(args):
             'event': evar_list}
 
 def write_incremental(writer, source_ds, data, step, maxcol, dialect):
-    for ii in range(0, int(maxcol * 1.0 / step + 0.5 * step), step):
+    for ii in range(0, maxcol + step - 1, step):
         if isinstance(data, nsdf.UniformData):
             tmp = nsdf.UniformData(data.name, unit=data.unit,
                                    dt=data.dt, tunit=data.tunit)
@@ -200,7 +199,9 @@ def write_incremental(writer, source_ds, data, step, maxcol, dialect):
             tmp = nsdf.NonuniformData(data.name, unit=data.unit,
                                       tunit=data.tunit, dtype=np.float32)
             for src, (value, time) in data.get_source_data_dict().items():
-                tmp.put_data(src, (value[ii: ii+step], time[ii: ii+step]))
+                value_chunk = value[ii: ii+step]
+                time_chunk = time[ii: ii+step]
+                tmp.put_data(src, (value_chunk, time_chunk))
             if dialect == nsdf.dialect.ONED:
                 writer.add_nonuniform_1d(source_ds, tmp)
             elif dialect == nsdf.dialect.VLEN:
@@ -210,7 +211,8 @@ def write_incremental(writer, source_ds, data, step, maxcol, dialect):
         elif isinstance(data, nsdf.EventData):
             tmp = nsdf.EventData(data.name, unit=data.unit, dtype=np.float32)
             for src, value in data.get_source_data_dict().items():
-                tmp.put_data(src, value[ii: ii+step])
+                value_chunk = value[ii: ii+step]
+                tmp.put_data(src, value_chunk)
             if dialect == nsdf.dialect.ONED:
                 writer.add_event_1d(source_ds, tmp)
             elif dialect == nsdf.dialect.VLEN:
