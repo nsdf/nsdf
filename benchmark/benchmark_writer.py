@@ -60,11 +60,14 @@ import h5py as h5
 from datetime import datetime
 import unittest
 import os
+import socket
 
 sys.path.append('..')
 import nsdf
 
 DATADIR = '/data/subha/nsdf_samples/benchmark'
+HOSTNAME = socket.gethostname()
+PID = os.getpid()
 
 np.random.seed(1) # For reproducibility
 
@@ -238,10 +241,12 @@ def write_data(args, var_dict):
         dialect = nsdf.dialect.NANPADDED
     else:
         dialect = nsdf.dialect.ONED
-    filename = 'benchmark_out_{0}_{1}_{2}.h5'.format(
+    filename = 'benchmark_out_{0}_{1}_{2}_{3}_{4}.h5'.format(
         dialect,
         'incr' if (args.increment > 0) else 'fixed',
-        'compressed' if args.compress else 'uncompressed')
+        'compressed' if args.compress else 'uncompressed',
+        HOSTNAME,
+        PID)
     filepath = os.path.join(DATADIR, filename)
                   
     if args.compress:

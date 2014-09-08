@@ -189,7 +189,7 @@ def plot_profile_data(filename):
             row = 0 if key.increment == '0' else 1
             ax = axes_list[row * 2 + col]
             ax.bar([pos], np.mean(data[key][field]), yerr=np.std(data[key][field]),
-                      color=color, alpha=0.7,
+                      color=color, ecolor='b', alpha=0.7,
                       label=key.dialect)
         pdfout = PdfPages('{}.pdf'.format(field))
         pdfout.savefig(fig)
