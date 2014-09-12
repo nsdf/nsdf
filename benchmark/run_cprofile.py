@@ -45,24 +45,28 @@
 
 # Code:
 """Script to run cProfile on the benchmark writer"""
+import os
 import sys
 import pstats
+import socket
 import subprocess
 
 mincol = 5000
 maxcol = 10000
 nvar = 100
 sources = 100
-
+hostname = socket.gethostname()
+pid = os.getpid()
 
 if __name__ == '__main__':
     for dialect in ['oned', 'nan', 'vlen']:
         for compression in ['', '-c']:
             for increment in [0, 1000]:
-                outfile = '{0}_{1}_{2}.prof'.format(
+                outfile = '{0}_{1}_{2}_{3}_{4}.prof'.format(
                     dialect,
                     'fixed' if increment == 0 else 'incr',
-                    'uncompressed' if not compression else 'compressed')
+                    'uncompressed' if not compression else 'compressed',
+                    hostname, pid)
                 args = ['python', '-m', 'cProfile', '-o', outfile,
                         'benchmark_writer.py', '-i', str(increment),
                         '-m', str(mincol), '-n', str(maxcol), '-d',
