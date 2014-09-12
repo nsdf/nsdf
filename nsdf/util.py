@@ -45,7 +45,13 @@
 
 # Code:
 """Utility functions for nsdf."""
+from __future__ import print_function
+
 __author__ = 'Subhasis Ray'
+
+import numpy as np
+from itertools import chain, izip
+import h5py as h5
 
 def node_finder(container_list, match_fn):
     """Return a function that can be passed to h5py.Group.visititem to
@@ -58,8 +64,6 @@ def node_finder(container_list, match_fn):
     return collector
         
 
-import numpy as np
-from itertools import chain, izip
 
 # The following was taken from numpy issue tracker. Originally
 # submitted by Phil Elson. This is a workaround for find_first until
@@ -129,6 +133,62 @@ def find(a, predicate, chunk_size=1024):
             yield (inds[0] + i0, ), chunk[inds]
         i0 = i1
 
+        
+def printtree(root, vchar='|', hchar='__', vcount=1, depth=0, prefix='', is_last=False):
+    """Pretty-print an HDF5 tree.
+    
+    Parameters
+    ----------
+    root : h5py.Group
+        path of the root element of the HDF5 subtree to be printed.
+
+    vchar : str 
+        the character printed to indicate vertical continuation of
+        a parent child relationship.
+
+    hchar : str
+        the character printed just before the node name.
+
+    vcount : int
+        determines how many lines will be printed between two
+        successive nodes.
+
+    depth : int
+        for internal use - should not be explicitly passed.
+
+    prefix : str
+        for internal use - should not be explicitly passed.
+
+    is_last : bool
+        for internal use - should not be explicitly passed.
+
+    """
+    for i in range(vcount):
+        print(prefix)
+
+    if depth != 0:
+        print(prefix + hchar, end='')
+        if is_last: # Special formatting for last child
+            index = prefix.rfind(vchar)
+            prefix = prefix[:index] + ' ' * (len(hchar) + len(vchar)) + vchar
+        else:
+            prefix = prefix + ' ' * len(hchar) + vchar
+    else:
+        prefix = prefix + vchar
+
+    if isinstance(root, h5.File):
+        print(root.name)
+    else:
+        print(root.name.rpartition('/')[-1])
+    if not isinstance(root, h5.Group):
+        return
+    children = root.keys()
+    for child in children[:-1]:        
+        printtree(root[child], vchar, hchar, vcount, depth+1, prefix, False)
+    # Need special formatting for the last child - no further vertical line
+    if len(children) > 0:
+        printtree(root[children[-1]], vchar, hchar, vcount, depth + 1, prefix, True)
+        
 
 # 
 # util.py ends here
