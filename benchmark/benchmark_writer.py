@@ -68,6 +68,7 @@ import nsdf
 DATADIR = '/data/subha/nsdf_samples/benchmark'
 HOSTNAME = socket.gethostname()
 PID = os.getpid()
+TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
 
 np.random.seed(1) # For reproducibility
 
@@ -155,7 +156,7 @@ def create_datasets(args):
         if args.sampling.startswith('u'):
             uvar_list = create_uniform_vars(args.variables,
                                             args.sources,
-                                            args.maxcol,
+                                            (args.maxcol + args.mincol) / 2,
                                             prefix='uniform')
         elif args.sampling.startswith('n'):
             nvar_list = create_nonuniform_vars(args.variables,
@@ -173,7 +174,7 @@ def create_datasets(args):
     else:
         uvar_list = create_uniform_vars(args.variables,
                                         args.sources,
-                                        args.maxcol,
+                                        (args.maxcol + args.mincol) / 2,
                                         prefix='uniform')
         nvar_list = create_nonuniform_vars(args.variables,
                                            args.sources,
@@ -241,12 +242,15 @@ def write_data(args, var_dict):
         dialect = nsdf.dialect.NANPADDED
     else:
         dialect = nsdf.dialect.ONED
-    filename = 'benchmark_out_{0}_{1}_{2}_{3}_{4}.h5'.format(
-        dialect,
-        'incr' if (args.increment > 0) else 'fixed',
-        'compressed' if args.compress else 'uncompressed',
-        HOSTNAME,
-        PID)
+    try:
+        filename = args.out
+    except KeyError:
+        filename = 'benchmark_out_{0}_{1}_{2}_{3}_{4}_{5}_{6}.h5'.format(
+            dialect, args.sampling,
+            'incr' if (args.increment > 0) else 'fixed',
+            'compressed' if args.compress else 'uncompressed',
+            HOSTNAME,
+            PID, TIMESTAMP)
     filepath = os.path.join(DATADIR, filename)
                   
     if args.compress:
@@ -330,6 +334,8 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--compress', 
                         help='enable gzip compression with level=6',
                         action='store_true')
+    parser.add_argument('-o', '--out', 
+                        help='output data file')
     args = parser.parse_args()
     print args
     data = create_datasets(args)

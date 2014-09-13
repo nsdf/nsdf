@@ -50,36 +50,39 @@ import sys
 import pstats
 import socket
 import subprocess
+from datetime import datetime
 
 mincol = 5000
-maxcol = 10000
+maxcol = 15000
 nvar = 100
 sources = 100
 hostname = socket.gethostname()
 pid = os.getpid()
+timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
 if __name__ == '__main__':
-    for dialect in ['oned', 'nan', 'vlen']:
-        for compression in ['', '-c']:
-            for increment in [0, 1000]:
-                outfile = '{0}_{1}_{2}_{3}_{4}.prof'.format(
-                    dialect,
-                    'fixed' if increment == 0 else 'incr',
-                    'uncompressed' if not compression else 'compressed',
-                    hostname, pid)
-                args = ['python', '-m', 'cProfile', '-o', outfile,
-                        'benchmark_writer.py', '-i', str(increment),
-                        '-m', str(mincol), '-n', str(maxcol), '-d',
-                        str(dialect), '-v', str(nvar), '-x',
-                        str(sources)]
-                if compression:
-                    args.append(compression)
-                subprocess.call(args)
-                stats = pstats.Stats(outfile).strip_dirs().sort_stats('name')
-                print 'dialect', 'increment', 'compression'
-                stats.print_stats('nsdfwriter.*add_')
-                stats.print_stats('benchmark_writer.*write_')
-                print 
+    for sampling in ['uniform', 'nonuniform', 'event']:
+        for dialect in ['oned', 'nan', 'vlen']:
+            for compression in ['', '-c']:
+                for increment in [0, 1000]:
+                    outfile = '{}_{}_{}_{}_{}_{}_{}.prof'.format(
+                        dialect, sampling,
+                        'fixed' if increment == 0 else 'incr',
+                        'uncompressed' if not compression else 'compressed',
+                        hostname, pid, timestamp)
+                    args = ['python', '-m', 'cProfile', '-o', outfile,
+                            'benchmark_writer.py', '-i', str(increment), '-s', sampling,
+                            '-m', str(mincol), '-n', str(maxcol), '-d',
+                            str(dialect), '-v', str(nvar), '-x',
+                            str(sources), '-o', outfile.replace('prof', 'h5')]
+                    if compression:
+                        args.append(compression)
+                    subprocess.call(args)
+                    stats = pstats.Stats(outfile).strip_dirs().sort_stats('name')
+                    print 'dialect', 'increment', 'compression'
+                    stats.print_stats('nsdfwriter.*add_')
+                    stats.print_stats('benchmark_writer.*write_')
+                    print 
 
 
 # 
