@@ -77,7 +77,7 @@ if __name__ == '__main__':
                             str(sources), '-o', outfile.replace('prof', 'h5')]
                     if compression:
                         args.append(compression)
-                    subprocess.call(args)
+                    subprocess.check_output(args, stderr=subprocess.STDOUT)
                     stats = pstats.Stats(outfile).strip_dirs().sort_stats('name')
                     print 'dialect', 'increment', 'compression'
                     stats.print_stats('nsdfwriter.*add_')

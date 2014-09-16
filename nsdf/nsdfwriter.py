@@ -959,7 +959,7 @@ class NSDFWriter(object):
                 timescale = self.time_dim.create_dataset(
                     tsname,
                     shape=(len(data),),
-                    dtype=np.float64,
+                    dtype=data_object.ttype,
                     data=time,
                     maxshape=(maxcol,),
                     **self.h5args)
@@ -1141,7 +1141,7 @@ class NSDFWriter(object):
                 tsname,
                 shape=dataset.shape,
                 maxshape=(maxrows,maxcols),
-                dtype=np.float64,
+                dtype=data_object.ttype,
                 fillvalue=np.nan,
                 **self.h5args)
             dataset.dims.create_scale(time_ds, 'time')

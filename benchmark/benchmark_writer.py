@@ -81,7 +81,7 @@ def get_poisson_times(npoints, rate):
 
 def create_uniform_data(name, num_sources, num_cols):
     """Create data for m=`num_sources`, each n=`num_cols` long."""
-    data = nsdf.UniformData(name, field='Vm', unit='V', dt=1e-5, tunit='s')
+    data = nsdf.UniformData(name, field='Vm', unit='V', dt=1e-5, tunit='s', dtype=np.float32)
     for ii in range(num_sources):
         data.put_data('src_{}'.format(ii), np.random.rand(num_cols))
     return data
@@ -93,7 +93,7 @@ def create_nonuniform_data(name, num_sources, mincol, maxcol):
     `maxcol`
 
     """
-    data = nsdf.NonuniformData(name, unit='V', tunit='s', dtype=np.float32)
+    data = nsdf.NonuniformData(name, unit='V', tunit='s', dtype=np.float32, ttype=np.float32)
     if mincol < maxcol:
         ncols = np.random.randint(low=mincol, high=maxcol, size=num_sources)
     else:
@@ -195,13 +195,13 @@ def write_incremental(writer, source_ds, data, step, maxcol, dialect):
     for ii in range(0, maxcol + step - 1, step):
         if isinstance(data, nsdf.UniformData):
             tmp = nsdf.UniformData(data.name, unit=data.unit,
-                                   dt=data.dt, tunit=data.tunit)
+                                   dt=data.dt, tunit=data.tunit, dtype=np.float32)
             for src, value in data.get_source_data_dict().items():
                 tmp.put_data(src, value[ii: ii + step])
             writer.add_uniform_data(source_ds, tmp)
         elif isinstance(data, nsdf.NonuniformData):
             tmp = nsdf.NonuniformData(data.name, unit=data.unit,
-                                      tunit=data.tunit, dtype=np.float32)
+                                      tunit=data.tunit, dtype=np.float32, ttype=np.float32)
             for src, (value, time) in data.get_source_data_dict().items():
                 value_chunk = value[ii: ii+step]
                 time_chunk = time[ii: ii+step]
@@ -242,9 +242,8 @@ def write_data(args, var_dict):
         dialect = nsdf.dialect.NANPADDED
     else:
         dialect = nsdf.dialect.ONED
-    try:
-        filename = args.out
-    except KeyError:
+    filename = args.out
+    if not filename:
         filename = 'benchmark_out_{0}_{1}_{2}_{3}_{4}_{5}_{6}.h5'.format(
             dialect, args.sampling,
             'incr' if (args.increment > 0) else 'fixed',
@@ -311,6 +310,7 @@ def write_data(args, var_dict):
             write_incremental(writer, source_ds, evar,
                               args.increment, args.maxcol,
                               dialect)
+    print 'Saved data in', filepath
     
 
 
