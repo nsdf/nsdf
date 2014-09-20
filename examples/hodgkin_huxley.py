@@ -9,6 +9,7 @@ __date__ = 'Fri Aug  1 21:43:07 IST 2014'
 import sys
 sys.path.append('..')
 import numpy as np
+from datetime import datetime, timedelta
 from uuid import uuid1
 
 import nsdf
@@ -22,6 +23,19 @@ def hh_vm():
     data_container = nsdf.UniformData('Vm', unit='mV', dt=0.1, tunit='ms')
     data_container.put_data(model.uid, vm_array)                            
     writer = nsdf.NSDFWriter('hh_vm.h5', mode='w')
+    writer.set_properties({'title': 'Example Vm recording',
+                           'creator': 'user',
+                           'software': ['python2.7', 'python-nsdf-0.1'],
+                           'method': ['np.random.rand'],
+                           'description': 'Randomly generated Vm for a single' \
+                                          'compartment',
+                           'rights': 'CC-BY-SA',
+                           'tstart': datetime.now(),
+                           'tend': datetime.now() + timedelta(seconds=3),
+                           'contributor': ['Chaitanya Chintaluri',
+                                           'Daniel Wocjcik',
+                                           'Upinder Bhalla']})
+                           
     writer.add_modeltree(model)
     source_ds = writer.add_uniform_ds(model.name, [model.uid])
     writer.add_uniform_data(source_ds, data_container)

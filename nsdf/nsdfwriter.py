@@ -233,6 +233,48 @@ class NSDFWriter(object):
     def __del__(self):
         self._fd.close()
 
+    def set_properties(self, properties):
+        """Set the file attributes (environments).
+
+        Args:
+            properties (dict): mapping property names to values.
+                It must contain the following keyes:
+
+                title (str)
+                creator (list of str)
+                software (list of str)
+                method (list of str)
+                description (str)
+                rights (str)
+                tstart (datetime.datetime)
+                tend (datetime.datetime)
+                contributor (list of str)
+                
+
+        Raises:
+            KeyError if not all environment properties are specified in the dict.
+
+        """
+        self._fd.attrs['title'] = properties['title']
+        attr = np.zeros((len(properties['creator']),), dtype=VLENSTR)
+        attr[:] = properties['creator']
+        self._fd.attrs['creator'] = attr                
+        attr = np.zeros((len(properties['software']),), dtype=VLENSTR)
+        attr[:] = properties['software']
+        self._fd.attrs['software'] = attr
+        attr = np.zeros((len(properties['method']),), dtype=VLENSTR)
+        attr[:] = properties['method']
+        self._fd.attrs['method'] = attr                
+        self._fd.attrs['description'] = properties['description']
+        self._fd.attrs['rights'] = properties['rights']
+        self._fd.attrs['tstart'] = properties['tstart'].isoformat()
+        self._fd.attrs['tend'] = properties['tend'].isoformat()
+        attr = np.zeros((len(properties['contributor']),), dtype=VLENSTR)
+        attr[:] = properties['contributor']
+        self._fd.attrs['contributor'] = attr                
+        
+        
+
     @property
     def title(self):
         """Title of the file"""
@@ -362,7 +404,10 @@ class NSDFWriter(object):
 
         Args:
             tstart (datetime.datetime): start date-time of the data
-                recording/simulation.
+                recording/simulation. 
+
+        Note:
+            We take datetime instance here because we want to ensure ISO format.
 
         """
         self._fd.attrs['tstart'] = tstart.isoformat()
@@ -379,6 +424,9 @@ class NSDFWriter(object):
         Args: 
             tend (datetime.datetime): end date-time of the data
                 recording or simulation.
+
+        Note:
+            We take datetime instance here because we want to ensure ISO format.
 
         """
         self._fd.attrs['tend'] = tend.isoformat()

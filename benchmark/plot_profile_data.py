@@ -52,7 +52,17 @@ import matplotlib as mpl
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 
-mpl.rcParams['text.usetex'] = True
+sizeOfFont = 12
+fontProperties = {'family':'sans-serif','sans-serif':['Arial'],
+    'weight' : 'normal', 'size' : sizeOfFont}
+ticks_font = mpl.font_manager.FontProperties(family='Arial', style='normal',
+    size=sizeOfFont, weight='normal', stretch='normal')
+mpl.rc('font',**fontProperties)
+
+mpl.rc('figure', figsize=(17.35/(2.54*2), 23.35/2.54/3))
+# mpl.rc('text', usetex=True)
+# mpl.rc('text.latex', preamble=r'\usepackage{cmbright}')
+
 # mpl.rcParams['text.latex.preamble']=[r"\usepackage{amsmath}"]
 
 FIELDNAMES = ['dialect',
@@ -164,7 +174,7 @@ def plot_profile_data(filename):
                 data[key][field] = values
 
     for field in DATA_FIELDS:
-        fig = plt.figure()
+        fig = plt.figure(field)
         # fig.suptitle(field)
         axes_list = []
         ax = None
@@ -173,11 +183,10 @@ def plot_profile_data(filename):
             ax.get_xaxis().set_visible(False)
             axes_list.append(ax)
             if ii // 2 == 0:
-                title = r'\textbf{compressed}' if ii % 2 else r'\textbf{uncompressed}'
-                ax.set_title(title)
+                title = r'Compressed' if ii % 2 else r'Uncompressed'
+                ax.set_title(title, fontsize=12)
             if ii % 2 == 0:
-                ylabel = r'\textbf{fixed}' if ii // 2 == 0 else r'\textbf{incremental}'
-                ylabel += '\nTime (s)'
+                ylabel = '{}\nTime (s)'.format('Fixed' if ii // 2 == 0 else 'Incremental')
                 ax.set_ylabel(ylabel)
             else:
                 ax.get_yaxis().set_visible(False)
@@ -191,9 +200,29 @@ def plot_profile_data(filename):
             ax.bar([pos], np.mean(data[key][field]), yerr=np.std(data[key][field]),
                       color=color, ecolor='b', alpha=0.7,
                       label=key.dialect)
-        pdfout = PdfPages('{}.pdf'.format(field))
-        pdfout.savefig(fig)
-        pdfout.close()
+        for ax in axes_list:
+            start, end = ax.get_ylim()
+            if end < 0.1:
+                step = 0.05
+            elif end < 1:
+                step = 0.5
+            elif end < 10:
+                step = 2
+            elif end < 50:
+                step = 10
+            elif end < 100:
+                step = 30
+            elif end < 200:
+                step = 50
+            else:
+                step = 100
+            ax.yaxis.set_ticks(np.arange(0, end + step/2, step))
+        fig.tight_layout()
+        fig.savefig('{}.svg'.format(field))
+        # pdfout = PdfPages('{}.pdf'.format(field))
+        # pdfout.savefig(fig)
+        # pdfout.close()
+        
     plt.show()
 
 if __name__ == '__main__':
