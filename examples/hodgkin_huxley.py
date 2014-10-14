@@ -37,10 +37,15 @@ def hh_vm():
                                            'Upinder Bhalla']})
                            
     writer.add_modeltree(model)
-    source_ds = writer.add_uniform_ds(model.name, [model.uid])
+    source_ds = writer.add_uniform_ds('compartment_population', [model.uid])
     writer.add_uniform_data(source_ds, data_container)
 
     
+def read_hh_vm():
+    reader = nsdf.NSDFReader('hh_vm.h5')
+    data = reader.get_uniform_data('compartment_population', 'Vm')
+
+
 def hh_compartment():
     filename = 'hh_compartment.h5'
     model = nsdf.ModelComponent('compartment', uid=uuid1().hex)
@@ -105,6 +110,7 @@ def hh_compartment_with_channels():
 
 if __name__ == '__main__':
     hh_vm()
+    read_hh_vm()
     hh_compartment()
     hh_compartment_with_channels()
     
