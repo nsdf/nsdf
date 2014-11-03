@@ -365,7 +365,7 @@ if dump_hdf5:
         tie_data_map(elec_dset, morp_labels, 'label', 1)
 
     elif dump_type == 4:
-        sys.path.append('../../..')
+        sys.path.append('../../')
         import nsdf
         writer = nsdf.NSDFWriter('hay_currents_nsdf.h5', mode='w')
         curr_source_ds = writer.add_uniform_ds('hay_currs', i_cp_names)
