@@ -6,75 +6,76 @@
 # for the convenience of the user.
 
 # Use matplotlib and pygraphviz
-
+import re
 import matplotlib.pyplot as plt
 import pygraphviz as pgv
+import webcolors as wc
 
-G = pgv.AGraph(strict=True,directed=True, rankdir='LR',ranksep='0.5', splines=False, nodesep=0.5)#, rank='source')
+width_box = 1.0
+edge_width = 2.0
 
-width_box = 2
+font_name = 'Arial'
+font_size = 12.0
 
-def add_children(G, parent_node, child_list, color=None):
-    child_node_list = []
-    dummy_point_list = []
-    children = []
-    for child_idx, child in enumerate(child_list):
-        try:
-            doh_ = G.get_node(child)
-            child_x = child+'_'+str(G.order())
-        except KeyError:
-            child_x = child
-        children.append(child_x)
-        G.add_node(child_x, label=child, width=width_box, shape='box', style='rounded,filled', concentrate=True, fillcolor=color)
-        G.add_node(child_x+'_point', shape='point')
+subgrp_shape = 'tab' #http://www.graphviz.org/doc/info/shapes.html#d:style
+leafnde_shape = 'note'
 
-        child_node = G.get_node(child_x)
-        child_point_node = G.get_node(child_x+'_point')
+NODE_0 = wc.name_to_hex('white') #root
+NODE_1 = wc.name_to_hex('skyblue') #data/map/model
+NODE_2 = wc.name_to_hex('wheat') #uniform/static
+NODE_3 = wc.name_to_hex('lightgreen') #population
+NODE_4 = wc.name_to_hex('sandybrown') #parameter
+NODE_5 = wc.name_to_hex('lightgrey') #oned
 
-        G.add_edge(child_point_node, child_node, weight=2)
+NODE_COLOR = [NODE_0, NODE_1, NODE_2, NODE_3, NODE_4, NODE_5]
 
-        child_node_list.append(child_node)
-        dummy_point_list.append(child_point_node)
+def add_child(G, parent_node, child, color=None, end_node=False):
+    if parent_node=='/':
+        child_x = parent_node+child 
+    else:
+        child_x = parent_node+'/'+child 
+    G.add_node(child_x+'_point', shape='point', width=0.05)
+    child_point_node = G.get_node(child_x+'_point')
+    G.add_edge(parent_node, child_point_node, weight=2, penwidth=edge_width, arrowsize=0.0, arrowhead=None, constraint=False)
+    if end_node:
+        G.add_node(child_x, label=child, width=width_box, shape=leafnde_shape, style='filled', concentrate=True, fillcolor=color, 
+                   fontname=font_name, fontsize=font_size)
+    else:
+        G.add_node(child_x, label=child, width=width_box, shape=subgrp_shape, style='filled', concentrate=True, fillcolor=color, 
+                   fontname=font_name, fontsize=font_size)
+    child_node = G.get_node(child_x)
+    G.add_edge(child_point_node, child_node, penwidth=edge_width, weight=3)
+    H = G.subgraph([child_point_node, parent_node], rank='same', constraint=False)
+    H = G.subgraph([child_point_node, child], rank='same')
+    return child_node
 
-    G.add_edge(parent_node, dummy_point_list[0], arrowhead=None, arrowsize=0.0)
-    for idx in range(len(dummy_point_list)-1):
-        G.add_edge(dummy_point_list[idx], dummy_point_list[idx+1], arrowhead=None, arrowsize=0.0, weight=1)
+def gen_figure(dir_list):
+    G = pgv.AGraph(strict=True, directed=True, rankdir='LR', ranksep='0.25', splines=False, nodesep=0.25)
+    G.add_node('/', label='ROOT', shape=subgrp_shape, style='filled', concentrate=True, width=width_box,
+               fontname=font_name, fontsize=font_size, fillcolor=NODE_0)
+    for path in dir_list:
+        if path.startswith('/'):
+            pass
+        else:
+            path = '/'+path #starting with root
+        path_idx = [m.start() for m in re.finditer('/', path)]
+        sub_dirs = path.split('/')[1:] #skip the first
+        for ii,sub_folder in enumerate(sub_dirs):
+            try: 
+                dummy = G.get_node(path[:path_idx[ii]]+'/'+sub_folder)
+                #print 'Node already exists:', path[:path_idx[ii]]+'/'+sub_folder
+                pass
+            except KeyError:
+                if ii==0:
+                    add_child(G, '/', sub_folder, NODE_COLOR[ii+1])
+                else:
+                    add_child(G, path[:path_idx[ii]], sub_folder, NODE_COLOR[ii+1])
+    G.layout('dot')
+    G.draw('figure2_lhs.svg')
 
-    H = G.subgraph(child_node_list, rank='same')
-    H = G.subgraph(dummy_point_list+[parent_node], rank='same')
+dir_list = ['/event/kill/me',
+            '/data/list/tada/hello',
+            'event/tell/this',
+            '/data/list/tada/meow']
 
-    return G, children
-
-#  #BASIC ROOT level in HDF5
-G.add_node('ROOT', label='ROOT', shape='box', style='rounded,filled', concentrate=True) #root level
-add_children(G, 'ROOT', ['model', 'map', 'data'], 'red') #  #parent level (model verus map)
-add_children(G, 'data', ['static', 'events', 'uniform', 'nonuniform'], 'green') #  #Child level (data type)
-
-add_children(G, 'static', ['all'], 'orange') #  #Grandchild (population)
-add_children(G, 'all', ['morphology'], 'blue') #  #Great-grandchild
-add_children(G, 'all', ['connections'], 'blue')
-
-add_children(G, 'events', ['population0', 'population1'], 'orange')
-G, children = add_children(G, 'population0', ['spikes'], 'blue')
-add_children(G, children[0], ['spikedataset0', 'spikedataset1', 'spikedataset2'])
-G, children = add_children(G, 'population1', ['spikes'], 'blue')
-add_children(G, children[0], ['spikedataset0', 'spikedataset1', 'spikedataset2'])
-
-G, children = add_children(G, 'uniform', ['population0', 'population1'], 'orange')
-add_children(G, children[0], ['Vm','Im', 'Ik'], 'blue')
-add_children(G, children[1], ['Vm'], 'blue')
-
-add_children(G, 'nonuniform', ['neurons', 'AMPA', 'GABA'], 'orange')
-G, children = add_children(G, 'neurons', ['Vm'], 'blue')
-add_children(G, children[0], ['soma_0', 'soma_1'])
-add_children(G, 'AMPA', ['Gk'], 'blue')
-add_children(G, 'Gk', ['soma_0_ampa'])
-add_children(G, 'Gk', ['dend_1_ampa'])
-G, children = add_children(G, 'GABA', ['Gk'], 'blue')
-add_children(G, children[0], ['soma_0_gaba'])
-add_children(G, children[0], ['dend_4_gaba'])
-add_children(G, children[0], ['dend_7_gaba'])
-
-G.layout('dot')
-G.draw('figure1.png')
-# End of figure1.py
+gen_figure(dir_list)
