@@ -19,7 +19,7 @@ from pylab import *
 
 simdt = 1e-6 # s
 plotdt = 10e-6 # s
-runtime = 0.7 # s
+runtime = 0.1 # s
 
 def loadGran98NeuroML_L123(filename):
     neuromlR = NeuroML()
@@ -35,23 +35,24 @@ def loadGran98NeuroML_L123(filename):
     resetSim(['/elec','/cells'],simdt,plotdt,simmethod='ee') # from moose.utils
     print "Running ... "
     moose.start(runtime)
-    tvec = arange(0.0,runtime,plotdt)
-    plot(tvec,somaVm.vector[1:])
-    title('Soma Vm')
-    xlabel('time (s)')
-    ylabel('Voltage (V)')
-    figure()
-    plot(tvec,somaCa.vector[1:])
-    title('Soma Ca')
-    xlabel('time (s)')
-    ylabel('Ca conc (mol/m^3)')
-    figure()
-    plot(tvec,somaIKCa.vector[1:])
-    title('KCa current (A)')
-    xlabel('time (s)')
-    ylabel('')
-    print "Showing plots ..."
-    show()
+    print 'Finished simulation for', runtime, 'seconds'
+    # tvec = arange(0.0,runtime,plotdt)
+    # plot(tvec,somaVm.vector[1:])
+    # title('Soma Vm')
+    # xlabel('time (s)')
+    # ylabel('Voltage (V)')
+    # figure()
+    # plot(tvec,somaCa.vector[1:])
+    # title('Soma Ca')
+    # xlabel('time (s)')
+    # ylabel('Ca conc (mol/m^3)')
+    # figure()
+    # plot(tvec,somaIKCa.vector[1:])
+    # title('KCa current (A)')
+    # xlabel('time (s)')
+    # ylabel('')
+    # print "Showing plots ..."
+    # show()
 
 filename = "GranuleCell.net.xml"
 if __name__ == "__main__":
