@@ -11,7 +11,7 @@ import h5py
 import numpy as np
 from brian import *
 
-USE_NSDF = TRUE
+USE_NSDF = True
 
 seed_no = 500
 np.random.seed(seed_no)
