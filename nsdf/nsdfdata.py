@@ -151,9 +151,17 @@ class UniformData(TimeSeriesData):
 
         
 class NonuniformData(TimeSeriesData):
-    """Stores nonuniformly sampled data."""
-    def __init__(self, *args, **kwargs):
-        super(NonuniformData, self).__init__(*args, **kwargs)
+    """Stores nonuniformly sampled data.
+
+    Attributes:
+    
+        ttype : np.dtype
+            data type of time points. Default np.float64
+
+    """
+    def __init__(self, name, unit=None, field=None, tunit=None, dtype=np.float64, ttype=np.float64):
+        super(NonuniformData, self).__init__(name, unit, field, tunit, dtype)
+        self.ttype = ttype
 
     def put_data(self, source, data):
         """Set the data array for source. 
@@ -170,8 +178,9 @@ class NonuniformData(TimeSeriesData):
         """
         assert len(data) == 2, 'need a 2-tuple (data values, sampling times)'
         assert len(data[0]) == len(data[1]),    \
-            'number of data values and sampling times must be the same.'
-        super(NonuniformData, self).put_data(source, data)
+            'number of data values and sampling times must be the same.'        
+        self._src_data_dict[source] = (np.asarray(data[0], dtype=self.dtype),
+                                       np.asarray(data[1], dtype=self.ttype))
 
         
 class NonuniformRegularData(TimeSeriesData):

@@ -15,7 +15,7 @@ In all cases, we utilize the NSDF Python library.
    We show how to store membrane potential obtained from the soma of a cell, also shows how to store data
    from the channels.
 
-3) test_brain.py
+3) test_brian.py
    is the case where we show how to store spiking data obtain from Brian simulator. Requires Brian simulator.
    Generates 3 files. Code for storing the data using native h5py is also included.
 
