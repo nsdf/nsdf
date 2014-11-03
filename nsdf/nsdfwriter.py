@@ -530,7 +530,6 @@ class NSDFWriter(object):
         node.add_child(root)
         self.modelroot.visit(write_absolute, self.model)
 
-
     def add_model_filecontents(self, filenames, ascii=True, recursive=True):
         """Add the files and directories listed in `filenames` to
         ``/model/filecontents``.
