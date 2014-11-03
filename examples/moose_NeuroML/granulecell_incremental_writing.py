@@ -59,9 +59,9 @@ import numpy as np
 import sys
 from datetime import datetime
 
-sys.path.append('..')
-sys.path.append('/home/subha/src/moose_async13/python')
-sys.path.append('/home/subha/src/moose_async13/Demos/neuroml/GranuleCell')
+sys.path.append('../../')
+sys.path.append('/home/subha/src/moose_trunk/python')
+sys.path.append('/home/subha/src/moose_trunk/Demos/neuroml/GranuleCell')
 
 import nsdf
 
@@ -106,6 +106,7 @@ def example():
     writer.method = ['exponential Euler']
     clock = moose.Clock('/clock')
     while clock.currentTime < runtime:
+        print 'Run till', clock.currentTime
         vm.clearVec()
         ca.clearVec()
         to_run = time_increment
@@ -113,7 +114,9 @@ def example():
             to_run = runtime - clock.currentTime
         moose.start(to_run)
         vm_data.put_data(soma_path, vm.vector)
+        writer.add_uniform_data(source_ds, vm_data)
         ca_data.put_data(soma_path, ca.vector)
+        writer.add_uniform_data(source_ds, ca_data)
     end_time = datetime.now()
     writer.tend = end_time
     print 'Finished writing example NSDF file for GranuleCell demo'
