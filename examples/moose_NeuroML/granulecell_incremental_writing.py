@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Nov  3 23:28:21 2014 (+0530)
 # Version: 
-# Last-Updated: 
-#           By: 
-#     Update #: 0
+# Last-Updated: Tue Nov  4 10:59:41 2014 (+0530)
+#           By: Subhasis Ray
+#     Update #: 4
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -72,7 +72,6 @@ import nsdf
 import moose
 import Granule98 as granule
 
-time_increment = 0.1
 runtime = 0.7
 
 def example():
@@ -81,7 +80,6 @@ def example():
     os.chdir(directory)
     start_time = datetime.now()    
     granule.loadGran98NeuroML_L123(granule.filename)
-    tvec = np.arange(0.0, granule.runtime, granule.plotdt)
     soma_path = '/cells[0]/Gran_0[0]/Soma_0[0]'
     ca = moose.element('{}/Gran_CaPool_98/data/somaCa'.format(soma_path))
     vm = moose.element('{}/data[0]/somaVm[0]'.format(soma_path))
@@ -105,6 +103,7 @@ def example():
     writer.software = ['Python2.7', 'moose', 'nsdf python library']
     writer.method = ['exponential Euler']
     clock = moose.Clock('/clock')
+    time_increment = 100 * granule.plotdt
     while clock.currentTime < runtime:
         print 'Run till', clock.currentTime
         vm.clearVec()
