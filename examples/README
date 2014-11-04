@@ -49,8 +49,13 @@ http://www.bit.ly/nsdf
    incremental writing, same example as the previous.
 
 10) datadump/test_parse_datadump.py and datadump/test_parse_datadump_spikes.py is
-   the case when user wants to process existing data into NSDF. Requires pandas
-   python package.  This is partial data, and is only meant as illustrative of
-   possible effecient operations.
+    the case when user wants to process existing data into NSDF. Requires pandas
+    python package.  This is partial data, and is only meant as illustrative of
+    possible effecient operations.
+
+11) test_connections.py illustrates how to save information related to
+    connectivity, we show two differnt options for saving this data. The user may	
+    prefer which ever suits their need. Both the formats shown are permitted withing
+    nsdf
 
 #End of README
