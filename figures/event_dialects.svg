@@ -1,0 +1,1752 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="584.64563"
+   height="460.62991"
+   id="svg3695"
+   version="1.1"
+   inkscape:version="0.48.3.1 r9886"
+   sodipodi:docname="event_dialects.svg"
+   inkscape:export-filename="/home/cchintaluri/nsdf/graphviz/fig3/event_dialects.png"
+   inkscape:export-xdpi="600"
+   inkscape:export-ydpi="600">
+  <defs
+     id="defs3697" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="1"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.979899"
+     inkscape:cx="256.05862"
+     inkscape:cy="166.02496"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     units="cm"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     inkscape:window-width="1920"
+     inkscape:window-height="1176"
+     inkscape:window-x="0"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid6524"
+       empspacing="5"
+       visible="true"
+       enabled="true"
+       snapvisiblegridlinesonly="true" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata3700">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-591.7325)">
+    <polygon
+       id="polygon3516"
+       points="475,-210 475,5 -4,5 -4,5 -4,-210 "
+       style="fill:#ffffff;stroke:#ffffff;stroke-width:2"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)" />
+    <g
+       class="node"
+       id="node2"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3519">/</title>
+      <polygon
+         id="polygon3521"
+         points="72,-170 72,-206 72,-206 12,-206 12,-210 3.15797e-14,-210 0,-170 "
+         style="fill:#f5deb3;stroke:#000000;stroke-width:2" />
+      <polyline
+         id="polyline3523"
+         points="2.84217e-14,-206 12,-206 "
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <text
+         id="text3525"
+         font-size="12.00"
+         y="-184.7"
+         x="36"
+         style="font-size:12px;text-anchor:middle;font-family:Arial">event</text>
+    </g>
+    <g
+       class="node"
+       id="node3"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3528">/cells_point</title>
+      <ellipse
+         id="ellipse3530"
+         ry="2.00002"
+         rx="2.00002"
+         cy="-150"
+         cx="36"
+         d="m 38.00002,-150 c 0,1.10458 -0.895439,2.00002 -2.00002,2.00002 -1.104581,0 -2.00002,-0.89544 -2.00002,-2.00002 0,-1.10458 0.895439,-2.00002 2.00002,-2.00002 1.104581,0 2.00002,0.89544 2.00002,2.00002 z"
+         sodipodi:cx="36"
+         sodipodi:cy="-150"
+         sodipodi:rx="2.00002"
+         sodipodi:ry="2.00002"
+         style="fill:#000000;stroke:#000000;stroke-width:2" />
+    </g>
+    <g
+       class="edge"
+       id="edge3"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3533">/-&gt;/cells_point</title>
+      <path
+         id="path3535"
+         d="m 36,-169.76 c 0,5.9 0,11.79 0,17.68"
+         inkscape:connector-curvature="0"
+         style="fill:none;stroke:#000000;stroke-width:2" />
+    </g>
+    <g
+       class="node"
+       id="node7"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3538">/cells</title>
+      <polygon
+         id="polygon3540"
+         points="155,-132 155,-168 155,-168 95,-168 95,-172 83,-172 83,-132 "
+         style="fill:#90ee90;stroke:#000000;stroke-width:2" />
+      <polyline
+         id="polyline3542"
+         points="83,-168 95,-168 "
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <text
+         id="text3544"
+         font-size="12.00"
+         y="-146.7"
+         x="119"
+         style="font-size:12px;text-anchor:middle;font-family:Arial">cells</text>
+    </g>
+    <g
+       class="edge"
+       id="edge18"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3547">/cells_point-&gt;/cells</title>
+      <path
+         id="path3549"
+         d="m 38.052,-150 c 5.201,0 19.575,0 34.794,0"
+         inkscape:connector-curvature="0"
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <polygon
+         id="polygon3551"
+         points="72.882,-153.5 82.882,-150 72.882,-146.5 72.882,-153.5 "
+         style="fill:#000000;stroke:#000000;stroke-width:2" />
+    </g>
+    <g
+       class="node"
+       id="node8"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3554">/cells/spikes_point</title>
+      <ellipse
+         id="ellipse3556"
+         ry="2.00002"
+         rx="2.00002"
+         cy="-112"
+         cx="119"
+         d="m 121.00002,-112 c 0,1.10458 -0.89544,2.00002 -2.00002,2.00002 -1.10458,0 -2.00002,-0.89544 -2.00002,-2.00002 0,-1.10458 0.89544,-2.00002 2.00002,-2.00002 1.10458,0 2.00002,0.89544 2.00002,2.00002 z"
+         sodipodi:cx="119"
+         sodipodi:cy="-112"
+         sodipodi:rx="2.00002"
+         sodipodi:ry="2.00002"
+         style="fill:#000000;stroke:#000000;stroke-width:2" />
+    </g>
+    <g
+       class="edge"
+       id="edge7"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3559">/cells-&gt;/cells/spikes_point</title>
+      <path
+         id="path3561"
+         d="m 119,-131.76 c 0,5.9 0,11.79 0,17.68"
+         inkscape:connector-curvature="0"
+         style="fill:none;stroke:#000000;stroke-width:2" />
+    </g>
+    <g
+       class="node"
+       id="node12"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3564">/cells/spikes</title>
+      <polygon
+         id="polygon3566"
+         points="238,-94 238,-130 238,-130 178,-130 178,-134 166,-134 166,-94 "
+         style="fill:#f4a460;stroke:#000000;stroke-width:2" />
+      <polyline
+         id="polyline3568"
+         points="166,-130 178,-130 "
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <text
+         id="text3570"
+         font-size="12.00"
+         y="-108.7"
+         x="202"
+         style="font-size:12px;text-anchor:middle;font-family:Arial">spikes</text>
+    </g>
+    <g
+       class="edge"
+       id="edge20"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3573">/cells/spikes_point-&gt;/cells/spikes</title>
+      <path
+         id="path3575"
+         d="m 121.05,-112 c 5.2,0 19.58,0 34.8,0"
+         inkscape:connector-curvature="0"
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <polygon
+         id="polygon3577"
+         points="155.88,-115.5 165.88,-112 155.88,-108.5 155.88,-115.5 "
+         style="fill:#000000;stroke:#000000;stroke-width:2" />
+    </g>
+    <g
+       class="node"
+       id="node13"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3580">/cells/spikes/neuronA_point</title>
+      <ellipse
+         id="ellipse3582"
+         ry="2.00002"
+         rx="2.00002"
+         cy="-74"
+         cx="202"
+         d="m 204.00002,-74 c 0,1.104581 -0.89544,2.00002 -2.00002,2.00002 -1.10458,0 -2.00002,-0.895439 -2.00002,-2.00002 0,-1.104581 0.89544,-2.00002 2.00002,-2.00002 1.10458,0 2.00002,0.895439 2.00002,2.00002 z"
+         sodipodi:cx="202"
+         sodipodi:cy="-74"
+         sodipodi:rx="2.00002"
+         sodipodi:ry="2.00002"
+         style="fill:#000000;stroke:#000000;stroke-width:2" />
+    </g>
+    <g
+       class="edge"
+       id="edge11"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3585">/cells/spikes-&gt;/cells/spikes/neuronA_point</title>
+      <path
+         id="path3587"
+         d="m 202,-93.758 c 0,5.893 0,11.786 0,17.68"
+         inkscape:connector-curvature="0"
+         style="fill:none;stroke:#000000;stroke-width:2" />
+    </g>
+    <g
+       class="node"
+       id="node17"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3590">/cells/spikes/neuronB_point</title>
+      <ellipse
+         id="ellipse3592"
+         ry="2.00002"
+         rx="2.00002"
+         cy="-19"
+         cx="202"
+         d="m 204.00002,-19 c 0,1.104581 -0.89544,2.00002 -2.00002,2.00002 -1.10458,0 -2.00002,-0.895439 -2.00002,-2.00002 0,-1.104581 0.89544,-2.00002 2.00002,-2.00002 1.10458,0 2.00002,0.895439 2.00002,2.00002 z"
+         sodipodi:cx="202"
+         sodipodi:cy="-19"
+         sodipodi:rx="2.00002"
+         sodipodi:ry="2.00002"
+         style="fill:#000000;stroke:#000000;stroke-width:2" />
+    </g>
+    <g
+       class="edge"
+       id="edge15"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3595">/cells/spikes-&gt;/cells/spikes/neuronB_point</title>
+      <path
+         id="path3597"
+         d="m 202,-93.835 c 0,24.34 0,48.679 0,73.019"
+         inkscape:connector-curvature="0"
+         style="fill:none;stroke:#000000;stroke-width:2" />
+    </g>
+    <g
+       class="node"
+       id="node22"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3600">/cells/spikes/neuronA</title>
+      <polygon
+         id="polygon3602"
+         points="249,-56 321,-56 321,-86 315,-92 315,-92 249,-92 "
+         style="fill:#d3d3d3;stroke:#000000;stroke-width:2" />
+      <polyline
+         id="polyline3604"
+         points="315,-92 315,-86 "
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <polyline
+         id="polyline3606"
+         points="321,-86 315,-86 "
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <text
+         id="text3608"
+         font-size="12.00"
+         y="-70.699997"
+         x="285"
+         style="font-size:12px;text-anchor:middle;font-family:Arial">neuronA</text>
+    </g>
+    <g
+       class="edge"
+       id="edge22"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3611">/cells/spikes/neuronA_point-&gt;/cells/spikes/neuronA</title>
+      <path
+         id="path3613"
+         d="m 204.05,-74 c 5.2,0 19.58,0 34.8,0"
+         inkscape:connector-curvature="0"
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <polygon
+         id="polygon3615"
+         points="238.88,-77.5001 248.88,-74 238.88,-70.5001 238.88,-77.5001 "
+         style="fill:#000000;stroke:#000000;stroke-width:2" />
+    </g>
+    <g
+       class="node"
+       id="node24"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3618">/cells/spikes/neuronB</title>
+      <polygon
+         id="polygon3620"
+         points="249,-1 321,-1 321,-31 315,-37 315,-37 249,-37 "
+         style="fill:#d3d3d3;stroke:#000000;stroke-width:2" />
+      <polyline
+         id="polyline3622"
+         points="315,-37 315,-31 "
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <polyline
+         id="polyline3624"
+         points="321,-31 315,-31 "
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <text
+         id="text3626"
+         font-size="12.00"
+         y="-15.7"
+         x="285"
+         style="font-size:12px;text-anchor:middle;font-family:Arial">neuronB</text>
+    </g>
+    <g
+       class="edge"
+       id="edge24"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3629">/cells/spikes/neuronB_point-&gt;/cells/spikes/neuronB</title>
+      <path
+         id="path3631"
+         d="m 204.05,-19 c 5.2,0 19.58,0 34.8,0"
+         inkscape:connector-curvature="0"
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <polygon
+         id="polygon3633"
+         points="238.88,-22.5001 248.88,-19 238.88,-15.5001 238.88,-22.5001 "
+         style="fill:#000000;stroke:#000000;stroke-width:2" />
+    </g>
+    <g
+       class="node"
+       id="node26"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3636">neuronA</title>
+      <polygon
+         id="polygon3638"
+         points="333,-55.5 469,-55.5 469,-94.5 469,-94.5 333,-94.5 "
+         style="fill:#d3d3d3;stroke:#000000;stroke-width:2" />
+      <polygon
+         id="polygon3640"
+         points="381,-90 381,-60 341,-60 341,-60 341,-90 "
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <text
+         id="text3642"
+         font-size="12.00"
+         y="-72.199997"
+         x="348"
+         style="font-size:12px;text-anchor:start;font-family:Arial">sp[0]</text>
+      <polygon
+         id="polygon3644"
+         points="421,-90 421,-60 381,-60 381,-60 381,-90 "
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <text
+         id="text3646"
+         font-size="12.00"
+         y="-72.199997"
+         x="396"
+         style="font-size:12px;text-anchor:start;font-family:Arial">...</text>
+      <polygon
+         id="polygon3648"
+         points="461,-90 461,-60 421,-60 421,-60 421,-90 "
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <text
+         id="text3650"
+         font-size="12.00"
+         y="-72.199997"
+         x="425"
+         style="font-size:12px;text-anchor:start;font-family:Arial">sp[11]</text>
+    </g>
+    <g
+       class="edge"
+       id="edge26"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3653">/cells/spikes/neuronA:ne-&gt;neuronA:nw</title>
+      <path
+         id="path3655"
+         d="m 301,-92 c 0,0 31,-2 31,-2"
+         inkscape:connector-curvature="0"
+         style="fill:none;stroke:#000000;stroke-width:2;stroke-dasharray:10, 4" />
+    </g>
+    <g
+       class="node"
+       id="node29"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3658">neuronB</title>
+      <polygon
+         id="polygon3660"
+         points="333,0.5 469,0.5 469,-38.5 469,-38.5 333,-38.5 "
+         style="fill:#d3d3d3;stroke:#000000;stroke-width:2" />
+      <polygon
+         id="polygon3662"
+         points="381,-34 381,-4 341,-4 341,-4 341,-34 "
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <text
+         id="text3664"
+         font-size="12.00"
+         y="-16.200001"
+         x="348"
+         style="font-size:12px;text-anchor:start;font-family:Arial">sp[0]</text>
+      <polygon
+         id="polygon3666"
+         points="421,-34 421,-4 381,-4 381,-4 381,-34 "
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <text
+         id="text3668"
+         font-size="12.00"
+         y="-16.200001"
+         x="396"
+         style="font-size:12px;text-anchor:start;font-family:Arial">...</text>
+      <polygon
+         id="polygon3670"
+         points="461,-34 461,-4 421,-4 421,-4 421,-34 "
+         style="fill:none;stroke:#000000;stroke-width:2" />
+      <text
+         id="text3672"
+         font-size="12.00"
+         y="-16.200001"
+         x="424.5"
+         style="font-size:12px;text-anchor:start;font-family:Arial">sp[13]</text>
+    </g>
+    <g
+       class="edge"
+       id="edge30"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3675">/cells/spikes/neuronB:ne-&gt;neuronB:nw</title>
+      <path
+         id="path3677"
+         d="m 301,-37 c 0,0 31,-1 31,-1"
+         inkscape:connector-curvature="0"
+         style="fill:none;stroke:#000000;stroke-width:2;stroke-dasharray:10, 4" />
+    </g>
+    <g
+       class="edge"
+       id="edge28"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3680">neuronA:sw-&gt;/cells/spikes/neuronA:se</title>
+      <path
+         id="path3682"
+         d="m 333,-56 c 0,0 -29,0 -29,0"
+         inkscape:connector-curvature="0"
+         style="fill:none;stroke:#000000;stroke-width:2;stroke-dasharray:10, 4" />
+    </g>
+    <g
+       class="edge"
+       id="edge32"
+       transform="matrix(0.625,0,0,0.625,18.526782,771.78183)">
+      <title
+         id="title3685">neuronB:sw-&gt;/cells/spikes/neuronB:se</title>
+      <path
+         id="path3687"
+         d="m 333,0 c 0,0 -29,-1 -29,-1"
+         inkscape:connector-curvature="0"
+         style="fill:none;stroke:#000000;stroke-width:2;stroke-dasharray:10, 4" />
+    </g>
+    <g
+       transform="matrix(0.625,0,0,0.625,18.1875,900.79992)"
+       class="graph"
+       id="graph1-0">
+      <title
+         id="title6754">_anonymous_0</title>
+      <polygon
+         id="polygon6756"
+         points="-4,5 -4,5 -4,-132 472,-132 472,5 "
+         style="fill:#ffffff;stroke:#ffffff;stroke-width:2" />
+      <!-- / -->
+      <g
+         class="node"
+         id="node2-2">
+        <title
+           id="title6759">/</title>
+        <polygon
+           id="polygon6761"
+           points="0,-92 72,-92 72,-128 72,-128 12,-128 12,-132 3.15797e-14,-132 "
+           style="fill:#f5deb3;stroke:#000000;stroke-width:2" />
+        <polyline
+           id="polyline6763"
+           points="2.84217e-14,-128 12,-128 "
+           style="fill:none;stroke:#000000;stroke-width:2" />
+        <text
+           id="text6765"
+           font-size="12.00"
+           y="-106.7"
+           x="36"
+           style="font-size:12px;text-anchor:middle;font-family:Arial">event</text>
+      </g>
+      <!-- /cells_point -->
+      <g
+         class="node"
+         id="node3-5">
+        <title
+           id="title6768">/cells_point</title>
+        <ellipse
+           d="m 38.00002,-72 c 0,1.104581 -0.895439,2.00002 -2.00002,2.00002 -1.104581,0 -2.00002,-0.895439 -2.00002,-2.00002 0,-1.104581 0.895439,-2.00002 2.00002,-2.00002 1.104581,0 2.00002,0.895439 2.00002,2.00002 z"
+           id="ellipse6770"
+           ry="2.00002"
+           rx="2.00002"
+           cy="-72"
+           cx="36"
+           sodipodi:cx="36"
+           sodipodi:cy="-72"
+           sodipodi:rx="2.00002"
+           sodipodi:ry="2.00002"
+           style="fill:#000000;stroke:#000000;stroke-width:2" />
+      </g>
+      <!-- /&#45;&gt;/cells_point -->
+      <g
+         class="edge"
+         id="edge3-1">
+        <title
+           id="title6773">/-&gt;/cells_point</title>
+        <path
+           id="path6775"
+           d="m 36,-91.758 c 0,5.893 0,11.786 0,17.68"
+           inkscape:connector-curvature="0"
+           style="fill:none;stroke:#000000;stroke-width:2" />
+      </g>
+      <!-- /cells -->
+      <g
+         class="node"
+         id="node7-4">
+        <title
+           id="title6778">/cells</title>
+        <polygon
+           id="polygon6780"
+           points="83,-54 155,-54 155,-90 155,-90 95,-90 95,-94 83,-94 "
+           style="fill:#90ee90;stroke:#000000;stroke-width:2" />
+        <polyline
+           id="polyline6782"
+           points="83,-90 95,-90 "
+           style="fill:none;stroke:#000000;stroke-width:2" />
+        <text
+           id="text6784"
+           font-size="12.00"
+           y="-68.699997"
+           x="119"
+           style="font-size:12px;text-anchor:middle;font-family:Arial">cells</text>
+      </g>
+      <!-- /cells_point&#45;&gt;/cells -->
+      <g
+         class="edge"
+         id="edge10">
+        <title
+           id="title6787">/cells_point-&gt;/cells</title>
+        <path
+           id="path6789"
+           d="m 38.052,-72 c 5.201,0 19.575,0 34.794,0"
+           inkscape:connector-curvature="0"
+           style="fill:none;stroke:#000000;stroke-width:2" />
+        <polygon
+           id="polygon6791"
+           points="82.882,-72 72.882,-68.5001 72.882,-75.5001 72.882,-75.5001 "
+           style="fill:#000000;stroke:#000000;stroke-width:2" />
+      </g>
+      <!-- /cells/spikes_point -->
+      <g
+         class="node"
+         id="node8-7">
+        <title
+           id="title6794">/cells/spikes_point</title>
+        <ellipse
+           d="m 121.00002,-34 c 0,1.104581 -0.89544,2.00002 -2.00002,2.00002 -1.10458,0 -2.00002,-0.895439 -2.00002,-2.00002 0,-1.104581 0.89544,-2.00002 2.00002,-2.00002 1.10458,0 2.00002,0.895439 2.00002,2.00002 z"
+           id="ellipse6796"
+           ry="2.00002"
+           rx="2.00002"
+           cy="-34"
+           cx="119"
+           sodipodi:cx="119"
+           sodipodi:cy="-34"
+           sodipodi:rx="2.00002"
+           sodipodi:ry="2.00002"
+           style="fill:#000000;stroke:#000000;stroke-width:2" />
+      </g>
+      <!-- /cells&#45;&gt;/cells/spikes_point -->
+      <g
+         class="edge"
+         id="edge7-2">
+        <title
+           id="title6799">/cells-&gt;/cells/spikes_point</title>
+        <path
+           id="path6801"
+           d="m 119,-53.758 c 0,5.893 0,11.786 0,17.68"
+           inkscape:connector-curvature="0"
+           style="fill:none;stroke:#000000;stroke-width:2" />
+      </g>
+      <!-- /cells/spikes -->
+      <g
+         class="node"
+         id="node12-5">
+        <title
+           id="title6804">/cells/spikes</title>
+        <polygon
+           id="polygon6806"
+           points="238,-16 238,-46 232,-52 232,-52 166,-52 166,-16 "
+           style="fill:#f4a460;stroke:#000000;stroke-width:2" />
+        <polyline
+           id="polyline6808"
+           points="232,-52 232,-46 "
+           style="fill:none;stroke:#000000;stroke-width:2" />
+        <polyline
+           id="polyline6810"
+           points="238,-46 232,-46 "
+           style="fill:none;stroke:#000000;stroke-width:2" />
+        <text
+           id="text6812"
+           font-size="12.00"
+           y="-30.700001"
+           x="202"
+           style="font-size:12px;text-anchor:middle;font-family:Arial">spikes</text>
+      </g>
+      <!-- /cells/spikes_point&#45;&gt;/cells/spikes -->
+      <g
+         class="edge"
+         id="edge12">
+        <title
+           id="title6815">/cells/spikes_point-&gt;/cells/spikes</title>
+        <path
+           id="path6817"
+           d="m 121.05,-34 c 5.2,0 19.58,0 34.8,0"
+           inkscape:connector-curvature="0"
+           style="fill:none;stroke:#000000;stroke-width:2" />
+        <polygon
+           id="polygon6819"
+           points="165.88,-34 155.88,-30.5001 155.88,-37.5001 155.88,-37.5001 "
+           style="fill:#000000;stroke:#000000;stroke-width:2" />
+      </g>
+      <!-- spikes -->
+      <g
+         class="node"
+         id="node14">
+        <title
+           id="title6822">spikes</title>
+        <polygon
+           id="polygon6824"
+           points="466,-68.5 466,-68.5 250,-68.5 250,0.5 466,0.5 "
+           style="fill:#f4a460;stroke:#000000;stroke-width:2" />
+        <polygon
+           id="polygon6826"
+           points="258,-34 258,-34 258,-64 308,-64 308,-34 "
+           style="fill:none;stroke:#000000;stroke-width:2" />
+        <text
+           id="text6828"
+           font-size="12.00"
+           y="-46.200001"
+           x="264.5"
+           style="font-size:12px;text-anchor:start;font-family:Arial">sp[A,1]</text>
+        <polygon
+           id="polygon6830"
+           points="308,-34 308,-34 308,-64 358,-64 358,-34 "
+           style="fill:none;stroke:#000000;stroke-width:2" />
+        <text
+           id="text6832"
+           font-size="12.00"
+           y="-46.200001"
+           x="328"
+           style="font-size:12px;text-anchor:start;font-family:Arial">...</text>
+        <polygon
+           id="polygon6834"
+           points="358,-34 358,-34 358,-64 408,-64 408,-34 "
+           style="fill:none;stroke:#000000;stroke-width:2" />
+        <text
+           id="text6836"
+           font-size="12.00"
+           y="-46.200001"
+           x="361.5"
+           style="font-size:12px;text-anchor:start;font-family:Arial">sp[A,11]</text>
+        <polygon
+           id="polygon6838"
+           points="258,-4 258,-4 258,-34 308,-34 308,-4 "
+           style="fill:none;stroke:#000000;stroke-width:2" />
+        <text
+           id="text6840"
+           font-size="12.00"
+           y="-16.200001"
+           x="264.5"
+           style="font-size:12px;text-anchor:start;font-family:Arial">sp[B,1]</text>
+        <polygon
+           id="polygon6842"
+           points="308,-4 308,-4 308,-34 358,-34 358,-4 "
+           style="fill:none;stroke:#000000;stroke-width:2" />
+        <text
+           id="text6844"
+           font-size="12.00"
+           y="-16.200001"
+           x="328"
+           style="font-size:12px;text-anchor:start;font-family:Arial">...</text>
+        <polygon
+           id="polygon6846"
+           points="358,-4 358,-4 358,-34 408,-34 408,-4 "
+           style="fill:none;stroke:#000000;stroke-width:2" />
+        <text
+           id="text6848"
+           font-size="12.00"
+           y="-16.200001"
+           x="378"
+           style="font-size:12px;text-anchor:start;font-family:Arial">...</text>
+        <polygon
+           id="polygon6850"
+           points="408,-4 408,-4 408,-34 458,-34 458,-4 "
+           style="fill:none;stroke:#000000;stroke-width:2" />
+        <text
+           id="text6852"
+           font-size="12.00"
+           y="-16.200001"
+           x="411"
+           style="font-size:12px;text-anchor:start;font-family:Arial">sp[B,13]</text>
+      </g>
+      <!-- /cells/spikes&#45;&gt;spikes -->
+      <g
+         class="edge"
+         id="edge14">
+        <title
+           id="title6855">/cells/spikes:ne-&gt;spikes:nw</title>
+        <path
+           id="path6857"
+           d="m 218,-52 c 0,0 31,-16 31,-16"
+           inkscape:connector-curvature="0"
+           style="fill:none;stroke:#000000;stroke-width:2;stroke-dasharray:10, 4" />
+      </g>
+      <!-- spikes&#45;&gt;/cells/spikes -->
+      <g
+         class="edge"
+         id="edge16">
+        <title
+           id="title6860">spikes:sw-&gt;/cells/spikes:se</title>
+        <path
+           id="path6862"
+           d="m 250,0 c 0,0 -29,-16 -29,-16"
+           inkscape:connector-curvature="0"
+           style="fill:none;stroke:#000000;stroke-width:2;stroke-dasharray:10, 4" />
+      </g>
+    </g>
+    <g
+       id="graph1-4"
+       class="graph"
+       transform="matrix(0.625,0,0,0.625,330.3125,784.53206)">
+      <title
+         id="title6039">_anonymous_0</title>
+      <!-- / -->
+      <g
+         id="node2-7"
+         class="node"
+         transform="translate(-41.6,0)">
+        <title
+           id="title6044">/</title>
+        <polygon
+           style="fill:#f5deb3;stroke:#000000;stroke-width:2"
+           points="346,-192 418,-192 418,-228 418,-228 358,-228 358,-232 346,-232 "
+           id="polygon6046" />
+        <polyline
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="346,-228 358,-228 "
+           id="polyline6048" />
+        <text
+           style="font-size:12px;text-anchor:middle;font-family:Arial"
+           x="382"
+           y="-206.7"
+           font-size="12.00"
+           id="text6050">event</text>
+      </g>
+      <!-- /cells_point -->
+      <g
+         id="node3-2"
+         class="node"
+         transform="translate(-41.6,0)">
+        <title
+           id="title6053">/cells_point</title>
+        <ellipse
+           style="fill:#000000;stroke:#000000;stroke-width:2"
+           sodipodi:ry="2.00002"
+           sodipodi:rx="2.00002"
+           sodipodi:cy="-172"
+           sodipodi:cx="382"
+           cx="382"
+           cy="-172"
+           rx="2.00002"
+           ry="2.00002"
+           id="ellipse6055"
+           d="m 384.00002,-172 c 0,1.10458 -0.89544,2.00002 -2.00002,2.00002 -1.10458,0 -2.00002,-0.89544 -2.00002,-2.00002 0,-1.10458 0.89544,-2.00002 2.00002,-2.00002 1.10458,0 2.00002,0.89544 2.00002,2.00002 z" />
+      </g>
+      <!-- /&#45;&gt;/cells_point -->
+      <g
+         id="edge3-7"
+         class="edge"
+         transform="translate(-41.6,0)">
+        <title
+           id="title6058">/-&gt;/cells_point</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:2"
+           inkscape:connector-curvature="0"
+           d="m 382,-191.76 c 0,5.9 0,11.79 0,17.68"
+           id="path6060" />
+      </g>
+      <!-- /cells -->
+      <g
+         id="node7-8"
+         class="node"
+         transform="translate(-41.6,0)">
+        <title
+           id="title6063">/cells</title>
+        <polygon
+           style="fill:#90ee90;stroke:#000000;stroke-width:2"
+           points="263,-154 335,-154 335,-190 335,-190 275,-190 275,-194 263,-194 "
+           id="polygon6065" />
+        <polyline
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="263,-190 275,-190 "
+           id="polyline6067" />
+        <text
+           style="font-size:12px;text-anchor:middle;font-family:Arial"
+           x="299"
+           y="-168.7"
+           font-size="12.00"
+           id="text6069">cells</text>
+      </g>
+      <!-- /cells_point&#45;&gt;/cells -->
+      <g
+         id="edge19"
+         class="edge"
+         transform="translate(-41.6,0)">
+        <title
+           id="title6072">/cells_point-&gt;/cells</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:2"
+           inkscape:connector-curvature="0"
+           d="m 379.95,-172 c -5.2,0 -19.58,0 -34.8,0"
+           id="path6074" />
+        <polygon
+           style="fill:#000000;stroke:#000000;stroke-width:2"
+           points="345.12,-175.5 345.12,-168.5 345.12,-168.5 335.12,-172 "
+           id="polygon6076" />
+      </g>
+      <!-- /cells/spikes_point -->
+      <g
+         id="node8-1"
+         class="node"
+         transform="translate(-41.6,0)">
+        <title
+           id="title6079">/cells/spikes_point</title>
+        <ellipse
+           style="fill:#000000;stroke:#000000;stroke-width:2"
+           sodipodi:ry="2.00002"
+           sodipodi:rx="2.00002"
+           sodipodi:cy="-134"
+           sodipodi:cx="299"
+           cx="299"
+           cy="-134"
+           rx="2.00002"
+           ry="2.00002"
+           id="ellipse6081"
+           d="m 301.00002,-134 c 0,1.10458 -0.89544,2.00002 -2.00002,2.00002 -1.10458,0 -2.00002,-0.89544 -2.00002,-2.00002 0,-1.10458 0.89544,-2.00002 2.00002,-2.00002 1.10458,0 2.00002,0.89544 2.00002,2.00002 z" />
+      </g>
+      <!-- /cells&#45;&gt;/cells/spikes_point -->
+      <g
+         id="edge7-5"
+         class="edge"
+         transform="translate(-41.6,0)">
+        <title
+           id="title6084">/cells-&gt;/cells/spikes_point</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:2"
+           inkscape:connector-curvature="0"
+           d="m 299,-153.76 c 0,5.9 0,11.79 0,17.68"
+           id="path6086" />
+      </g>
+      <!-- /cells/spikes -->
+      <g
+         id="node12-4"
+         class="node"
+         transform="translate(16,0)">
+        <title
+           id="title6089">/cells/spikes</title>
+        <polygon
+           style="fill:#f4a460;stroke:#000000;stroke-width:2"
+           points="162,-146 156,-152 156,-152 90,-152 90,-116 162,-116 "
+           id="polygon6091" />
+        <polyline
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="156,-152 156,-146 "
+           id="polyline6093" />
+        <polyline
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="162,-146 156,-146 "
+           id="polyline6095" />
+        <text
+           style="font-size:12px;text-anchor:middle;font-family:Arial"
+           x="126"
+           y="-130.7"
+           font-size="12.00"
+           id="text6097">spikes</text>
+      </g>
+      <!-- /cells/spikes_point&#45;&gt;/cells/spikes -->
+      <g
+         id="edge21"
+         class="edge"
+         transform="matrix(0.54561638,0,0,1,93.3792,0)">
+        <title
+           id="title6100">/cells/spikes_point-&gt;/cells/spikes</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:2.70761108"
+           inkscape:connector-curvature="0"
+           d="m 297.06,-134 c -12.12,0 -78.27,0 -124.67,0"
+           id="path6102" />
+        <polygon
+           style="fill:#000000;stroke:#000000;stroke-width:2.70761108"
+           points="172.24,-130.5 162.24,-134 172.24,-137.5 172.24,-130.5 "
+           id="polygon6104" />
+      </g>
+      <!-- spikes -->
+      <g
+         id="node13-9"
+         class="node"
+         transform="translate(16,0)">
+        <title
+           id="title6107">spikes</title>
+        <polygon
+           style="fill:#f4a460;stroke:#000000;stroke-width:2"
+           points="252,0.5 252,-98.5 252,-98.5 9.9476e-14,-98.5 0,0.5 "
+           id="polygon6109" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="17.5"
+           y="-76.199997"
+           font-size="12.00"
+           id="text6111">source</text>
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="141"
+           y="-76.199997"
+           font-size="12.00"
+           id="text6113">data</text>
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="63,-34 8,-34 8,-34 8,-64 63,-64 "
+           id="polygon6115" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="13.5"
+           y="-46.200001"
+           font-size="12.00"
+           id="text6117">neuronA</text>
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="243,-34 63,-34 63,-34 63,-64 243,-64 "
+           id="polygon6119" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="69"
+           y="-46.200001"
+           font-size="12.00"
+           id="text6121">/data/events/cells/spike/neuronA</text>
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="63,-4 8,-4 8,-4 8,-34 63,-34 "
+           id="polygon6123" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="13.5"
+           y="-16.200001"
+           font-size="12.00"
+           id="text6125">neuronB</text>
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="243,-4 63,-4 63,-4 63,-34 243,-34 "
+           id="polygon6127" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="69"
+           y="-16.200001"
+           font-size="12.00"
+           id="text6129">/data/events/cells/spike/neuronB</text>
+      </g>
+      <!-- /cells/spikes&#45;&gt;spikes -->
+      <g
+         id="edge11-9"
+         class="edge"
+         transform="translate(16,0)">
+        <title
+           id="title6132">/cells/spikes:nw-&gt;spikes:sw</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:2;stroke-dasharray:10, 4"
+           inkscape:connector-curvature="0"
+           d="m 252,-99 c 0,0 -108,-17 -108,-17"
+           id="path6134" />
+      </g>
+      <!-- spikes&#45;&gt;/cells/spikes -->
+      <g
+         id="edge13"
+         class="edge"
+         transform="translate(16,0)">
+        <title
+           id="title6137">spikes:ne-&gt;/cells/spikes:se</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:2;stroke-dasharray:10, 4"
+           inkscape:connector-curvature="0"
+           d="m 108,-116 c 0,0 -108,17 -108,17"
+           id="path6139" />
+      </g>
+      <!-- dummy_node -->
+      <g
+         id="node16"
+         class="node">
+        <title
+           id="title6142">dummy_node</title>
+      </g>
+      <!-- spikes&#45;&gt;dummy_node -->
+      <g
+         id="edge15-0"
+         class="edge"
+         transform="translate(-41.6,0)">
+        <title
+           id="title6145">spikes-&gt;dummy_node</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0"
+           inkscape:connector-curvature="0"
+           d="m 126,-98.139 c 0,-23.771 0,-47.551 0,-71.331"
+           id="path6147" />
+        <polygon
+           style="fill:#000000;stroke:#000000;stroke-width:2"
+           points="126,-169.75 126,-169.75 126,-169.75 126,-169.75 "
+           id="polygon6149" />
+      </g>
+      <!-- dummy_node&#45;&gt;/cells/spikes -->
+      <g
+         id="edge17"
+         class="edge"
+         transform="translate(-41.6,0)">
+        <title
+           id="title6152">dummy_node-&gt;/cells/spikes</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:0"
+           inkscape:connector-curvature="0"
+           d="m 126,-169.79 c 0,5.79 0,11.58 0,17.37"
+           id="path6154" />
+        <polygon
+           style="fill:#000000;stroke:#000000;stroke-width:2"
+           points="126,-152.14 126,-152.14 126,-152.14 126,-152.14 "
+           id="polygon6156" />
+      </g>
+    </g>
+    <g
+       id="graph1-9"
+       class="graph"
+       transform="matrix(0.625,0,0,0.625,19,1025.3624)">
+      <title
+         id="title7983">_anonymous_0</title>
+      <polygon
+         style="fill:#ffffff;stroke:#ffffff;stroke-width:2"
+         points="-4,5 -4,5 -4,-132 496,-132 496,5 "
+         id="polygon7985" />
+      <!-- / -->
+      <g
+         id="node2-3"
+         class="node">
+        <title
+           id="title7988">/</title>
+        <polygon
+           style="fill:#f5deb3;stroke:#000000;stroke-width:2"
+           points="0,-92 72,-92 72,-128 72,-128 12,-128 12,-132 3.15797e-14,-132 "
+           id="polygon7990" />
+        <polyline
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="2.84217e-14,-128 12,-128 "
+           id="polyline7992" />
+        <text
+           style="font-size:12px;text-anchor:middle;font-family:Arial"
+           x="36"
+           y="-106.7"
+           font-size="12.00"
+           id="text7994">event</text>
+      </g>
+      <!-- /cells_point -->
+      <g
+         id="node3-7"
+         class="node">
+        <title
+           id="title7997">/cells_point</title>
+        <ellipse
+           style="fill:#000000;stroke:#000000;stroke-width:2"
+           sodipodi:ry="2.00002"
+           sodipodi:rx="2.00002"
+           sodipodi:cy="-72"
+           sodipodi:cx="36"
+           cx="36"
+           cy="-72"
+           rx="2.00002"
+           ry="2.00002"
+           id="ellipse7999"
+           d="m 38.00002,-72 c 0,1.104581 -0.895439,2.00002 -2.00002,2.00002 -1.104581,0 -2.00002,-0.895439 -2.00002,-2.00002 0,-1.104581 0.895439,-2.00002 2.00002,-2.00002 1.104581,0 2.00002,0.895439 2.00002,2.00002 z" />
+      </g>
+      <!-- /&#45;&gt;/cells_point -->
+      <g
+         id="edge3-6"
+         class="edge">
+        <title
+           id="title8002">/-&gt;/cells_point</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:2"
+           inkscape:connector-curvature="0"
+           d="m 36,-91.758 c 0,5.893 0,11.786 0,17.68"
+           id="path8004" />
+      </g>
+      <!-- /cells -->
+      <g
+         id="node7-48"
+         class="node">
+        <title
+           id="title8007">/cells</title>
+        <polygon
+           style="fill:#90ee90;stroke:#000000;stroke-width:2"
+           points="83,-54 155,-54 155,-90 155,-90 95,-90 95,-94 83,-94 "
+           id="polygon8009" />
+        <polyline
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="83,-90 95,-90 "
+           id="polyline8011" />
+        <text
+           style="font-size:12px;text-anchor:middle;font-family:Arial"
+           x="119"
+           y="-68.699997"
+           font-size="12.00"
+           id="text8013">cells</text>
+      </g>
+      <!-- /cells_point&#45;&gt;/cells -->
+      <g
+         id="edge10-9"
+         class="edge">
+        <title
+           id="title8016">/cells_point-&gt;/cells</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:2"
+           inkscape:connector-curvature="0"
+           d="m 38.052,-72 c 5.201,0 19.575,0 34.794,0"
+           id="path8018" />
+        <polygon
+           style="fill:#000000;stroke:#000000;stroke-width:2"
+           points="82.882,-72 72.882,-68.5001 72.882,-75.5001 72.882,-75.5001 "
+           id="polygon8020" />
+      </g>
+      <!-- /cells/spikes_point -->
+      <g
+         id="node8-8"
+         class="node">
+        <title
+           id="title8023">/cells/spikes_point</title>
+        <ellipse
+           style="fill:#000000;stroke:#000000;stroke-width:2"
+           sodipodi:ry="2.00002"
+           sodipodi:rx="2.00002"
+           sodipodi:cy="-34"
+           sodipodi:cx="119"
+           cx="119"
+           cy="-34"
+           rx="2.00002"
+           ry="2.00002"
+           id="ellipse8025"
+           d="m 121.00002,-34 c 0,1.104581 -0.89544,2.00002 -2.00002,2.00002 -1.10458,0 -2.00002,-0.895439 -2.00002,-2.00002 0,-1.104581 0.89544,-2.00002 2.00002,-2.00002 1.10458,0 2.00002,0.895439 2.00002,2.00002 z" />
+      </g>
+      <!-- /cells&#45;&gt;/cells/spikes_point -->
+      <g
+         id="edge7-4"
+         class="edge">
+        <title
+           id="title8028">/cells-&gt;/cells/spikes_point</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:2"
+           inkscape:connector-curvature="0"
+           d="m 119,-53.758 c 0,5.893 0,11.786 0,17.68"
+           id="path8030" />
+      </g>
+      <!-- /cells/spikes -->
+      <g
+         id="node12-2"
+         class="node">
+        <title
+           id="title8033">/cells/spikes</title>
+        <polygon
+           style="fill:#f4a460;stroke:#000000;stroke-width:2"
+           points="166,-52 166,-16 238,-16 238,-46 232,-52 232,-52 "
+           id="polygon8035" />
+        <polyline
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="232,-52 232,-46 "
+           id="polyline8037" />
+        <polyline
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="238,-46 232,-46 "
+           id="polyline8039" />
+        <text
+           style="font-size:12px;text-anchor:middle;font-family:Arial"
+           x="202"
+           y="-30.700001"
+           font-size="12.00"
+           id="text8041">spikes</text>
+      </g>
+      <!-- /cells/spikes_point&#45;&gt;/cells/spikes -->
+      <g
+         id="edge12-7"
+         class="edge">
+        <title
+           id="title8044">/cells/spikes_point-&gt;/cells/spikes</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:2"
+           inkscape:connector-curvature="0"
+           d="m 121.05,-34 c 5.2,0 19.58,0 34.8,0"
+           id="path8046" />
+        <polygon
+           style="fill:#000000;stroke:#000000;stroke-width:2"
+           points="165.88,-34 155.88,-30.5001 155.88,-37.5001 155.88,-37.5001 "
+           id="polygon8048" />
+      </g>
+      <!-- spikes -->
+      <g
+         id="node14-3"
+         class="node">
+        <title
+           id="title8051">spikes</title>
+        <polygon
+           style="fill:#f4a460;stroke:#000000;stroke-width:2"
+           points="491,-68.5 491,-68.5 249,-68.5 249,0.5 491,0.5 "
+           id="polygon8053" />
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="257,-34 257,-34 257,-64 302,-64 302,-34 "
+           id="polygon8055" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="261"
+           y="-46.200001"
+           font-size="12.00"
+           id="text8057">sp[A,0]</text>
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="302,-34 302,-34 302,-64 347,-64 347,-34 "
+           id="polygon8059" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="319.5"
+           y="-46.200001"
+           font-size="12.00"
+           id="text8061">...</text>
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="347,-34 347,-34 347,-64 392,-64 392,-34 "
+           id="polygon8063" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="348"
+           y="-46.200001"
+           font-size="12.00"
+           id="text8065">sp[A,11]</text>
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="392,-34 392,-34 392,-64 437,-64 437,-34 "
+           id="polygon8067" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="402.5"
+           y="-46.200001"
+           font-size="12.00"
+           id="text8069">NaN</text>
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="437,-34 437,-34 437,-64 482,-64 482,-34 "
+           id="polygon8071" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="447.5"
+           y="-46.200001"
+           font-size="12.00"
+           id="text8073">NaN</text>
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="257,-4 257,-4 257,-34 302,-34 302,-4 "
+           id="polygon8075" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="261"
+           y="-16.200001"
+           font-size="12.00"
+           id="text8077">sp[B,0]</text>
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="302,-4 302,-4 302,-34 347,-34 347,-4 "
+           id="polygon8079" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="319.5"
+           y="-16.200001"
+           font-size="12.00"
+           id="text8081">...</text>
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="347,-4 347,-4 347,-34 392,-34 392,-4 "
+           id="polygon8083" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="364.5"
+           y="-16.200001"
+           font-size="12.00"
+           id="text8085">...</text>
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="392,-4 392,-4 392,-34 437,-34 437,-4 "
+           id="polygon8087" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="409.5"
+           y="-16.200001"
+           font-size="12.00"
+           id="text8089">...</text>
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="437,-4 437,-4 437,-34 482,-34 482,-4 "
+           id="polygon8091" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="437.5"
+           y="-16.200001"
+           font-size="12.00"
+           id="text8093">sp[B,13]</text>
+      </g>
+      <!-- /cells/spikes&#45;&gt;spikes -->
+      <g
+         id="edge14-7"
+         class="edge">
+        <title
+           id="title8096">/cells/spikes:ne-&gt;spikes:nw</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:2;stroke-dasharray:10, 4"
+           inkscape:connector-curvature="0"
+           d="m 218,-52 c 0,0 31,-16 31,-16"
+           id="path8098" />
+      </g>
+      <!-- spikes&#45;&gt;/cells/spikes -->
+      <g
+         id="edge16-8"
+         class="edge">
+        <title
+           id="title8101">spikes:sw-&gt;/cells/spikes:se</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:2;stroke-dasharray:10, 4"
+           inkscape:connector-curvature="0"
+           d="m 250,0 c 0,0 -29,-16 -29,-16"
+           id="path8103" />
+      </g>
+    </g>
+    <flowRoot
+       transform="matrix(0.75,0,0,0.75,189.07723,403.04575)"
+       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Symbol;-inkscape-font-specification:Symbol"
+       id="flowRoot7984-1-2-5"
+       xml:space="preserve"><flowRegion
+         id="flowRegion7986-6-2-2"><rect
+           y="309.36218"
+           x="174"
+           height="84"
+           width="89"
+           id="rect7988-1-7-2" /></flowRegion><flowPara
+         style="font-size:16px;font-weight:normal"
+         id="flowPara7990-8-0-3">A</flowPara></flowRoot>    <flowRoot
+       transform="matrix(0.75,0,0,0.75,189.07723,577.04575)"
+       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Symbol;-inkscape-font-specification:Symbol"
+       id="flowRoot7984-1-2-5-4"
+       xml:space="preserve"><flowRegion
+         id="flowRegion7986-6-2-2-4"><rect
+           y="309.36218"
+           x="174"
+           height="84"
+           width="89"
+           id="rect7988-1-7-2-6" /></flowRegion><flowPara
+         style="font-size:16px;font-weight:normal"
+         id="flowPara7990-8-0-3-6">B</flowPara></flowRoot>    <flowRoot
+       transform="matrix(0.75,0,0,0.75,189.07723,693.04575)"
+       style="font-size:12px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;font-family:Symbol;-inkscape-font-specification:Symbol"
+       id="flowRoot7984-1-2-5-4-6"
+       xml:space="preserve"><flowRegion
+         id="flowRegion7986-6-2-2-4-0"><rect
+           y="309.36218"
+           x="174"
+           height="84"
+           width="89"
+           id="rect7988-1-7-2-6-8" /></flowRegion><flowPara
+         style="font-size:16px;font-weight:normal"
+         id="flowPara7990-8-0-3-6-9">C</flowPara></flowRoot>    <g
+       id="graph1"
+       class="graph"
+       transform="matrix(0.62500395,0,0,0.62500395,372.18752,879.79989)">
+      <title
+         id="title10584">_anonymous_0</title>
+      <polygon
+         style="fill:#ffffff;stroke:#ffffff;stroke-width:1.99998736"
+         points="-4,5 -4,-94 243,-94 243,5 -4,5 "
+         id="polygon10586" />
+      <!-- / -->
+      <g
+         id="node2-25"
+         class="node">
+        <title
+           id="title10589">/</title>
+        <polygon
+           style="fill:#f5deb3;stroke:#000000;stroke-width:1.99998736"
+           points="238,-90 238,-90 178,-90 178,-94 166,-94 166,-54 238,-54 "
+           id="polygon10591" />
+        <polyline
+           style="fill:none;stroke:#000000;stroke-width:1.99998736"
+           points="166,-90 178,-90 "
+           id="polyline10593" />
+        <text
+           style="font-size:12px;text-anchor:middle;font-family:Arial"
+           x="202"
+           y="-68.699997"
+           font-size="12.00"
+           id="text10595">event</text>
+      </g>
+      <!-- /cells_point -->
+      <g
+         id="node3-9"
+         class="node">
+        <title
+           id="title10598">/cells_point</title>
+        <ellipse
+           style="fill:#000000;stroke:#000000;stroke-width:1.99998736"
+           sodipodi:ry="2.00002"
+           sodipodi:rx="2.00002"
+           sodipodi:cy="-34"
+           sodipodi:cx="202"
+           cx="202"
+           cy="-34"
+           rx="2.00002"
+           ry="2.00002"
+           id="ellipse10600"
+           d="m 204.00002,-34 c 0,1.104581 -0.89544,2.00002 -2.00002,2.00002 -1.10458,0 -2.00002,-0.895439 -2.00002,-2.00002 0,-1.104581 0.89544,-2.00002 2.00002,-2.00002 1.10458,0 2.00002,0.895439 2.00002,2.00002 z" />
+      </g>
+      <!-- /&#45;&gt;/cells_point -->
+      <g
+         id="edge3-9"
+         class="edge">
+        <title
+           id="title10603">/-&gt;/cells_point</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:1.99998736"
+           inkscape:connector-curvature="0"
+           d="m 202,-53.758 c 0,5.893 0,11.786 0,17.68"
+           id="path10605" />
+      </g>
+      <!-- /cells -->
+      <g
+         id="node6"
+         class="node">
+        <title
+           id="title10608">/cells</title>
+        <polygon
+           style="fill:#90ee90;stroke:#000000;stroke-width:1.99998736"
+           points="155,-16 155,-46 149,-52 149,-52 83,-52 83,-16 "
+           id="polygon10610" />
+        <polyline
+           style="fill:none;stroke:#000000;stroke-width:1.99998736"
+           points="149,-52 149,-46 "
+           id="polyline10612" />
+        <polyline
+           style="fill:none;stroke:#000000;stroke-width:1.99998736"
+           points="155,-46 149,-46 "
+           id="polyline10614" />
+        <text
+           style="font-size:12px;text-anchor:middle;font-family:Arial"
+           x="119"
+           y="-30.700001"
+           font-size="12.00"
+           id="text10616">cells</text>
+      </g>
+      <!-- /cells_point&#45;&gt;/cells -->
+      <g
+         id="edge6"
+         class="edge">
+        <title
+           id="title10619">/cells_point-&gt;/cells</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:1.99998736"
+           inkscape:connector-curvature="0"
+           d="m 199.95,-34 c -5.2,0 -19.58,0 -34.8,0"
+           id="path10621" />
+        <polygon
+           style="fill:#000000;stroke:#000000;stroke-width:1.99998736"
+           points="165.12,-30.5001 165.12,-30.5001 155.12,-34 165.12,-37.5001 "
+           id="polygon10623" />
+      </g>
+      <!-- cells -->
+      <g
+         id="node8-71"
+         class="node">
+        <title
+           id="title10626">cells</title>
+        <polygon
+           style="fill:#90ee90;stroke:#000000;stroke-width:1.99998736"
+           points="72,-68.5 2.84217e-14,-68.5 0,0.5 72,0.5 72,-68.5 "
+           id="polygon10628" />
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:1.99998736"
+           points="8,-34 8,-64 63,-64 63,-34 8,-34 "
+           id="polygon10630" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="13.5"
+           y="-46.200001"
+           font-size="12.00"
+           id="text10632">neuronA</text>
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:1.99998736"
+           points="8,-4 8,-34 63,-34 63,-4 8,-4 "
+           id="polygon10634" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="13.5"
+           y="-16.200001"
+           font-size="12.00"
+           id="text10636">neuronB</text>
+      </g>
+      <!-- /cells&#45;&gt;cells -->
+      <g
+         id="edge8"
+         class="edge">
+        <title
+           id="title10639">/cells:nw-&gt;cells:ne</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:1.99998736;stroke-dasharray:9.999937, 3.9999748"
+           inkscape:connector-curvature="0"
+           d="m 103,-52 c 0,0 -31,-16 -31,-16"
+           id="path10641" />
+      </g>
+      <!-- cells&#45;&gt;/cells -->
+      <g
+         id="edge10-2"
+         class="edge">
+        <title
+           id="title10644">cells:se-&gt;/cells:sw</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:1.99998736;stroke-dasharray:9.999937, 3.9999748"
+           inkscape:connector-curvature="0"
+           d="m 71,0 c 0,0 29,-16 29,-16"
+           id="path10646" />
+      </g>
+    </g>
+    <g
+       id="graph1-93"
+       class="graph"
+       transform="matrix(0.625,0,0,0.625,372.1875,1002.7999)">
+      <title
+         id="title10584-9">_anonymous_0</title>
+      <polygon
+         style="fill:#ffffff;stroke:#ffffff;stroke-width:2"
+         points="-4,5 -4,-94 243,-94 243,5 -4,5 "
+         id="polygon10586-6" />
+      <!-- / -->
+      <g
+         id="node2-6"
+         class="node">
+        <title
+           id="title10589-2">/</title>
+        <polygon
+           style="fill:#f5deb3;stroke:#000000;stroke-width:2"
+           points="238,-90 178,-90 178,-94 166,-94 166,-54 238,-54 238,-90 "
+           id="polygon10591-8" />
+        <polyline
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="166,-90 178,-90 "
+           id="polyline10593-9" />
+        <text
+           style="font-size:12px;text-anchor:middle;font-family:Arial"
+           x="202"
+           y="-68.699997"
+           font-size="12.00"
+           id="text10595-6">event</text>
+      </g>
+      <!-- /cells_point -->
+      <g
+         id="node3-57"
+         class="node">
+        <title
+           id="title10598-3">/cells_point</title>
+        <ellipse
+           style="fill:#000000;stroke:#000000;stroke-width:2"
+           sodipodi:ry="2.00002"
+           sodipodi:rx="2.00002"
+           sodipodi:cy="-34"
+           sodipodi:cx="202"
+           cx="202"
+           cy="-34"
+           rx="2.00002"
+           ry="2.00002"
+           id="ellipse10600-1"
+           d="m 204.00002,-34 c 0,1.104581 -0.89544,2.00002 -2.00002,2.00002 -1.10458,0 -2.00002,-0.895439 -2.00002,-2.00002 0,-1.104581 0.89544,-2.00002 2.00002,-2.00002 1.10458,0 2.00002,0.895439 2.00002,2.00002 z" />
+      </g>
+      <!-- /&#45;&gt;/cells_point -->
+      <g
+         id="edge3-0"
+         class="edge">
+        <title
+           id="title10603-4">/-&gt;/cells_point</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:2"
+           inkscape:connector-curvature="0"
+           d="m 202,-53.758 c 0,5.893 0,11.786 0,17.68"
+           id="path10605-0" />
+      </g>
+      <!-- /cells -->
+      <g
+         id="node6-5"
+         class="node">
+        <title
+           id="title10608-3">/cells</title>
+        <polygon
+           style="fill:#90ee90;stroke:#000000;stroke-width:2"
+           points="155,-46 149,-52 149,-52 83,-52 83,-16 155,-16 "
+           id="polygon10610-1" />
+        <polyline
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="149,-52 149,-46 "
+           id="polyline10612-9" />
+        <polyline
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="155,-46 149,-46 "
+           id="polyline10614-1" />
+        <text
+           style="font-size:12px;text-anchor:middle;font-family:Arial"
+           x="119"
+           y="-30.700001"
+           font-size="12.00"
+           id="text10616-5">cells</text>
+      </g>
+      <!-- /cells_point&#45;&gt;/cells -->
+      <g
+         id="edge6-4"
+         class="edge">
+        <title
+           id="title10619-6">/cells_point-&gt;/cells</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:2"
+           inkscape:connector-curvature="0"
+           d="m 199.95,-34 c -5.2,0 -19.58,0 -34.8,0"
+           id="path10621-2" />
+        <polygon
+           style="fill:#000000;stroke:#000000;stroke-width:2"
+           points="165.12,-37.5001 165.12,-30.5001 165.12,-30.5001 155.12,-34 "
+           id="polygon10623-4" />
+      </g>
+      <!-- cells -->
+      <g
+         id="node8-3"
+         class="node">
+        <title
+           id="title10626-1">cells</title>
+        <polygon
+           style="fill:#90ee90;stroke:#000000;stroke-width:2"
+           points="72,-68.5 2.84217e-14,-68.5 0,0.5 72,0.5 72,-68.5 "
+           id="polygon10628-9" />
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="8,-34 8,-64 63,-64 63,-34 8,-34 "
+           id="polygon10630-1" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="13.5"
+           y="-46.200001"
+           font-size="12.00"
+           id="text10632-8">neuronA</text>
+        <polygon
+           style="fill:none;stroke:#000000;stroke-width:2"
+           points="8,-4 8,-34 63,-34 63,-4 8,-4 "
+           id="polygon10634-9" />
+        <text
+           style="font-size:12px;text-anchor:start;font-family:Arial"
+           x="13.5"
+           y="-16.200001"
+           font-size="12.00"
+           id="text10636-4">neuronB</text>
+      </g>
+      <!-- /cells&#45;&gt;cells -->
+      <g
+         id="edge8-9"
+         class="edge">
+        <title
+           id="title10639-7">/cells:nw-&gt;cells:ne</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:2;stroke-dasharray:10, 4"
+           inkscape:connector-curvature="0"
+           d="m 103,-52 c 0,0 -31,-16 -31,-16"
+           id="path10641-2" />
+      </g>
+      <!-- cells&#45;&gt;/cells -->
+      <g
+         id="edge10-25"
+         class="edge">
+        <title
+           id="title10644-1">cells:se-&gt;/cells:sw</title>
+        <path
+           style="fill:none;stroke:#000000;stroke-width:2;stroke-dasharray:10, 4"
+           inkscape:connector-curvature="0"
+           d="m 71,0 c 0,0 29,-16 29,-16"
+           id="path10646-8" />
+      </g>
+    </g>
+  </g>
+</svg>
