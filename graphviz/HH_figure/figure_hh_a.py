@@ -12,10 +12,10 @@ import pygraphviz as pgv
 import webcolors as wc
 
 width_box = 1.0
-edge_width = 2.0
+edge_width = 1.0
 
 font_name = 'Arial'
-font_size = 12.0
+font_size = 12.0 #in pts
 
 subgrp_shape = 'tab' #http://www.graphviz.org/doc/info/shapes.html#d:style
 leafnde_shape = 'note'
@@ -50,7 +50,7 @@ def add_child(G, parent_node, child, color=None, end_node=False):
     return child_node
 
 def gen_figure(dir_list):
-    G = pgv.AGraph(strict=True, directed=True, rankdir='LR', ranksep='0.25', splines=False, nodesep=0.25)
+    G = pgv.AGraph(strict=True, directed=True, rankdir='LR', ranksep='0.15', splines=False, nodesep=0.25)
     G.add_node('/', label='ROOT', shape=subgrp_shape, style='filled', concentrate=True, width=width_box,
                fontname=font_name, fontsize=font_size, fillcolor=NODE_0)
     for path in dir_list:
@@ -68,14 +68,50 @@ def gen_figure(dir_list):
             except KeyError:
                 if ii==0:
                     add_child(G, '/', sub_folder, NODE_COLOR[ii+1])
+                elif ii==3 :
+                    add_child(G, path[:path_idx[ii]], sub_folder, NODE_COLOR[ii+1], True)
+                elif ii==2 and (path.find('map')!=-1 or path.find('model')!=-1) :
+                    add_child(G, path[:path_idx[ii]], sub_folder, NODE_COLOR[ii+1], True)
                 else:
                     add_child(G, path[:path_idx[ii]], sub_folder, NODE_COLOR[ii+1])
-    G.layout('dot')
-    G.draw('figure2_lhs.svg')
 
-dir_list = ['/event/kill/me',
-            '/data/list/tada/hello',
-            'event/tell/this',
-            '/data/list/tada/meow']
+    return G
 
-gen_figure(dir_list)
+def add_leaf(G, parent, leaf_name, leaf_html):
+    G.add_node(leaf_name, label=leaf_html, shape='box', style='filled', concentrate=True, width=width_box,
+               fontname=font_name, fontsize=font_size, fillcolor=NODE_4)
+    G.add_edge(parent, leaf_name, weight=1, penwidth=edge_width, arrowsize=0.0, style='dashed', 
+               arrowhead=None, constraint=True, headport="nw", tailport="ne")
+    G.add_edge(leaf_name, parent, weight=1, penwidth=edge_width, arrowsize=0.0, style='dashed', 
+               arrowhead=None, constraint=True, headport="se", tailport="sw")
+    #leaf_point_node = G.get_node(parent+'_point')
+    #H = G.subgraph([leaf_name, parent], rank='max', constraint=False)
+    return G
+
+
+# dir_list = ['/data/event',
+#             '/data/nonuniform',
+#             '/data/static',
+#             '/data/uniform/channel/Ik',
+#             '/data/uniform/compartment/Vm',
+#             '/map/event',
+#             '/map/nonuniform',
+#             '/map/static',
+#             '/map/time',
+#             '/map/uniform/channel',
+#             '/map/uniform/compartment',
+#             '/model/modeltree/compartment/KChannel',
+#             '/model/modeltree/compartment/NaChannel']
+
+dir_list = ['/data/uniform/compartment/Vm',
+            '/map/uniform/compartment',
+            '/model/modeltree/compartment']
+
+G = gen_figure(dir_list)
+# add_leaf(G, dir_list[0], 'static', static)
+# add_leaf(G, dir_list[1], 'vm', Vm)
+# add_leaf(G, dir_list[3], 'im', Im1)
+# add_leaf(G, dir_list[4], 'spikes', spikes)
+
+G.layout('dot')
+G.draw('figure_hh_a.svg')
