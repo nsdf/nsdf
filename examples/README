@@ -1,54 +1,61 @@
-#Written by Chintaluri Chaitanya
+#README Written by Chintaluri Chaitanya
 
 This folder contains the relevant examples for the NSDF file format
 In all cases, we utilize the NSDF Python library.
 
-1) poolroom.py
-   is an case considering non-neuroscience data testing for the agnosticism and versatality in this format.
-   considers the case of liesure center, with pool rooms, each having multiple pool tables.
-   
-   In this case there is no hierarchy, and we utilize /model/modeltree to represent the model information.
+The output of these scripts (NSDF files) are available here:
+http://www.bit.ly/nsdf
 
-2) hodgkin_huxley.py 
-   is the simplest possible case of HH models from Neuroscience simulations. Running this generates 2 files.
+1) poolroom.py is an case considering non-neuroscience data testing for the
+   agnosticism and versatality in this format.  considers the case of liesure
+   center, with pool rooms, each having multiple pool tables. In this case there
+   is no hierarchy, and we utilize /model/modeltree to represent the model
+   information.
 
-   We show how to store membrane potential obtained from the soma of a cell, also shows how to store data
-   from the channels.
+2) hodgkin_huxley.py is the simplest possible case of HH models from
+   Neuroscience simulations. Running this generates 3 files. We show how to
+   store membrane potential obtained from the soma of a cell, also shows how to
+   store data from the channels.
 
-3) test_brian.py
-   is the case where we show how to store spiking data obtain from Brian simulator. Requires Brian simulator.
-   Generates 3 files. Code for storing the data using native h5py is also included.
+3) test_brian.py is the case where we show how to store spiking data obtain from
+   Brian simulator. Requires Brian simulator.  Generates 3 files. Code for
+   storing the data using native h5py is also included. We store the spikes
+   obtained, we also show different dialects in which it is possible to save
+   this data.
 
-   We store the spikes obtained, we also show different dialects in which it is possible to save this data.
+4) traub2005.py - WARNING : Running this generates large files!  is an example
+   of complete data obtained from simulations. Generates 6 large files. We
+   store, Vms, Ims, spikes, etc. We also test different dialets possible with
+   nonuniform and compressions.
 
-4) traub2005.py - WARNING : Running this generates large files!
-   is an example of complete data obtained from simulations. Generates 6 large files.
+5) external_model.py: For linking to external hdf5 files, which contain specific
+   data. and yet complying with the nsdf format.
 
-   We store, Vms, Ims, spikes, etc. We also test different dialets possible with nonuniform and compressions.
+6) neuron_Hay/test_neuron_Hay.py is the case of an actual simulation, this
+   requires Neuron installed with python, generates 1 file.  most of the program
+   here is to obtain the currents from all the compartments. We show how to save
+   the data from current injection, injection location, etc.
 
-5) model_description.py
+7) moose_Multi/multi1.py is the case from Moose demos, it generates 1
+   file. Requires MOOSE/asyn13 installed We show how to save multidimensional
+   data (voxel, property, time) in uniform, while saving Ca dynamics
 
-6) external_model.py
+8) moose_NeuroML/granulecell_neuroml.py is the case to iillustrate the NeuroML
+   fileinclusion inside NSDF. Requires MOOSE/asyn13 installed.  This example is
+   taken from Moose demos. This case is applicaple when user wishes to provide
+   the code that generated the output.
 
-5) neuron_Hay/test_neuron_Hay.py
-   is the case of an actual simulation, this requires Neuron installed with python, generates 1 file.
-   most of the program here is to obtain the currents from all the compartments.
+9) moose_NeuroML/granulecell_incremental_writing.py is the case to show,
+   incremental writing, same example as the previous.
 
-   We show how to save the data from current injection, injection location, etc.
+10) datadump/test_parse_datadump.py and datadump/test_parse_datadump_spikes.py is
+    the case when user wants to process existing data into NSDF. Requires pandas
+    python package.  This is partial data, and is only meant as illustrative of
+    possible effecient operations.
 
-6) moose_Multi/multi1.py
-   is the case from Moose demos, it generates 1 file. Requires MOOSE/asyn13  installed
-   
-   We show how to save multidimensional data (voxel, property, time) in uniform, while saving Ca dynamics
-
-7) moose_NeuroML/granulecell_neuroml.py
-   is the case to iillustrate the NeuroML fileinclusion inside NSDF. Requires MOOSE/asyn13 installed.
-   This example is taken from Moose demos.
-
-   This case is applicaple when user wishes to provide the code that generated the output.
-
-8) datadump/test_parse_datadump.py and datadump/test_parse_datadump_spikes.py
-   is the case when user wants to process existing data into NSDF. Requires pandas python package.
-   This is partial data, and is only meant as illustrative of possible effecient operations.	
+11) test_connections.py illustrates how to save information related to
+    connectivity, we show two differnt options for saving this data. The user may	
+    prefer which ever suits their need. Both the formats shown are permitted withing
+    nsdf
 
 #End of README
