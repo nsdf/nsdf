@@ -43,6 +43,14 @@ This will create "\_build" directory and the index of the docs will be
 in "\_build/html/index.html". Or you can read the latest documentation
 built from git:master branch on nsdf.readthedocs.org.
 
+Other Tools
+-----------
+
+[dataviz](https://github.com/subhacom/dataviz)
+A GUI utility for viewing HDF5 datasets.
+
+[Moogli](https://aviralg.github.io/Moogli/) Coming Soon.
+A Simulator independent visualization tool for neuronal simulations.
 
 Credits
 -------
