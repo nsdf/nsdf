@@ -58,4 +58,7 @@ http://www.bit.ly/nsdf
     prefer which ever suits their need. Both the formats shown are permitted withing
     nsdf
 
+12) STEPS/diffusion_boundary.py illustrates an example for the STEPS simulator - taken
+    from the tutorials of STEP solver 2.2.0/examples/tutorial/diffusion_boundary.py 
+
 #End of README
