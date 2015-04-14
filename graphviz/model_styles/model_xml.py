@@ -1,0 +1,97 @@
+# This script was written by Chaitanya Chintaluri c.chinaluri@nencki.gov.pl
+# This software is available under GNU GPL3 License.
+
+# Uses pygraphviz to illustrate the inner structure of NSDF file format
+# This is to use in the NSDF paper and to generate machine readable file structure
+# for the convenience of the user.
+
+# Use matplotlib and pygraphviz
+import re
+import matplotlib.pyplot as plt
+import pygraphviz as pgv
+import webcolors as wc
+
+width_box = 1.0
+edge_width = 1.0
+
+font_name = 'Arial'
+font_size = 12.0 #in pts
+
+subgrp_shape = 'tab' #http://www.graphviz.org/doc/info/shapes.html#d:style
+leafnde_shape = 'note'
+
+NODE_0 = wc.name_to_hex('white') #root
+NODE_1 = wc.name_to_hex('skyblue') #data/map/model
+NODE_2 = wc.name_to_hex('wheat') #uniform/static
+NODE_3 = wc.name_to_hex('lightgreen') #population
+NODE_4 = wc.name_to_hex('sandybrown') #parameter
+NODE_5 = wc.name_to_hex('lightgrey') #oned
+
+NODE_COLOR = [NODE_0, NODE_1, NODE_2, NODE_3, NODE_4, NODE_5]
+
+def add_child(G, parent_node, child, color=None, end_node=False):
+    if parent_node=='/':
+        child_x = parent_node+child 
+    else:
+        child_x = parent_node+'/'+child 
+    G.add_node(child_x+'_point', shape='point', width=0.05)
+    child_point_node = G.get_node(child_x+'_point')
+    G.add_edge(parent_node, child_point_node, weight=2, penwidth=edge_width, arrowsize=0.0, arrowhead=None, constraint=False)
+    if end_node:
+        G.add_node(child_x, label=child, width=width_box, shape=leafnde_shape, style='filled', concentrate=True, fillcolor=color, 
+                   fontname=font_name, fontsize=font_size)
+    else:
+        G.add_node(child_x, label=child, width=width_box, shape=subgrp_shape, style='filled', concentrate=True, fillcolor=color, 
+                   fontname=font_name, fontsize=font_size)
+    child_node = G.get_node(child_x)
+    G.add_edge(child_point_node, child_node, penwidth=edge_width, weight=3)
+    H = G.subgraph([child_point_node, parent_node], rank='same', constraint=False)
+    H = G.subgraph([child_point_node, child], rank='same')
+    return child_node
+
+def gen_figure(dir_list):
+    G = pgv.AGraph(strict=True, directed=True, rankdir='LR', ranksep='0.15', splines=False, nodesep=0.25)
+    G.add_node('/', label='model', shape=subgrp_shape, style='filled', concentrate=True, width=width_box,
+               fontname=font_name, fontsize=font_size, fillcolor=NODE_1)
+    for path in dir_list:
+        if path.startswith('/'):
+            pass
+        else:
+            path = '/'+path #starting with root
+        path_idx = [m.start() for m in re.finditer('/', path)]
+        sub_dirs = path.split('/')[1:] #skip the first
+        for ii,sub_folder in enumerate(sub_dirs):
+            try: 
+                dummy = G.get_node(path[:path_idx[ii]]+'/'+sub_folder)
+                #print 'Node already exists:', path[:path_idx[ii]]+'/'+sub_folder
+                pass
+            except KeyError:
+                if ii==0:
+                    add_child(G, '/', sub_folder, NODE_COLOR[ii+2])
+                elif ii==1:
+                    add_child(G, path[:path_idx[ii]], sub_folder, NODE_COLOR[ii+2], True)
+                else:
+                    add_child(G, path[:path_idx[ii]], sub_folder, NODE_COLOR[ii+2])
+
+    return G
+
+def add_leaf(G, parent, leaf_name, leaf_html):
+    G.add_node(leaf_name, label=leaf_html, shape='box', style='filled', concentrate=True, width=width_box,
+               fontname=font_name, fontsize=font_size, fillcolor=NODE_3)
+    G.add_edge(parent, leaf_name, weight=1, penwidth=edge_width, arrowsize=0.0, style='dashed', 
+               arrowhead=None, constraint=True, headport="nw", tailport="ne")
+    G.add_edge(leaf_name, parent, weight=1, penwidth=edge_width, arrowsize=0.0, style='dashed', 
+               arrowhead=None, constraint=True, headport="se", tailport="sw")
+    #leaf_point_node = G.get_node(parent+'_point')
+    #H = G.subgraph([leaf_name, parent], rank='max', constraint=False)
+    return G
+
+readme = '<<TABLE ALIGN="LEFT" BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" FIXEDSIZE="TRUE"><TR> <TD ALIGN="LEFT">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</TD></TR><TR><TD ALIGN="LEFT">&lt;cells&gt;</TD></TR><TR><TD ALIGN="LEFT">&nbsp;&nbsp;&nbsp;&nbsp;&lt;cell name&gt; = neuronA</TD></TR><TR><TD ALIGN="LEFT">&nbsp;&nbsp;&nbsp;&nbsp;&lt;segments&gt;</TD></TR><TR><TD ALIGN="LEFT">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;segment id ="0" name="soma"&gt;</TD></TR><TR><TD ALIGN="LEFT">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;segment id ="1" name="axon"&gt;</TD></TR><TR><TD ALIGN="LEFT">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;segment id ="2" name="dend"&gt;</TD></TR><TR><TD ALIGN="LEFT">...</TD></TR></TABLE>>'
+
+dir_list = ['/filecontents/Cell.xml']
+
+G = gen_figure(dir_list)
+add_leaf(G, dir_list[0], 'readme', readme)
+
+G.layout('dot')
+G.draw('model_xml.svg')
