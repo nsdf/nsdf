@@ -163,21 +163,26 @@ def save_nsdf(mesh, resX, resY):
     import h5py as h5
     h = h5.File('Diff_boundary.h5', 'a')
     #what vertex idx makes each tetrahedron?
-    vertex_idx = np.zeros((420,4), dtype=np.int) #each tetrah has 4 vertices
-    for tet_idx in range(420):
+    h['/model/filecontents/README.txt'] = str('Download: http://sourceforge.net/projects/steps/files/src/2.x.x\nThis example is based on /STEPS-2.2.0.tar.gz/STEPS-2.2.0/examples/tutorial/')
+
+    num_tets = mesh.countTets()
+    num_vert = mesh.countVertices()
+
+    vertex_idx = np.zeros((num_tets,4), dtype=np.int) #each tetrah has 4 vertices
+    for tet_idx in range(num_tets):
         vertex_idx[tet_idx, :] = mesh.getTet(tet_idx)
     h['/data/static/mesh/tet'] = vertex_idx
-    h['/map/static/tet_idx'] = np.arange(420)
+    h['/map/static/tet_idx'] = np.arange(num_tets)
     h['/data/static/mesh/tet'].attrs.create('field', ['vertex_1', 'vertex_2', 
                                                       'vertex_3', 'vertex_4'])
     h['/data/static/mesh/tet'].attrs.create('unit', ['id', 'id', 'id', 'id'])
     
     ver_dtype = np.dtype([('x', np.float32),('y', np.float32),('z', np.float32)])
-    vertex_loc = np.zeros((173,), dtype=ver_dtype)
-    for node in range(173): #number of vertices in given mesh
+    vertex_loc = np.zeros((num_vert,), dtype=ver_dtype)
+    for node in range(num_vert): #number of vertices in given mesh
         vertex_loc[node] = mesh.getVertex(node)
     h['/data/static/mesh/vertex'] = vertex_loc.T
-    h['/map/static/vertex_idx'] = np.arange(173)
+    h['/map/static/vertex_idx'] = np.arange(num_vert)
     h['/data/static/mesh/vertex'].attrs.create('field', ['x', 'y', 'z'])
     h['/data/static/mesh/vertex'].attrs.create('unit', ['m', 'm', 'm'])
     #attach DS
@@ -188,7 +193,7 @@ def save_nsdf(mesh, resX, resY):
     h['/data/uniform/molecules/Y'] = resY.T
     x = h['/data/uniform/molecules/X']
     y = h['/data/uniform/molecules/Y']
-    h['/map/uniform/tet_idx'] = np.arange(420)
+    h['/map/uniform/tet_idx'] = np.arange(num_tets)
     #attach DS
     tie_data_map(x, h['/map/uniform/tet_idx'], 'source', axis=0)
     tie_data_map(y, h['/map/uniform/tet_idx'], 'source', axis=0)
