@@ -18,11 +18,12 @@ import numpy as np
 import sys
 
 dump_hdf5 = True 
-dump_type = 4 # use dump_type=4 for using NSDF library
-# 1 = preference to time data.
-# 2 = THIS IS NSDF. Agnostic of data 'addition of static subgroup'
-# 3 = uses regional reference inside /model to point to specific data_sources
-# 4 = uses NSDF library
+dump_type = 1 #Use 2 for using the nsdf library
+# 1 = Operates without the use of nsdf library
+# Also, includes storing of morphology information as compond arrays
+
+# 2 = Utilized nsdf library
+# Does not include morphology information.
 
 #Obtain morphology details
 n3dpoints = {} #has sec name and the first and last coordinates of its location
@@ -236,13 +237,13 @@ def tie_data_map(d_set, m_set, name, axis=0):
     d_set.dims[axis].label = name
     d_set.dims.create_scale(m_set, name)
     d_set.dims[axis].attach_scale(m_set)
-    m_set.attrs.create('NAME', data='SOURCE')
+    m_set.attrs.create('NAME', data='source')
 
 def tie_data_map_extended(d_set, m_set, name, axis=0):
     d_set.dims[axis].label = name
     d_set.dims.create_scale(m_set, name)
     d_set.dims[axis].attach_scale(m_set)
-    m_set.attrs.create('NAME', data='SOURCE')
+    m_set.attrs.create('NAME', data='source')
     if axis==0:
         for idx, ii in enumerate(m_set):
             h5 = d_set.file
@@ -255,89 +256,64 @@ def tie_data_map_extended(d_set, m_set, name, axis=0):
             #print '/model'+ path_ +'/'+str(ii)+'/'+var_
             h5.create_dataset('/model'+ path_ +'/'+str(ii)+'/'+var_, data=d_set.regionref[:, idx])
         
+
 #Dump into HDF5
 if dump_hdf5:
     import h5py
-    if dump_type == 1:
-    ### TYPE1
-        h5 = h5py.File('Hay_currents_0.h5', 'a')
-        currs_dset = h5.create_dataset('/data/uniform/hay/i', data=total_hdf5, dtype=np.float32)
-        pas_dset = h5.create_dataset('/data/uniform/hay/i_pas', data=i_pas_hdf5, dtype=np.float32)
-        cap_dset = h5.create_dataset('/data/uniform/hay/i_cap', data=i_cap_hdf5, dtype=np.float32)
-        ca_dset = h5.create_dataset('/data/uniform/hay/i_ca', data=i_ca_hdf5, dtype=np.float32)
-        na_dset = h5.create_dataset('/data/uniform/hay/i_na', data=i_na_hdf5, dtype=np.float32)
-        k_dset = h5.create_dataset('/data/uniform/hay/i_k', data=i_k_hdf5, dtype=np.float32)
-        ih_dset = h5.create_dataset('/data/uniform/hay/i_ih', data=i_ih_hdf5, dtype=np.float32)
-        v_dset = h5.create_dataset('/data/uniform/hay/v', data=v_all, dtype=np.float32)
-        iclamp_dset = h5.create_dataset('/data/uniform/electronics/i_clamp', data=i_clamp_curr*-1.0, dtype=np.float32)
-        epsp_dset = h5.create_dataset('/data/uniform/electronics/epsp', data=epsp_curr, dtype=np.float32)
-        spikes_dset = h5.create_dataset('/data/events/hay/spikes', data=spikes, dtype=np.float32)
-        times_ds = h5.create_dataset('/map/time/uniform/time', data=time_vals, dtype=np.float32)
-        cp_names = h5.create_dataset('/map/uniform/hay/names', data=i_cp_names)
-        v_names = h5.create_dataset('/map/uniform/hay/v_names', data=['soma','dend', 'dend2'])
-        events_names = h5.create_dataset('/map/events/hay/spike', data=['pyr_0'])
-        tie_data_map(currs_dset, cp_names, 'SOURCE', 0)
-        tie_data_map(pas_dset, cp_names, 'SOURCE', 0)
-        tie_data_map(cap_dset, cp_names, 'SOURCE', 0)
-        tie_data_map(ca_dset, cp_names, 'SOURCE', 0)
-        tie_data_map(na_dset, cp_names, 'SOURCE', 0)
-        tie_data_map(k_dset, cp_names, 'SOURCE', 0)
-        tie_data_map(ih_dset, cp_names, 'SOURCE', 0)
-        tie_data_map(v_dset, v_names, 'SOURCE', 0)
-        tie_data_map(spikes_dset, events_names, 'SOURCE', 0)
-        tie_data_map(currs_dset, times_ds, 'time', 1)
-        tie_data_map(pas_dset, times_ds, 'time', 1)
-        tie_data_map(cap_dset, times_ds, 'time', 1)
-        tie_data_map(ca_dset, times_ds, 'time', 1)
-        tie_data_map(na_dset, times_ds, 'time', 1)
-        tie_data_map(k_dset, times_ds, 'time', 1)
-        tie_data_map(ih_dset, times_ds, 'time', 1)
-        tie_data_map(v_dset, times_ds, 'time', 1)
-        tie_data_map(iclamp_dset, times_ds, 'time', 0)
-        tie_data_map(epsp_dset, times_ds, 'time', 0)
-        #morphology dump
-        loc_array = np.zeros((len(location_dict), 8), dtype=np.float32)
-        loc_names = []
-        for doh_,name in enumerate(i_cp_names):
-            loc_array[doh_] = np.array(location_dict[name])
-            loc_names.append(name)
-        morp_dset = h5.create_dataset('/model/morphology/hay', data=loc_array, dtype=np.float32)
-        morp_names = h5.create_dataset('/model/morphology/hay_names', data=loc_names)
-        morp_labels = h5.create_dataset('/model/dim_labels', data=['x0','y0','z0','d0','x1','y1','z1','d1'])
-        tie_data_map(morp_dset, morp_names, 'SOURCE', 0)
-        tie_data_map(morp_dset, morp_labels, 'label', 1)
-        elec_dset = h5.create_dataset('/model/electronics/location', data=np.array((location_dict['soma[0]_0'], epsp_location)), dtype=np.float32)
-        elec_names = h5.create_dataset('/model/electronics/names', data=['i_clamp', 'epsp_site'])
-        tie_data_map(elec_dset, elec_names, 'SOURCE', 0)
-        tie_data_map(elec_dset, morp_labels, 'label', 1)
-
     # ### TYPE2
-    elif dump_type == 2:
-        h5 = h5py.File('Hay_currents_0_2.h5', 'a')
-        currs_dset = h5.create_dataset('/data/uniform/hay/i', data=total_hdf5, dtype=np.float32)
-        pas_dset = h5.create_dataset('/data/uniform/hay/i_pas', data=i_pas_hdf5, dtype=np.float32)
-        cap_dset = h5.create_dataset('/data/uniform/hay/i_cap', data=i_cap_hdf5, dtype=np.float32)
-        ca_dset = h5.create_dataset('/data/uniform/hay/i_ca', data=i_ca_hdf5, dtype=np.float32)
-        na_dset = h5.create_dataset('/data/uniform/hay/i_na', data=i_na_hdf5, dtype=np.float32)
-        k_dset = h5.create_dataset('/data/uniform/hay/i_k', data=i_k_hdf5, dtype=np.float32)
-        ih_dset = h5.create_dataset('/data/uniform/hay/i_ih', data=i_ih_hdf5, dtype=np.float32)
-        v_dset = h5.create_dataset('/data/uniform/hay/v', data=v_all, dtype=np.float32)
-        iclamp_dset = h5.create_dataset('/data/uniform/electronics/i_clamp', data=i_clamp_curr*-1.0, dtype=np.float32)
-        epsp_dset = h5.create_dataset('/data/uniform/electronics/epsp', data=epsp_curr, dtype=np.float32)
-        spikes_dset = h5.create_dataset('/data/events/hay/spikes', data=spikes, dtype=np.float32)
-        times_ds = h5.create_dataset('/map/time', data=time_vals, dtype=np.float32)
-        cp_names = h5.create_dataset('/map/hay_i_names', data=i_cp_names)
-        v_names = h5.create_dataset('/map/hay_v_names', data=['soma','dend', 'dend2'])
-        events_names = h5.create_dataset('/map/hay_spikes', data=['pyr_0'])
-        tie_data_map(currs_dset, cp_names, 'SOURCE', 0)
-        tie_data_map(pas_dset, cp_names, 'SOURCE', 0)
-        tie_data_map(cap_dset, cp_names, 'SOURCE', 0)
-        tie_data_map(ca_dset, cp_names, 'SOURCE', 0)
-        tie_data_map(na_dset, cp_names, 'SOURCE', 0)
-        tie_data_map(k_dset, cp_names, 'SOURCE', 0)
-        tie_data_map(ih_dset, cp_names, 'SOURCE', 0)
-        tie_data_map(v_dset, v_names, 'SOURCE', 0)
-        tie_data_map(spikes_dset, events_names, 'SOURCE', 0)
+    if dump_type == 1:
+        h5 = h5py.File('hay_currents.h5', 'a')
+        #Currents
+        currs_dset = h5.create_dataset('/data/uniform/Hay/i', data=total_hdf5, dtype=np.float32)
+        pas_dset = h5.create_dataset('/data/uniform/Hay/i_pas', data=i_pas_hdf5, dtype=np.float32)
+        cap_dset = h5.create_dataset('/data/uniform/Hay/i_cap', data=i_cap_hdf5, dtype=np.float32)
+        ca_dset = h5.create_dataset('/data/uniform/Hay/i_ca', data=i_ca_hdf5, dtype=np.float32)
+        na_dset = h5.create_dataset('/data/uniform/Hay/i_na', data=i_na_hdf5, dtype=np.float32)
+        k_dset = h5.create_dataset('/data/uniform/Hay/i_k', data=i_k_hdf5, dtype=np.float32)
+        ih_dset = h5.create_dataset('/data/uniform/Hay/i_ih', data=i_ih_hdf5, dtype=np.float32)
+        for dataset in [currs_dset, pas_dset, cap_dset, ca_dset, na_dset, k_dset, ih_dset]:
+            dataset.attrs.create('unit', 'nA')
+        currs_dset.attrs.create('field', 'i')
+        pas_dset.attrs.create('field', 'i_pas')
+        cap_dset.attrs.create('field', 'i_cap')
+        ca_dset.attrs.create('field', 'i_ca')
+        na_dset.attrs.create('field', 'i_na')
+        k_dset.attrs.create('field', 'i_k')
+        ih_dset.attrs.create('field', 'i_ih')
+        #Potentials
+        v_dset = h5.create_dataset('/data/uniform/Hay/v', data=v_all, dtype=np.float32)
+        v_dset.attrs.create('unit', 'mV')
+        v_dset.attrs.create('field', 'Vm')
+        #Electronics
+        hay_ele_dset = h5.create_dataset('/data/uniform/Electronics/Hay', dtype=np.float32, shape=(2,len(epsp_curr)))
+        hay_ele_dset[0, :] = i_clamp_curr*-1.0
+        hay_ele_dset[1, :] = epsp_curr
+        hay_ele_dset.attrs.create('unit', 'nA')
+        hay_ele_dset.attrs.create('field', 'electronics')
+        #Spikes
+        spikes_dset = h5.create_dataset('/data/event/Hay/spikes', data=spikes, dtype=np.float32)
+        spikes_dset.attrs.create('unit', 'ms')
+        spikes_dset.attrs.create('field', 'spiketime')
+        #Map entries
+        times_ds = h5.create_dataset('/map/time/tpoints', data=time_vals, dtype=np.float32)
+        times_ds.attrs.create('unit', 'ms')
+        times_ds.attrs.create('field', 'time')
+        cp_names = h5.create_dataset('/map/uniform/i_names', data=i_cp_names)
+        v_names = h5.create_dataset('/map/uniform/v_names', data=['soma','dend', 'dend2'])
+        events_names = h5.create_dataset('/map/event/spikes', data=['pyr_0'])
+        ele_names = h5.create_dataset('/map/uniform/electronics', data=['i_clamp', 'epsp'])
+
+        tie_data_map(currs_dset, cp_names, 'source', 0)
+        tie_data_map(pas_dset, cp_names, 'source', 0)
+        tie_data_map(cap_dset, cp_names, 'source', 0)
+        tie_data_map(ca_dset, cp_names, 'source', 0)
+        tie_data_map(na_dset, cp_names, 'source', 0)
+        tie_data_map(k_dset, cp_names, 'source', 0)
+        tie_data_map(ih_dset, cp_names, 'source', 0)
+
+        tie_data_map(v_dset, v_names, 'source', 0)
+        tie_data_map(spikes_dset, events_names, 'source', 0)
+
         tie_data_map(currs_dset, times_ds, 'time', 1)
         tie_data_map(pas_dset, times_ds, 'time', 1)
         tie_data_map(cap_dset, times_ds, 'time', 1)
@@ -346,25 +322,36 @@ if dump_hdf5:
         tie_data_map(k_dset, times_ds, 'time', 1)
         tie_data_map(ih_dset, times_ds, 'time', 1)
         tie_data_map(v_dset, times_ds, 'time', 1)
-        tie_data_map(iclamp_dset, times_ds, 'time', 0)
-        tie_data_map(epsp_dset, times_ds, 'time', 0)
-        #morphology dump
+        tie_data_map(hay_ele_dset, ele_names, 'source', 0)
+        tie_data_map(hay_ele_dset, times_ds, 'time', 1)
+
+        #Morphology dump
+        sp_type = np.dtype([('x0', np.float64),('y0', np.float64),('z0', np.float64),
+                            ('d0', np.float64),
+                            ('x1', np.float64),('y1', np.float64),('z1', np.float64),
+                            ('d1', np.float64)])
         loc_array = np.zeros((len(location_dict), 8), dtype=np.float32)
         loc_names = []
         for doh_,name in enumerate(i_cp_names):
             loc_array[doh_] = np.array(location_dict[name])
             loc_names.append(name)
-        morp_dset = h5.create_dataset('/data/static/morphology', data=loc_array, dtype=np.float32)
-        #morp_names = h5.create_dataset('/map/morphology/hay_names', data=loc_names)
-        morp_labels = h5.create_dataset('/map/morph_labels', data=['x0','y0','z0','d0','x1','y1','z1','d1'])
-        tie_data_map(morp_dset, cp_names, 'SOURCE', 0)
-        tie_data_map(morp_dset, morp_labels, 'label', 1)
-        elec_dset = h5.create_dataset('/data/static/electronic_loc', data=np.array((location_dict['soma[0]_0'], epsp_location)), dtype=np.float32)
-        elec_names = h5.create_dataset('/map/electronics_names', data=['i_clamp', 'epsp_site'])
-        tie_data_map(elec_dset, elec_names, 'SOURCE', 0)
-        tie_data_map(elec_dset, morp_labels, 'label', 1)
+        morp_dset = h5.create_dataset('/data/static/morphology/Hay', shape=(len(loc_names),), dtype=sp_type)
+        morp_dset[:, 'x0'] = loc_array[:,0]
+        morp_dset[:, 'y0'] = loc_array[:,1]
+        morp_dset[:, 'z0'] = loc_array[:,2]
+        morp_dset[:, 'd0'] = loc_array[:,3]
+        morp_dset[:, 'x1'] = loc_array[:,4]
+        morp_dset[:, 'y1'] = loc_array[:,5]
+        morp_dset[:, 'z1'] = loc_array[:,6]
+        morp_dset[:, 'd1'] = loc_array[:,7]
 
-    elif dump_type == 4:
+        morp_dset.attrs.create('unit', ['um','um','um','um','um','um','um','um'])
+        morp_dset.attrs.create('field', ['x0','y0','z0','d0','x1','y1','z1','d1'])
+
+        morp_names = h5.create_dataset('/map/static/Hay', data=loc_names)
+        tie_data_map(morp_dset, morp_names, 'source', 0)
+
+    elif dump_type == 2:
         sys.path.append('../../')
         import nsdf
         writer = nsdf.NSDFWriter('hay_currents_nsdf.h5', mode='w')
@@ -417,100 +404,33 @@ if dump_hdf5:
         writer.add_uniform_data(ele_source_ds, data_obj_9)
 
 
-        # for doh_,name in enumerate(i_cp_names):
-        #     loc_array[doh_] = np.array(location_dict[name])
-        #     loc_names.append(name)
-        # morp_dset = h5.create_dataset('/data/static/morphology', data=loc_array, dtype=np.float32)
-        # #morp_names = h5.create_dataset('/map/morphology/hay_names', data=loc_names)
-        # morp_labels = h5.create_dataset('/map/morph_labels', data=['x0','y0','z0','d0','x1','y1','z1','d1'])
-        # tie_data_map(morp_dset, cp_names, 'SOURCE', 0)
-        # tie_data_map(morp_dset, morp_labels, 'label', 1)
-        # elec_dset = h5.create_dataset('/data/static/electronic_loc', data=np.array((location_dict['soma[0]_0'], epsp_location)), dtype=np.float32)
-        # elec_names = h5.create_dataset('/map/electronics_names', data=['i_clamp', 'epsp_site'])
-        # tie_data_map(elec_dset, elec_names, 'SOURCE', 0)
-        # tie_data_map(elec_dset, morp_labels, 'label', 1)
+# #PLOTTING    
+# plt.hold(True)
+# plt.subplot(311)
+# plt.plot(time_vals, v_soma , label='soma')
+# plt.plot(time_vals, v_dend, label='dend')
+# plt.plot(time_vals, v_dend2, label='dend2')
+# plt.plot(spikes, [1.0]*len(spikes), 'ro', label = 'spikes')
+# plt.legend()
 
-    ### TYPE 3
-    elif dump_type == 3:
-        h5 = h5py.File('Hay_currents_0_3.h5', 'a')
-        currs_dset = h5.create_dataset('/data/uniform/hay/i', data=total_hdf5, dtype=np.float32)
-        pas_dset = h5.create_dataset('/data/uniform/hay/i_pas', data=i_pas_hdf5, dtype=np.float32)
-        cap_dset = h5.create_dataset('/data/uniform/hay/i_cap', data=i_cap_hdf5, dtype=np.float32)
-        ca_dset = h5.create_dataset('/data/uniform/hay/i_ca', data=i_ca_hdf5, dtype=np.float32)
-        na_dset = h5.create_dataset('/data/uniform/hay/i_na', data=i_na_hdf5, dtype=np.float32)
-        k_dset = h5.create_dataset('/data/uniform/hay/i_k', data=i_k_hdf5, dtype=np.float32)
-        ih_dset = h5.create_dataset('/data/uniform/hay/i_ih', data=i_ih_hdf5, dtype=np.float32)
-        v_dset = h5.create_dataset('/data/uniform/hay/v', data=v_all, dtype=np.float32)
-        iclamp_dset = h5.create_dataset('/data/uniform/electronics/i_clamp', data=i_clamp_curr*-1.0, dtype=np.float32)
-        epsp_dset = h5.create_dataset('/data/uniform/electronics/epsp', data=epsp_curr, dtype=np.float32)
-        #spikes_dset = h5.create_dataset('/data/events/hay/spikes', data=spikes, dtype=np.float32)
-        times_ds = h5.create_dataset('/map/common/time', data=time_vals, dtype=np.float32)
-        cp_names = h5.create_dataset('/map/common/hay_names', data=i_cp_names)
-        v_names = h5.create_dataset('/map/uniform/hay/v_names', data=['soma','dend', 'dend2'])
-        events_names = h5.create_dataset('/map/events/hay/hay_spike', data=['pyr_0'])
-        tie_data_map_extended(currs_dset, cp_names, 'SOURCE', 0)
-        tie_data_map_extended(pas_dset, cp_names, 'SOURCE', 0)
-        tie_data_map_extended(cap_dset, cp_names, 'SOURCE', 0)
-        tie_data_map_extended(ca_dset, cp_names, 'SOURCE', 0)
-        tie_data_map_extended(na_dset, cp_names, 'SOURCE', 0)
-        tie_data_map_extended(k_dset, cp_names, 'SOURCE', 0)
-        tie_data_map_extended(ih_dset, cp_names, 'SOURCE', 0)
-        tie_data_map_extended(v_dset, v_names, 'SOURCE', 0)
-        #tie_data_map_extended(spikes_dset, events_names, 'SOURCE', 0)
-        tie_data_map_extended(currs_dset, times_ds, 'time', 1)
-        tie_data_map_extended(pas_dset, times_ds, 'time', 1)
-        tie_data_map_extended(cap_dset, times_ds, 'time', 1)
-        tie_data_map_extended(ca_dset, times_ds, 'time', 1)
-        tie_data_map_extended(na_dset, times_ds, 'time', 1)
-        tie_data_map_extended(k_dset, times_ds, 'time', 1)
-        tie_data_map_extended(ih_dset, times_ds, 'time', 1)
-        tie_data_map_extended(v_dset, times_ds, 'time', 1)
-        tie_data_map_extended(iclamp_dset, times_ds, 'time', 0)
-        tie_data_map_extended(epsp_dset, times_ds, 'time', 0)
-        #morphology dump
-        loc_array = np.zeros((len(location_dict), 8), dtype=np.float32)
-        loc_names = []
-        for doh_,name in enumerate(i_cp_names):
-            loc_array[doh_] = np.array(location_dict[name])
-            loc_names.append(name)
-        morp_dset = h5.create_dataset('/data/static/hay_morph', data=loc_array, dtype=np.float32)
-        #morp_names = h5.create_dataset('/map/common/hay_names', data=loc_names)
-        morp_labels = h5.create_dataset('/map/static/dim_labels', data=['x0','y0','z0','d0','x1','y1','z1','d1'])
-        tie_data_map_extended(morp_dset, cp_names, 'SOURCE', 0)
-        tie_data_map_extended(morp_dset, morp_labels, 'label', 1)
-        elec_dset = h5.create_dataset('/data/static/elec_loc', data=np.array((location_dict['soma[0]_0'], epsp_location)), dtype=np.float32)
-        elec_names = h5.create_dataset('/map/static/ele_names', data=['i_clamp', 'epsp_site'])
-        tie_data_map_extended(elec_dset, elec_names, 'SOURCE', 0)
-        tie_data_map_extended(elec_dset, morp_labels, 'label', 1)
-    h5.close()
+# plt.subplot(312)
+# plt.plot(time_vals, total_curr, label='tot_i_Hay')
+# try:
+#     plt.plot(time_vals, epsp_curr, label='apic_epsp')
+# except NameError:
+#     print 'No vector for apical'
+#     pass
+# try:
+#     plt.plot(time_vals, -1.0*i_clamp_curr, label='i_clamp')
+# except NameError:
+#     print 'No vector for i clamp'
+#     pass
+# plt.legend()
 
-#PLOTTING    
-plt.hold(True)
-plt.subplot(311)
-plt.plot(time_vals, v_soma , label='soma')
-plt.plot(time_vals, v_dend, label='dend')
-plt.plot(time_vals, v_dend2, label='dend2')
-plt.plot(spikes, [1.0]*len(spikes), 'ro', label = 'spikes')
-plt.legend()
+# plt.subplot(313)
+# plt.plot(time_vals, n_i_cap*1e-2, label='i_cap')
+# plt.plot(time_vals, n_i_pas*1e-2, label='i_pas')
+# plt.legend()
+# plt.show()
 
-plt.subplot(312)
-plt.plot(time_vals, total_curr, label='tot_i_Hay')
-try:
-    plt.plot(time_vals, epsp_curr, label='apic_epsp')
-except NameError:
-    print 'No vector for apical'
-    pass
-try:
-    plt.plot(time_vals, -1.0*i_clamp_curr, label='i_clamp')
-except NameError:
-    print 'No vector for i clamp'
-    pass
-plt.legend()
-
-plt.subplot(313)
-plt.plot(time_vals, n_i_cap*1e-2, label='i_cap')
-plt.plot(time_vals, n_i_pas*1e-2, label='i_pas')
-plt.legend()
-plt.show()
-
-# End of test_neuron_Hay.py 
+# # End of test_neuron_Hay.py 
