@@ -88,7 +88,7 @@ def add_leaf(G, parent, leaf_name, leaf_html):
 
 readme = '<<TABLE ALIGN="LEFT" BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="2" FIXEDSIZE="TRUE"><TR> <TD ALIGN="LEFT">This was gene... </TD></TR><TR><TD ALIGN="LEFT">Available under...</TD></TR><TR><TD ALIGN="LEFT">You may use...</TD></TR><TR><TD ALIGN="LEFT">Contact:d.w...</TD></TR></TABLE>>'
 
-dir_list = ['/filecontents/README.txt', '/filecontents/github']
+dir_list = ['/filecontents/README.txt', '/filecontents/url']
 
 G = gen_figure(dir_list)
 add_leaf(G, dir_list[0], 'readme', readme)

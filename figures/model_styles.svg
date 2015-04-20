@@ -14,7 +14,7 @@
    id="svg3518"
    version="1.1"
    inkscape:version="0.48.4 r9939"
-   sodipodi:docname="fig_5.svg"
+   sodipodi:docname="model_styles.svg"
    inkscape:export-filename="/home/cchintaluri/nsdf_figures/fig5/fig_5.png"
    inkscape:export-xdpi="600"
    inkscape:export-ydpi="600">
@@ -27,11 +27,11 @@
      borderopacity="1.0"
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
-     inkscape:zoom="2.8"
-     inkscape:cx="260.87319"
-     inkscape:cy="330.5889"
+     inkscape:zoom="15.839192"
+     inkscape:cx="186.71913"
+     inkscape:cy="168.87021"
      inkscape:document-units="mm"
-     inkscape:current-layer="graph0"
+     inkscape:current-layer="node7"
      showgrid="true"
      units="cm"
      inkscape:window-width="1915"
@@ -55,7 +55,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -311,7 +311,7 @@
              x="212"
              y="-14.9"
              font-size="12.00"
-             id="text4780">github</text>
+             id="text4780">url</text>
         </g>
         <!-- /filecontents/github_point&#45;&gt;/filecontents/github -->
         <g
