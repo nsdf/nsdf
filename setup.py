@@ -8,20 +8,22 @@ from setuptools import setup
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-setup(
-    name = "nsdf",
-    version = "0.1",
-    author = "Subhasis Ray",
-    author_email = "ray dot subhasis at gmail dot com",
-    description = ("NSDF (Neuroscience Simulation Data Format)"),
-    license = "GPL 3",
-    keywords = "neuroscience simulation format data",
-    url = "http://github.com/subhacom/nsdf",
-    packages=['nsdf', 'test'],
-    long_description=read('README.md'),
-    classifiers=[
-        "Development Status :: 1 - Alpha",
-        "Topic :: Utilities",
-        "License :: OSI Approved :: GPL License",
-    ],
-)
+setup(name="nsdf",
+      version="0.1",
+      author="Subhasis Ray",
+      author_email="ray dot subhasis at gmail dot com",
+      description=("NSDF (Neuroscience Simulation Data Format)"),
+      license="GPL 3",
+      keywords="neuroscience simulation format data",
+      url="http://github.com/subhacom/nsdf",
+      packages=['nsdf', 'test'],
+      long_description=read('README.md'),
+      classifiers=[
+          "Development Status :: 1 - Alpha",
+          "Topic :: Utilities",
+          "License :: OSI Approved :: GPL License",
+      ],
+      install_requires=[
+          "cython",
+          "h5py"
+      ])
