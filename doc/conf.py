@@ -58,12 +58,15 @@ sys.path.insert(0, os.path.abspath('..'))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
+import sphinx
+sphinx13 = sphinx.__version__.split('.') >= ['1', '3']
+
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinxcontrib.napoleon',
-    'sphinx.ext.coverage'
+    'sphinx.ext.coverage',
+    'sphinx.ext.napoleon' if sphinx13 else 'sphinxcontrib.napoleon',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
