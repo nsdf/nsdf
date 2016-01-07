@@ -16,7 +16,7 @@ setup(name="nsdf",
       license="GPL 3",
       keywords="neuroscience simulation format data",
       url="https://github.com/nsdf/nsdf",
-      packages=['nsdf', 'test'],
+      packages=['nsdf', 'nsdf.test'],
       long_description=read('README.md'),
       classifiers=[
           "Development Status :: 1 - Alpha",
