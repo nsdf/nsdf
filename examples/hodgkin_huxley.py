@@ -30,8 +30,8 @@ def hh_vm():
                            'description': 'Randomly generated Vm for a single' \
                                           'compartment',
                            'rights': 'CC-BY-SA',
-                           'tstart': datetime.now().isoformat(),
-                           'tend': (datetime.now() + timedelta(seconds=3)).isoformat(),
+                           'tstart': datetime.now(),
+                           'tend': (datetime.now() + timedelta(seconds=3)),
                            'contributor': ['Chaitanya Chintaluri',
                                            'Daniel Wocjcik',
                                            'Upinder Bhalla']})
