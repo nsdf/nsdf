@@ -46,6 +46,7 @@
 # Code:
 """An example of 'External Link' in HDF5 to connect external HDF5 file
 as model description."""
+from __future__ import print_function
 
 import numpy as np
 import h5py as h5
@@ -69,13 +70,13 @@ def create_demo():
 
 def printx(name):
     """Interestingly printx does not print the external nodes."""
-    print name
+    print(name)
 
 def printy(name, obj):
     """Interestingly printx does not print the external nodes."""
-    print '###', name
+    print('###', name)
     for ii in obj:
-        print '#    ', ii, obj[ii], type(obj[ii])
+        print('#    ', ii, obj[ii], type(obj[ii]))
 
 if __name__ == '__main__':
     create_demo()

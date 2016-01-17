@@ -45,6 +45,7 @@
 
 # Code:
 """Profile the different dialects of NaN filled 2D homogeneous array, vlen and 1D cases."""
+from builtins import range
 
 import os
 import sys
@@ -56,7 +57,7 @@ targetfilebase = os.path.basename(sourcefile)
 repeats = 10
 
 if __name__ == '__main__':
-    seq = range(6 * repeats)
+    seq = list(range(6 * repeats))
     random.shuffle(seq)
     for ii in seq:
         if ii < 10:

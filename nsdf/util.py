@@ -46,11 +46,13 @@
 # Code:
 """Utility functions for nsdf."""
 from __future__ import print_function
+from builtins import zip
+from builtins import range
 
 __author__ = 'Subhasis Ray'
 
 import numpy as np
-from itertools import chain, izip
+from itertools import chain
 import h5py as h5
 
 def node_finder(container_list, match_fn):
@@ -124,12 +126,12 @@ def find(a, predicate, chunk_size=1024):
         raise ValueError('The array must be 1D, not {}.'.format(a.ndim))
 
     i0 = 0
-    chunk_inds = chain(xrange(chunk_size, a.size, chunk_size), 
+    chunk_inds = chain(range(chunk_size, a.size, chunk_size), 
                  [None])
 
     for i1 in chunk_inds:
         chunk = a[i0:i1]
-        for inds in izip(*predicate(chunk).nonzero()):
+        for inds in zip(*predicate(chunk).nonzero()):
             yield (inds[0] + i0, ), chunk[inds]
         i0 = i1
 
@@ -182,7 +184,7 @@ def printtree(root, vchar='|', hchar='__', vcount=1, depth=0, prefix='', is_last
         print(root.name.rpartition('/')[-1])
     if not isinstance(root, h5.Group):
         return
-    children = root.keys()
+    children = list(root.keys())
     for child in children[:-1]:        
         printtree(root[child], vchar, hchar, vcount, depth+1, prefix, False)
     # Need special formatting for the last child - no further vertical line

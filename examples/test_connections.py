@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import range
 # This script was written by Chaitanya Chintaluri c.chinaluri@nencki.gov.pl
 # This software is available under GNU GPL3 License.
 
@@ -64,14 +66,14 @@ def connection_1():
     h = h5py.File('Brian_conn_1.h5', 'w')
     sp_type = np.dtype([('pre', h5py.special_dtype(vlen=str)), ('post', h5py.special_dtype(vlen=str)), ('weight', np.float64)])
     #excitatory
-    syn_ids = h.create_dataset('/map/static/ex_synapses', data=range(len(ex_pre)), dtype=np.int)
+    syn_ids = h.create_dataset('/map/static/ex_synapses', data=list(range(len(ex_pre))), dtype=np.int)
     exc_ds = h.create_dataset('/data/static/syapses/exc', dtype=sp_type, shape=(len(ex_pre),) )
     for ii in range(len(ex_pre)):
         exc_ds[ii] = (str(ex_pre[ii]), str(ex_post[ii]), ex_wts[ii])
     tie_data_map(exc_ds, syn_ids, 'syn_ids', axis=0)
     exc_ds.attrs.create('unit', data=['null', 'null', 'mV'])
     #inhibitory
-    syn_ids = h.create_dataset('/map/static/in_synapses', data=range(len(in_pre)), dtype=np.int)
+    syn_ids = h.create_dataset('/map/static/in_synapses', data=list(range(len(in_pre))), dtype=np.int)
     inh_ds = h.create_dataset('/data/static/syapses/inh', dtype=sp_type, shape=(len(in_pre),) )
     for ii in range(len(in_pre)):
         inh_ds[ii] = (str(in_pre[ii]), str(in_post[ii]), in_wts[ii])
@@ -82,7 +84,7 @@ def connection_1():
 def connection_2():
     h = h5py.File('Brian_conn_2.h5', 'w')
     #excitatory
-    syn_ids = h.create_dataset('/map/static/ex_synapses', data=range(len(ex_pre)), dtype=np.int)
+    syn_ids = h.create_dataset('/map/static/ex_synapses', data=list(range(len(ex_pre))), dtype=np.int)
     exc_pre_ds = h.create_dataset('/data/static/exc_syapses/pre', data=ex_pre, dtype=np.int)
     exc_post_ds = h.create_dataset('/data/static/exc_syapses/post', data=ex_post, dtype=np.int)
     exc_wts = h.create_dataset('/data/static/exc_syapses/wts', data=ex_wts, dtype=np.float64)
@@ -96,7 +98,7 @@ def connection_2():
     exc_wts.attrs.create('field', data='weight')
     exc_wts.attrs.create('unit', data='mV')
     #inhibitory
-    syn_ids = h.create_dataset('/map/static/in_synapses', data=range(len(in_pre)), dtype=np.int)
+    syn_ids = h.create_dataset('/map/static/in_synapses', data=list(range(len(in_pre))), dtype=np.int)
     inh_pre_ds = h.create_dataset('/data/static/inh_syapses/pre', data=in_pre, dtype=np.int)
     inh_post_ds = h.create_dataset('/data/static/inh_syapses/post', data=in_post, dtype=np.int)
     inh_wts = h.create_dataset('/data/static/inh_syapses/wts', data=in_wts, dtype=np.float64)
@@ -117,14 +119,14 @@ def connection_3(): #DO NOT RECOMMEND! Ineffective means of storing information
     exc_ds = h.create_dataset('/data/static/synapses/exc', data=exc_mat, dtype=np.float64)
     exc_ds.attrs.create('field', data='weight')
     exc_ds.attrs.create('unit', data='mV')
-    exc_pre = h.create_dataset('/map/static/exc_pre', data=range(exc_mat.shape[0]), dtype=np.int)
-    exc_post = h.create_dataset('/map/static/post', data=range(exc_mat.shape[1]), dtype=np.int)
+    exc_pre = h.create_dataset('/map/static/exc_pre', data=list(range(exc_mat.shape[0])), dtype=np.int)
+    exc_post = h.create_dataset('/map/static/post', data=list(range(exc_mat.shape[1])), dtype=np.int)
     tie_data_map(exc_ds, exc_pre, 'pre', axis=0)
     tie_data_map(exc_ds, exc_post, 'post', axis=1)
     inh_ds = h.create_dataset('/data/static/synapses/inh', data=inh_mat, dtype=np.float64)
     inh_ds.attrs.create('field', data='weight')
     inh_ds.attrs.create('unit', data='mV')
-    inh_pre = h.create_dataset('/map/static/inh_pre', data=range(inh_mat.shape[0]), dtype=np.int)
+    inh_pre = h.create_dataset('/map/static/inh_pre', data=list(range(inh_mat.shape[0])), dtype=np.int)
     tie_data_map(inh_ds, inh_pre, 'pre', axis=0)
     tie_data_map(inh_ds, exc_post, 'post', axis=1)
     h.close()

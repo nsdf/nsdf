@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Apr 25 19:51:42 2014 (+0530)
 # Version: 
-# Last-Updated: 
-#           By: 
-#     Update #: 0
+# Last-Updated: Sun Jan 17 11:31:32 2016 (-0500)
+#           By: subha
+#     Update #: 5
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -47,6 +47,9 @@
 """Classes for representing the model.
 
 """
+from __future__ import print_function
+from builtins import range
+from builtins import object
 __author__ = 'Subhasis Ray'
 __version__ = '0.1'
 
@@ -154,7 +157,7 @@ class ModelComponent(object):
 
         """
         function(self, *args, **kwargs)
-        for child in self.children.values():
+        for child in list(self.children.values()):
             child.visit(function, *args, **kwargs)
                 
     def print_tree(self, indent=''):
@@ -167,8 +170,8 @@ class ModelComponent(object):
             None
 
         """
-        print '{}{}({})'.format(indent, self.name, self.uid)
-        for child in self.children.values():
+        print('{}{}({})'.format(indent, self.name, self.uid))
+        for child in list(self.children.values()):
             child.print_tree(indent + '  ')
 
     def check_uid(self, uid_dict):
@@ -191,12 +194,12 @@ class ModelComponent(object):
                 self.uid = '{}/{}'.format(self.parent.uid, self.name)
         try:
             clashing = uid_dict[self.uid]
-            print 'Components with uid clashing with {}: \n'.format(self.name)
-            print '\n'.join([comp.name for comp in clashing])
+            print('Components with uid clashing with {}: \n'.format(self.name))
+            print('\n'.join([comp.name for comp in clashing]))
             clashing.append(self)
         except KeyError:
             uid_dict[self.uid] = [self]
-        for child in self.children.values():
+        for child in list(self.children.values()):
             child.check_uid(uid_dict)
             
     @property
