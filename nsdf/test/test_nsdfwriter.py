@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Jul 21 15:00:04 2014 (+0530)
 # Version: 
-# Last-Updated: 
-#           By: 
-#     Update #: 0
+# Last-Updated: Sun Jan 17 12:42:01 2016 (-0500)
+#           By: subha
+#     Update #: 1
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -56,6 +56,10 @@ try removing all hdf5 files from current working directory. These are
 possibly files left from older tests which failed.
 
 """
+from __future__ import division
+from builtins import zip
+from builtins import str
+from builtins import range
 
 import sys
 from collections import defaultdict
@@ -80,7 +84,7 @@ class TestNSDFWriterUniform(unittest.TestCase):
         self.granule_somata = []
         self.popname = 'pop0'
         for cell in self.mdict['granule_cells']:
-            for name, comp in cell.children.items():
+            for name, comp in list(cell.children.items()):
                 if name == 'gc_0':
                     self.granule_somata.append(comp.uid)
         writer = nsdf.NSDFWriter(self.filepath, mode='w')
@@ -157,7 +161,7 @@ class TestNSDFWriterNonuniform1D(unittest.TestCase):
         writer.title  = self.id()
         mitral_somata = []
         for cell in self.mdict['mitral_cells']:
-            for name, comp in cell.children.items():
+            for name, comp in list(cell.children.items()):
                 if name == 'mc_0':
                     mitral_somata.append(comp.uid)
                     
@@ -272,7 +276,7 @@ class TestNSDFWriterNonuniformVlen(unittest.TestCase):
         writer.title = self.id()
         mitral_somata = []
         for cell in self.mdict['mitral_cells']:
-            for name, comp in cell.children.items():
+            for name, comp in list(cell.children.items()):
                 if name == 'mc_0':
                     mitral_somata.append(comp.uid)
                     
@@ -385,7 +389,7 @@ class TestNSDFWriterNonuniformRegular(unittest.TestCase):
         writer.title = self.id()
         mitral_somata = []
         for cell in self.mdict['mitral_cells']:
-            for name, comp in cell.children.items():
+            for name, comp in list(cell.children.items()):
                 if name == 'mc_0':
                     mitral_somata.append(comp.uid)
                     
@@ -474,7 +478,7 @@ class TestNSDFWriterNonuniformNan(unittest.TestCase):
         writer.title = self.id()
         mitral_somata = []
         for cell in self.mdict['mitral_cells']:
-            for name, comp in cell.children.items():
+            for name, comp in list(cell.children.items()):
                 if name == 'mc_0':
                     mitral_somata.append(comp.uid)
         self.sources = mitral_somata
@@ -880,7 +884,7 @@ class TestNSDFWriterModelTree(unittest.TestCase):
         self.granule_somata = []
         self.popname = 'pop0'
         for cell in self.mdict['granule_cells']:
-            for name, comp in cell.children.items():
+            for name, comp in list(cell.children.items()):
                 if name == 'gc_0':
                     self.granule_somata.append(comp.uid)
         uds = writer.add_uniform_ds(self.popname,

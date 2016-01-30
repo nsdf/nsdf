@@ -72,7 +72,7 @@ class TestNSDFUniformData(unittest.TestCase):
     def test_put(self):
         src_data_dict = {'src_{}'.format(name): np.random.uniform(1000)
                          for name in 'abc'}
-        for name, data in src_data_dict.items():
+        for name, data in list(src_data_dict.items()):
             self.data.put_data(name, data)
         self.assertEqual(len(src_data_dict), len(self.data.get_sources()))
         self.assertEqual(set(src_data_dict.keys()),

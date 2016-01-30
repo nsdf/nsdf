@@ -1,3 +1,7 @@
+from __future__ import division
+from __future__ import print_function
+from builtins import range
+
 # poolroom.py --- 
 # 
 # Filename: poolroom.py
@@ -6,9 +10,9 @@
 # Maintainer: 
 # Created: Thu Jul 17 09:35:38 2014 (+0530)
 # Version: 
-# Last-Updated: 
-#           By: 
-#     Update #: 0
+# Last-Updated: Sun Jan 17 13:27:53 2016 (-0500)
+#           By: subha
+#     Update #: 3
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -143,7 +147,7 @@ def create_example():
     
 if __name__ == '__main__':
     create_example()
-    print 'Finished'
+    print('Finished')
     
 # 
 # poolroom.py ends here
