@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Aug  9 16:10:00 2014 (+0530)
 # Version: 
-# Last-Updated: 
-#           By: 
-#     Update #: 0
+# Last-Updated: Sun Jan 17 13:31:43 2016 (-0500)
+#           By: subha
+#     Update #: 3
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -52,6 +52,9 @@ The model in this current instance is a dummy-one created in
 Python. For the original model see modeldb.
 
 """
+from __future__ import division
+from __future__ import print_function
+from builtins import range
 
 import os
 import random
@@ -144,7 +147,7 @@ class ThalamoCorticalModel(ComponentBase):
     """
     def __init__(self, *args, **kwargs):
         ComponentBase.__init__(self, *args, **kwargs)
-        print 'Start model creation'
+        print('Start model creation')
         self.cellgroup = {}
         self.cells = defaultdict(list)
         for (celltype, cellcount, compcount, presyn) in CELL_POPS:
@@ -155,7 +158,7 @@ class ThalamoCorticalModel(ComponentBase):
                               parent=group, ncomp=compcount,
                               presyn=presyn)
                 self.cells[celltype].append(cell)
-        print 'End model creation'
+        print('End model creation')
 
 
 dialect_eventds_map = {
@@ -205,10 +208,10 @@ def create_example(dialect=nsdf.dialect.ONED, simtime=10.0, dt=1e-4):
     start_time = datetime.now()
     writer = nsdf.NSDFWriter('traub_et_al_2005_{}.h5'.format(dialect),
                              mode='w', dialect=dialect)
-    print 'Start add_modeltree'
+    print('Start add_modeltree')
     writer.add_modeltree(model)
-    print 'End add_modeltree'
-    for celltype, cell_list in model.cells.items():
+    print('End add_modeltree')
+    for celltype, cell_list in list(model.cells.items()):
         event_sources = [cell.compartments[cell.presyn - 1]     \
                          for cell in cell_list]
         event_data = nsdf.EventData('spiketime', unit='s', dtype=FLOATDTYPE)
@@ -228,11 +231,11 @@ def create_example(dialect=nsdf.dialect.ONED, simtime=10.0, dt=1e-4):
             dialect_eventwriter_map[dialect](writer,
                                              event_ds,
                                              event_data)
-        vm_sources = random.sample(event_sources, len(event_sources)/10)
+        vm_sources = random.sample(event_sources, len(event_sources)//10)
         vm_data = nsdf.UniformData('Vm', unit='V', field='Vm')
         vm_data.set_dt(dt, unit='s')
         for src in vm_sources:
-            vm = np.random.uniform(-120e-3, 40e-3, size=simtime/dt)
+            vm = np.random.uniform(-120e-3, 40e-3, size=int(simtime//dt))
             vm_data.put_data(src.uid, vm)
         vm_ds = writer.add_uniform_ds(celltype, vm_data.get_sources())
         writer.add_uniform_data(vm_ds, vm_data)
@@ -244,7 +247,7 @@ def create_example(dialect=nsdf.dialect.ONED, simtime=10.0, dt=1e-4):
     writer.creator = [os.environ['USER']]
     writer.license = 'CC BY-SA'
     writer.software = ['Python2.7', 'nsdf python library']
-    print 'Finished writing example NSDF file for dialect {}'.format(dialect)
+    print('Finished writing example NSDF file for dialect {}'.format(dialect))
 
 
 if __name__ == '__main__':

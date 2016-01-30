@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import range
 # This script was written by Chaitanya Chintaluri c.chinaluri@nencki.gov.pl
 # This software is available under GNU GPL3 License.
 
@@ -117,11 +119,11 @@ def h5_cmpd():
     m_ex = h.create_dataset('/map/events/excitatory/spikes', dtype=sp_type, shape=(len(maping_ex),))
     m_in = h.create_dataset('/map/events/inhibitory/spikes', dtype=sp_type, shape=(len(maping_in),))
     doh_ = 0
-    for ii,jj in maping_ex.iteritems():
+    for ii,jj in maping_ex.items():
         m_ex[doh_] = (ii, jj)
         doh_ += 1
     doh_ = 0
-    for ii,jj in maping_in.iteritems():
+    for ii,jj in maping_in.items():
         m_in[doh_] = (ii, jj)
         doh_ += 1
     h.close()

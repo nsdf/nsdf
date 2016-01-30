@@ -45,6 +45,7 @@
 
 # Code:
 """Profile the NaN filled 2D homogeneous array case."""
+from builtins import range
 
 import os
 import sys
@@ -58,7 +59,7 @@ repeats = 10
 if __name__ == '__main__':
     count_nan_uncompressed = 0
     count_nan_compressed = 0
-    for ii in random.shuffle(range(2*repeats)):
+    for ii in random.shuffle(list(range(2*repeats))):
         if ii < 10:
             subprocess.call(['python', '-m', 'cProfile', '-o', 'nan_uncompressed_%d.prof' % (ii), 'test_nsdfwriter.py', sourcefile, os.path.join('/tmp', 'nan_uncompressed_%d_%s' % (ii, targetfilebase)), 'False', 'False'])
         else:

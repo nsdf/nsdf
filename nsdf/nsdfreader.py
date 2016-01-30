@@ -46,6 +46,11 @@
 # Code:
 
 """Reader for NSDF format"""
+from builtins import zip
+from builtins import str
+from builtins import next
+from builtins import range
+from builtins import object
 
 import h5py as h5
 import numpy as np
@@ -139,7 +144,7 @@ class NSDFReader(object):
         with uniform sampling.
 
         """
-        return self.data[UNIFORM].keys()
+        return list(self.data[UNIFORM].keys())
     
     @property
     def nonuniform_populations(self):
@@ -147,7 +152,7 @@ class NSDFReader(object):
         with nonuniform sampling.
 
         """
-        return self.data['nonuniform'].keys()
+        return list(self.data['nonuniform'].keys())
 
     @property
     def event_populations(self):
@@ -155,7 +160,7 @@ class NSDFReader(object):
         recorded.
 
         """
-        return self.data['event'].keys()
+        return list(self.data['event'].keys())
 
     def get_uniform_vars(self, population):
         """Returns the names of uniform variables recorded for `population`.
@@ -167,7 +172,7 @@ class NSDFReader(object):
             list of str: names of the datasets storing uniform variables.
 
         """
-        return self.data[UNIFORM][population].keys()
+        return list(self.data[UNIFORM][population].keys())
 
     def get_nonuniform_vars(self, population):
         """Returns the names of nonuniform variables recorded for `population`.
@@ -179,7 +184,7 @@ class NSDFReader(object):
             list of str: names of the groups storing nonuniform variables.
 
         """
-        return self.data['nonuniform'][population].keys()
+        return list(self.data['nonuniform'][population].keys())
 
     
     def get_event_vars(self, population):
@@ -192,7 +197,7 @@ class NSDFReader(object):
             list of str: names of the groups storing event variables.
 
         """
-        return self.data['event'][population].keys()
+        return list(self.data['event'][population].keys())
 
     def get_uniform_dataset(self, population, varname):
         """Returns the data sources and data contents for recorded variable
@@ -317,7 +322,7 @@ class NSDFReader(object):
                           dt=data.attrs['dt'],
                           tunit=data.attrs['tunit'],
                           dtype=data.dtype)
-        for src, row in izip(mapping, data):
+        for src, row in zip(mapping, data):
             ret.put_data(src, row)
         return ret
 
@@ -325,7 +330,7 @@ class NSDFReader(object):
         ret = NonuniformData(data.name.rpartition('/')[-1],
                              unit=data.attrs['unit'],
                              field=data.attrs['field'])
-        for name, dset in data.items():
+        for name, dset in list(data.items()):
             times = dset.dims[0]['time']
             ret.put_data(dset.attrs['source'], (np.asarray(dset),
                                                 np.asarray(times)))
@@ -417,7 +422,7 @@ class NSDFReader(object):
         ret = EventData(datagroup.name.rpartition('/')[-1],
                         unit=datagroup.attrs['unit'],
                         field=datagroup.attrs['field'])
-        for name, dataset in datagroup.items():
+        for name, dataset in list(datagroup.items()):
             ret.put_data(dataset.attrs['source'],
                          np.asarray(dataset))
         ret.dtype = dataset.dtype

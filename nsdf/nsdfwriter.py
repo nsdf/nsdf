@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Apr 25 19:51:42 2014 (+0530)
 # Version: 
-# Last-Updated: 
-#           By: 
-#     Update #: 0
+# Last-Updated: Sun Jan 17 14:16:49 2016 (-0500)
+#           By: subha
+#     Update #: 13
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -47,6 +47,12 @@
 """
 Writer for NSDF file format.
 """
+from __future__ import print_function
+from builtins import next
+from builtins import str
+from builtins import zip
+from builtins import range
+from builtins import object
 
 import h5py as h5
 import numpy as np
@@ -96,7 +102,7 @@ def add_model_component(component, parentgroup):
         grp.attrs['uid'] = component.uid
     else:
         grp.attrs['uid'] = component.path
-    for key, value in component.attrs.items():
+    for key, value in list(component.attrs.items()):
         grp.attrs[key] = value
     return grp
 
@@ -151,7 +157,7 @@ def write_dir_contents(root_group, root_dir, ascii, **compression_opts):
                 try:
                     dset = write_ascii_file(grp, dset_name, file_path, **compression_opts)
                 except ValueError:
-                    print 'Skipping binary file', file_path
+                    print('Skipping binary file', file_path)
             else:
                 dset = write_binary_file(grp, dset_name, file_path, **compression_opts)
 
@@ -495,8 +501,8 @@ class NSDFWriter(object):
                 attr = np.zeros((len(tmpattr),), dtype=REFTYPE)
                 attr[:] = tmpattr
                 mapds.attrs['model'] = attr                
-            except KeyError, error:
-                print error.message
+            except KeyError as error:
+                print(error.message)
         
     def add_modeltree(self, root, target='/'):
         """Add an entire model tree. This will cause the modeltree rooted at
@@ -947,22 +953,24 @@ class NSDFWriter(object):
         assert self.dialect == dialect.ONED, \
             'add 1D dataset under nonuniform only for dialect=ONED'
         if source_name_dict is None:
-            names = np.asarray(source_ds['source'], dtype=str)
-            if np.any((np.char.find(names, '/') >= 0) |
-                      (np.char.find(names, '.') >= 0)):
+            names = np.array(source_ds['source'], dtype=np.str_)
+            slash_pos = np.char.find(names, '/') 
+            dot_pos = np.char.find(names, '.')
+            if np.any(( slash_pos >= 0) |
+                      ( dot_pos >= 0)):
                 names = [str(index) for index in range(len(names))]
-            source_name_dict = dict(zip(source_ds['source'], names))
+            source_name_dict = dict(list(zip(source_ds['source'], names)))
 
         assert len(set(source_name_dict.values())) == len(source_ds), \
             'The names in `source_name_dict` must be unique'        
         popname = source_ds.name.split('/')[-2]
         ngrp = self.data[NONUNIFORM].require_group(popname)
-        assert match_datasets(source_name_dict.keys(),
+        assert match_datasets(list(source_name_dict.keys()),
                               data_object.get_sources()), \
                'sources in `source_name_dict`'    \
                ' do not match those in `data_object`'
         assert match_datasets(source_ds['source'],
-                              source_name_dict.keys()),  \
+                              list(source_name_dict.keys())),  \
             'sources in mapping dataset do not match those with data'
         datagrp = ngrp.require_group(data_object.name)
         datagrp.attrs['source'] = source_ds.ref
@@ -1246,7 +1254,7 @@ class NSDFWriter(object):
             self.dialect == dialect.NUREGULAR), \
             'add 1D dataset under event only for dialect=ONED or NUREGULAR'
         if source_name_dict is None:
-            names = np.asarray(source_ds['source'], dtype=str)
+            names = np.asarray(source_ds['source'], dtype=np.str_)
             if np.any((np.char.find(names, '/') >= 0) |
                       (np.char.find(names, '.') >= 0)):
                 names = [str(index) for index in range(len(names))]

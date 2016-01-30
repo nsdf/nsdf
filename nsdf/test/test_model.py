@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import range
 # test_model.py --- 
 # 
 # Filename: test_model.py
@@ -87,7 +89,7 @@ class TestModel(unittest.TestCase):
         self.mdict = create_ob_model_tree()
         for cell in self.mdict['granule_cells']:
             self.assertTrue(cell.path.startswith('/model/Granule/granule_'))
-            for name, component in cell.children.items():                
+            for name, component in list(cell.children.items()):                
                 self.assertEqual(component.path, 
                                  '{}/{}'.format(cell.path, name))
 

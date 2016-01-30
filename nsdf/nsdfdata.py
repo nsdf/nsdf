@@ -46,6 +46,7 @@
 # Code:
 
 """Classes for NSDF data."""
+from builtins import object
 
 import numpy as np
 
@@ -111,11 +112,11 @@ class NSDFData(object):
 
     def get_sources(self):
         """Return the source ids as a list"""
-        return self._src_data_dict.keys()
+        return list(self._src_data_dict.keys())
 
     def get_all_data(self):
         """Return the data for all the sources as a list."""
-        return self._src_data_dict.values()
+        return list(self._src_data_dict.values())
 
     def get_data(self, source):
         """Return the data for specified source"""
