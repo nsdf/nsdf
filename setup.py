@@ -10,12 +10,13 @@ def read(fname):
 
 setup(name="nsdf",
       version="0.1",
-      author="Subhasis Ray",
+      author="Subhasis Ray and Chaitanya Chintaluri",
       author_email="ray dot subhasis at gmail dot com",
       description=("NSDF (Neuroscience Simulation Data Format)"),
       license="GPL 3",
       keywords="neuroscience simulation format data",
       url="https://github.com/nsdf/nsdf",
+      download_url="https://github.com/nsdf/nsdf/tarball/0.1",
       packages=['nsdf', 'nsdf.test'],
       long_description=read('README.md'),
       classifiers=[

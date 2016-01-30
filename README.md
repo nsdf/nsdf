@@ -65,3 +65,5 @@ for reading and writing NSDF files.
 
 We thank Aviral Goel, Johannes Rieke and Matteo Cantarelli for their
 critical input.
+
+Zbigniew Jędrzejewski-Szmek contributed to structuring for packaging.

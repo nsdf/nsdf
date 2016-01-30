@@ -47,6 +47,7 @@ def tie_data_map(d_set, m_set, name, axis=0):
 ### vlen arrays
 def h5_vlen():
     h = h5py.File('Brian_VLEN_'+str(seed_no)+'.h5', 'a')
+    h.create_group('/model')
     e_dset = h.create_dataset('/data/events/excitatory/spikes', dtype=h5py.special_dtype(vlen='float32'), shape=(e_spikes,))
     i_dset = h.create_dataset('/data/events/inhibitory/spikes', dtype=h5py.special_dtype(vlen='float32'), shape=(i_spikes,))
     e_list = []
@@ -70,6 +71,7 @@ def h5_vlen():
 ### NaN filled arrays
 def h5_nan():
     h = h5py.File('Brian_NANPADDED_'+str(seed_no)+'.h5', 'a')
+    h.create_group('/model')
     e_max = 0
     i_max = 0
     for ii in range(e_spikes):
