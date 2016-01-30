@@ -20,9 +20,10 @@ setup(name="nsdf",
       packages=['nsdf', 'nsdf.test'],
       long_description=read('README.md'),
       classifiers=[
-          "Development Status :: 1 - Alpha",
-          "Topic :: Utilities",
-          "License :: OSI Approved :: GPL License",
+          "Development Status :: 3 - Alpha",
+          "Topic :: Scientific/Engineering :: Bio-Informatics",
+          "Intended Audience :: Science/Research",
+          "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
       ],
       install_requires=[
           "cython",
