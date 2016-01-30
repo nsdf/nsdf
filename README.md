@@ -13,14 +13,17 @@ neuroscience.
  * NSDF is under development and we welcome feedback and suggestions from
 the community.
 
- * This is work in progress and please contact the developers regarding
-its use and citation.
+ * If you use nsdf for your research, please consider citing the article with NSDF specification:
+ 
+ Ray, Subhasis, Chaitanya Chintaluri, Upinder S. Bhalla, and Daniel K. Wójcik. 2015. "NSDF: Neuroscience Simulation Data Format." Neuroinformatics, November, 1–21. doi:10.1007/s12021-015-9282-5.
 
 
 Requirements
 ------------
 
-nsdf module works with h5py 2.3.1. Python 2.7 and numpy.
+nsdf module works with h5py 2.3.1. Python 2.7 and numpy. The latest
+development version should also work with Python 3, but not fully
+tested yet.
 
 To build the documentation you also need sphinx,
 sphinxcontrib-napoleon packages.
@@ -28,16 +31,30 @@ sphinxcontrib-napoleon packages.
 
 Installation
 ------------
+To install from PyPI use: 
 
-To install the nsdf package open a terminal, cd to the top level
-directory (the one containing this file) and enter:
+1. If you have admin rights on a linux and want to install it for all users:
 
-python setup.py install
+	`sudo pip install nsdf`
+
+2. If you don't have admin rights or want to install in your home directory
+
+	`pip install nsdf --user`
+
+
+
+To install the nsdf package from the source (available at
+"https://github.com/nsdf/nsdf"):
+
+Open a terminal, cd to the top level directory (the one containing
+this file) and enter:
+
+`python setup.py install`
 
 
 To build the documentation, cd to doc directory and enter:
 
-make html
+`make html`
 
 This will create "\_build" directory and the index of the docs will be
 in "\_build/html/index.html". Or you can read the latest documentation
