@@ -48,8 +48,13 @@
 
 """
 from __future__ import print_function
-from builtins import range
-from builtins import object
+try:
+    from builtins import range
+    from builtins import object
+except ImportError as e:
+    from __builtin__ import range
+    from __builtin__ import object
+
 __author__ = 'Subhasis Ray'
 __version__ = '0.1'
 

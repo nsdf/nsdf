@@ -46,8 +46,13 @@
 # Code:
 """Utility functions for nsdf."""
 from __future__ import print_function
-from builtins import zip
-from builtins import range
+
+try:
+    from builtins import zip
+    from builtins import range
+except ImportError as e:
+    from __builtin__ import zip
+    from __builtin__ import range
 
 __author__ = 'Subhasis Ray'
 
