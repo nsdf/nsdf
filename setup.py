@@ -27,5 +27,5 @@ setup(name="nsdf",
       ],
       install_requires=[
           "cython",
-          "h5py"
+          "h5py>=2.3"
       ])

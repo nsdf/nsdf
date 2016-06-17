@@ -46,11 +46,18 @@
 # Code:
 
 """Reader for NSDF format"""
-from builtins import zip
-from builtins import str
-from builtins import next
-from builtins import range
-from builtins import object
+try:
+    from builtins import zip
+    from builtins import str
+    from builtins import next
+    from builtins import range
+    from builtins import object
+except ImportError as e:
+    from __builtin__ import zip
+    from __builtin__ import str
+    from __builtin__ import next
+    from __builtin__ import range
+    from __builtin__ import object
 
 import h5py as h5
 import numpy as np

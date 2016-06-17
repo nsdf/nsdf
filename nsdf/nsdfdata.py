@@ -46,7 +46,10 @@
 # Code:
 
 """Classes for NSDF data."""
-from builtins import object
+try:
+    from builtins import object
+except Exception as e:
+    from __builtin__ import object
 
 import numpy as np
 
