@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Apr 25 19:51:42 2014 (+0530)
 # Version: 
-# Last-Updated: Sun Jan 17 14:16:49 2016 (-0500)
-#           By: subha
-#     Update #: 13
+# Last-Updated: Fri Feb  2 15:41:16 2018 (-0500)
+#           By: Subhasis Ray
+#     Update #: 17
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -495,7 +495,11 @@ class NSDFWriter(object):
             
         if len(id_path_dict) > 1:
             # there are elements other than /model/modeltree
-            paths = [id_path_dict[uid] for uid in idlist]
+            try:
+                paths = [id_path_dict[uid] for uid in idlist]
+            except KeyError:
+                print('Warning: modeltree does not include source ids in the DS')
+                return
             prefix = common_prefix(paths)[len('/modeltree/'):]
             try:
                 source = self.modeltree[prefix]
@@ -572,7 +576,7 @@ class NSDFWriter(object):
                     fhandle.readinto(buf)
                 components = []
                 while True:
-                    head, tail = os.path.split(fame)
+                    head, tail = os.path.split(fname)
                     if tail:
                         components.append(tail)
                     if not head:
@@ -1443,7 +1447,7 @@ class NSDFWriter(object):
                 a dimension scale called `source` on the row
                 dimension.
 
-            data_object (nsdf.EventData): NSDFData object storing
+            data_object (nsdf.StaticData): NSDFData object storing
                 the data for all sources in `source_ds`.
             
             fixed (bool): if True, the data cannot grow. Default: True
