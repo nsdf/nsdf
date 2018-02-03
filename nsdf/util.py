@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Jul 28 15:13:33 2014 (+0530)
 # Version: 
-# Last-Updated: 
-#           By: 
-#     Update #: 0
+# Last-Updated: Fri Feb  2 17:14:41 2018 (-0500)
+#           By: Subhasis Ray
+#     Update #: 9
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -59,6 +59,7 @@ __author__ = 'Subhasis Ray'
 import numpy as np
 from itertools import chain
 import h5py as h5
+import os
 
 def node_finder(container_list, match_fn):
     """Return a function that can be passed to h5py.Group.visititem to
@@ -196,6 +197,20 @@ def printtree(root, vchar='|', hchar='__', vcount=1, depth=0, prefix='', is_last
     if len(children) > 0:
         printtree(root[children[-1]], vchar, hchar, vcount, depth + 1, prefix, True)
         
-
+def split_os_path(path):
+    """Inverse of os.path.join()"""
+    components = []
+    while True:
+        path, tail = os.path.split(path)
+        if tail:
+            components.append(tail)
+        else:
+            if path:
+                components.append(path)
+            break
+    components.reverse()
+    return components
+    
+        
 # 
 # util.py ends here
