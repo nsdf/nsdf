@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Apr 25 19:51:42 2014 (+0530)
 # Version: 
-# Last-Updated: Sun Jan 17 14:16:49 2016 (-0500)
-#           By: subha
-#     Update #: 13
+# Last-Updated: Tue Feb  6 13:58:38 2018 (-0500)
+#           By: Subhasis Ray
+#     Update #: 98
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -65,6 +65,7 @@ except ImportError as e:
 import h5py as h5
 import numpy as np
 import os
+import warnings
 
 from .model import ModelComponent, common_prefix
 from .constants import *
@@ -165,7 +166,7 @@ def write_dir_contents(root_group, root_dir, ascii, **compression_opts):
                 try:
                     dset = write_ascii_file(grp, dset_name, file_path, **compression_opts)
                 except ValueError:
-                    print('Skipping binary file', file_path)
+                    warnings.warn('Skipping binary file {}'.format(file_path))
             else:
                 dset = write_binary_file(grp, dset_name, file_path, **compression_opts)
 
@@ -319,6 +320,8 @@ class NSDFWriter(object):
             creator_list (list of str): list of creators of the file.
 
         """
+        if isinstance(creator_list, basestring):
+            creator_list = [creator_list]
         attr = np.zeros((len(creator_list),), dtype=VLENSTR)
         attr[:] = creator_list
         self._fd.attrs['creator'] = attr                
@@ -349,6 +352,8 @@ class NSDFWriter(object):
                 involved in generating the data in the file.
 
         """
+        if isinstance(software_list, basestring):
+            software_list = [software_list]        
         attr = np.zeros((len(software_list),), dtype=VLENSTR)
         attr[:] = software_list
         self._fd.attrs['software'] = attr
@@ -367,6 +372,8 @@ class NSDFWriter(object):
                 to generate the data.
 
         """
+        if isinstance(method_list, basestring):
+            method_list = [method_list]
         attr = np.zeros((len(method_list),), dtype=VLENSTR)
         attr[:] = method_list
         self._fd.attrs['method'] = attr                
@@ -460,6 +467,8 @@ class NSDFWriter(object):
                 contributed towards the data stored in the file.
 
         """
+        if isinstance(contributor_list, basestring):
+            contributor_list = [contributor_list]
         attr = np.zeros((len(contributor_list),), dtype=VLENSTR)
         attr[:] = contributor_list
         self._fd.attrs['contributor'] = attr                
@@ -495,8 +504,18 @@ class NSDFWriter(object):
             
         if len(id_path_dict) > 1:
             # there are elements other than /model/modeltree
-            paths = [id_path_dict[uid] for uid in idlist]
+            paths = []
+            for uid in idlist:
+                try:
+                    paths.append(id_path_dict[uid])
+                except KeyError:
+                    warnings.warn('modeltree does not include '
+                                  'source id {} in the DS'.format(uid))
             prefix = common_prefix(paths)[len('/modeltree/'):]
+            if not prefix:
+                warnings.warn('no common prefix for map dimscale {}'.format(
+                    mapds.name))
+                return
             try:
                 source = self.modeltree[prefix]
                 tmpattr = ([ref for ref in source.attrs.get('map', [])]
@@ -510,7 +529,7 @@ class NSDFWriter(object):
                 attr[:] = tmpattr
                 mapds.attrs['model'] = attr                
             except KeyError as error:
-                print(error.message)
+                warnings.warn(error.message)
         
     def add_modeltree(self, root, target='/'):
         """Add an entire model tree. This will cause the modeltree rooted at
@@ -544,7 +563,7 @@ class NSDFWriter(object):
         node.add_child(root)
         self.modelroot.visit(write_absolute, self.model)
 
-    def add_model_filecontents(self, filenames, ascii=True, recursive=True):
+    def add_model_filecontents(self, filenames, basedir, ascii=True, recursive=True):
         """Add the files and directories listed in `filenames` to
         ``/model/filecontents``.
         
@@ -558,34 +577,44 @@ class NSDFWriter(object):
             filenames (sequence): the paths of files and/or
                 directories which contain model information.
 
+            basedir (str): path of the basedirectory of the model. 
+                This is necessary to avoid problem with nonunix file 
+                paths like `C:\\mydir\\xyz.py` and relative paths with `..`
+
             ascii (bool): whether the files are in ascii.
 
             recursive (bool): whether to recursively store
                 subdirectories.
 
         """
+        basepath = os.path.abspath(basedir)
         filecontents = self.model.require_group('filecontents')
         for fname in filenames:
+            fpath = os.path.abspath(fname)
+            if not fpath.startswith(basepath):
+                warnings.warn('{} does not start with basedir {}. Skipping.'.format(fname, basedir))
             if os.path.isfile(fname):
                 buf = bytearray(os.path.getsize(fname))
                 with open(fname, 'rb') as fhandle:
                     fhandle.readinto(buf)
-                components = []
-                while True:
-                    head, tail = os.path.split(fame)
-                    if tail:
-                        components.append(tail)
-                    if not head:
-                        break
-                grp = filecontents
-                for name in components[:0:-1]:
-                    grp = filecontents.require_group(name)
+                # Get the file path components in portable manner
+                relative_path = fpath[len(basepath):]
+                components = split_os_path(relative_path)
+                if components[0] in ['/', '\\']:
+                    components = components[1:]
+                file_parent_path = '/'.join(components[:-1])
+                if file_parent_path:
+                    grp = filecontents.require_group(file_parent_path)
+                else:
+                    grp = filecontents
                 if ascii:
                     fdata = write_ascii_file(grp, components[-1], fname, **self.h5args)
                 else:
                     fdata = write_binary_file(grp, components[-1], fname, **self.h5args)
             elif os.path.isdir(fname):
-                write_dir_contents(filecontents, fname, ascii=ascii, **self.h5args)                        
+                write_dir_contents(filecontents, fname, ascii=ascii, **self.h5args)
+            else:
+                warnings.warn('not a file or directory {}'.format(fname))
 
     def add_uniform_ds(self, name, idlist):
 
@@ -1443,7 +1472,7 @@ class NSDFWriter(object):
                 a dimension scale called `source` on the row
                 dimension.
 
-            data_object (nsdf.EventData): NSDFData object storing
+            data_object (nsdf.StaticData): NSDFData object storing
                 the data for all sources in `source_ds`.
             
             fixed (bool): if True, the data cannot grow. Default: True
