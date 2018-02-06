@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Apr 25 19:51:42 2014 (+0530)
 # Version: 
-# Last-Updated: Fri Feb  2 20:28:08 2018 (-0500)
+# Last-Updated: Tue Feb  6 13:58:38 2018 (-0500)
 #           By: Subhasis Ray
-#     Update #: 97
+#     Update #: 98
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -320,6 +320,8 @@ class NSDFWriter(object):
             creator_list (list of str): list of creators of the file.
 
         """
+        if isinstance(creator_list, basestring):
+            creator_list = [creator_list]
         attr = np.zeros((len(creator_list),), dtype=VLENSTR)
         attr[:] = creator_list
         self._fd.attrs['creator'] = attr                
@@ -350,6 +352,8 @@ class NSDFWriter(object):
                 involved in generating the data in the file.
 
         """
+        if isinstance(software_list, basestring):
+            software_list = [software_list]        
         attr = np.zeros((len(software_list),), dtype=VLENSTR)
         attr[:] = software_list
         self._fd.attrs['software'] = attr
@@ -368,6 +372,8 @@ class NSDFWriter(object):
                 to generate the data.
 
         """
+        if isinstance(method_list, basestring):
+            method_list = [method_list]
         attr = np.zeros((len(method_list),), dtype=VLENSTR)
         attr[:] = method_list
         self._fd.attrs['method'] = attr                
@@ -461,6 +467,8 @@ class NSDFWriter(object):
                 contributed towards the data stored in the file.
 
         """
+        if isinstance(contributor_list, basestring):
+            contributor_list = [contributor_list]
         attr = np.zeros((len(contributor_list),), dtype=VLENSTR)
         attr[:] = contributor_list
         self._fd.attrs['contributor'] = attr                
