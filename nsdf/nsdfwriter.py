@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Apr 25 19:51:42 2014 (+0530)
 # Version: 
-# Last-Updated: Tue Feb  6 13:58:38 2018 (-0500)
+# Last-Updated: Fri Feb  9 12:12:27 2018 (-0500)
 #           By: Subhasis Ray
-#     Update #: 98
+#     Update #: 101
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -288,7 +288,10 @@ class NSDFWriter(object):
         attr[:] = properties['contributor']
         self._fd.attrs['contributor'] = attr                
         
-        
+    @property
+    def filename(self):
+        """The file this writer writes to."""
+        return self._fd.filename
 
     @property
     def title(self):

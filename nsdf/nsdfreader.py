@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Sat Aug  9 14:49:04 2014 (+0530)
 # Version: 
-# Last-Updated: 
-#           By: 
-#     Update #: 0
+# Last-Updated: Fri Feb  9 13:02:58 2018 (-0500)
+#           By: Subhasis Ray
+#     Update #: 1
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -88,6 +88,11 @@ class NSDFReader(object):
     def __del__(self):
         self._fd.close()
 
+    @property
+    def filename(self):
+        """filename being read"""
+        return self._fd.filename
+        
     @property
     def title(self):
         """Title of the file"""
