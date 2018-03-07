@@ -89,6 +89,8 @@ class NSDFData(object):
         Returns:
             None
 
+        NOTE: From NSDF v > 0.1 the data will be maintained in the same order
+        as the put_data calls.
         """
         self._src_data_dict[source] = np.asarray(data, dtype=self.dtype)
         self._src_list.append(source)
@@ -99,6 +101,11 @@ class NSDFData(object):
 
     def update_source_data_dict(self, src_data):
         """Insert a bunch of source, data pairs.
+
+        If `src_data` is a dict, then the entries are added to end
+        of the current sources, but their order is undefined (as obtained
+        by `dict.keyes()`. If `src_data` is a sequence of 2-tuples, then 
+        the order is preserved.
 
         Args:
             src_data (dict-like): an object that is a dict or a
