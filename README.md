@@ -66,7 +66,7 @@ Other Tools
 [dataviz](https://github.com/subhacom/dataviz)
 A GUI utility for viewing HDF5 datasets.
 
-[Moogli](https://aviralg.github.io/Moogli/) Coming Soon.
+[Moogli](https://github.com/BhallaLab/moogli/) 
 A Simulator independent visualization tool for neuronal simulations.
 
 Credits
@@ -75,7 +75,7 @@ Credits
 Subhasis Ray, Chaitanya Chintaluri, Upinder Bhalla and Daniel Wójcik
 have been designing the specification in collaboration.
 
-Chaitanya is providing examples and use cases.
+Chaitanya provided examples and use cases.
 
 Subhasis is developing this Python module providing a high level API
 for reading and writing NSDF files.
