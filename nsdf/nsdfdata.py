@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Jul 29 12:55:01 2014 (+0530)
 # Version: 
-# Last-Updated: 
-#           By: 
-#     Update #: 0
+# Last-Updated: Tue Mar  6 20:00:36 2018 (-0500)
+#           By: Subhasis Ray
+#     Update #: 13
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -75,6 +75,7 @@ class NSDFData(object):
         self.dtype = dtype
         self.field = name if field is None else field
         self._src_data_dict = {}
+        self._src_list = []  # required to maintain order
 
     def put_data(self, source, data):
         """Set the data array for source. 
@@ -90,6 +91,7 @@ class NSDFData(object):
 
         """
         self._src_data_dict[source] = np.asarray(data, dtype=self.dtype)
+        self._src_list.append(source)
 
     def get_source_data_dict(self):
         """Return a dictionary storing the mapping from source->data."""
@@ -111,15 +113,21 @@ class NSDFData(object):
             >>> data_obj.update_source_data_dict([('KA', ika), ('KDR', ikdr)])
 
         """
-        self._src_data_dict.update(src_data)
+        if isinstance(src_data, dict):
+            self._src_data_dict.update(src_data)
+            self._src_list += src_data.keys()
+        else:
+            for src, data in src_data:
+                self._src_list.append(src)
+                self._src_data_dict[src] = data
 
     def get_sources(self):
         """Return the source ids as a list"""
-        return list(self._src_data_dict.keys())
+        return self._src_list
 
     def get_all_data(self):
         """Return the data for all the sources as a list."""
-        return list(self._src_data_dict.values())
+        return [self._src_data_dict[src] for src in self._src_list]
 
     def get_data(self, source):
         """Return the data for specified source"""
@@ -185,6 +193,7 @@ class NonuniformData(TimeSeriesData):
             'number of data values and sampling times must be the same.'        
         self._src_data_dict[source] = (np.asarray(data[0], dtype=self.dtype),
                                        np.asarray(data[1], dtype=self.ttype))
+        self._src_list.append(source)
 
         
 class NonuniformRegularData(TimeSeriesData):
