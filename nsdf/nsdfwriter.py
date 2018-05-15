@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Apr 25 19:51:42 2014 (+0530)
 # Version: 
-# Last-Updated: Tue May 15 12:25:40 2018 (-0400)
+# Last-Updated: Fri Feb  9 12:12:27 2018 (-0500)
 #           By: Subhasis Ray
-#     Update #: 103
+#     Update #: 101
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -637,8 +637,8 @@ class NSDFWriter(object):
             added.
 
         """
-        # if len(idlist) == 0:
-        #     raise ValueError('idlist must be nonempty')
+        if len(idlist) == 0:
+            raise ValueError('idlist must be nonempty')
         base = None
         try:
             base = self.mapping[UNIFORM]
@@ -788,8 +788,8 @@ class NSDFWriter(object):
             added.
 
         """
-        # if len(idlist) == 0:
-        #     raise ValueError('idlist must be nonempty')
+        if len(idlist) == 0:
+            raise ValueError('idlist must be nonempty')
         base = self.mapping.require_group(STATIC)
         src_ds = base.create_dataset(popname, shape=(len(idlist),),
                                  dtype=VLENSTR, data=idlist)
