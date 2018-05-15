@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Jul 29 12:55:01 2014 (+0530)
 # Version: 
-# Last-Updated: Tue Mar  6 20:00:36 2018 (-0500)
+# Last-Updated: Wed Mar  7 17:15:24 2018 (-0500)
 #           By: Subhasis Ray
-#     Update #: 13
+#     Update #: 19
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -89,8 +89,12 @@ class NSDFData(object):
         Returns:
             None
 
-        NOTE: From NSDF v > 0.1 the data will be maintained in the same order
-        as the put_data calls.
+        NOTE: From NSDF v > 0.1 the data will be maintained in the
+        same order as the put_data calls. However, when writing data,
+        the order in source dimension scale (DS) takes precedence. It
+        makes easier shortcut when you do not want to repeat the
+        source DS list.
+
         """
         self._src_data_dict[source] = np.asarray(data, dtype=self.dtype)
         self._src_list.append(source)
