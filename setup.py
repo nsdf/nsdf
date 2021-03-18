@@ -26,5 +26,5 @@ setup(name="nsdf",
           "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
       ],
       install_requires=[
-          "h5py>=3.0"
+          "h5py>=3.0.0"
       ])
