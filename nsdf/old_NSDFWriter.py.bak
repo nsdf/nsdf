@@ -215,7 +215,7 @@ class NSDFWriter(object):
             source_dim = self.uniform_map.create_dataset(population_name,
                                                          dtype=h5.special_dtype(vlen=str),
                                                          data=[str(src) for src in sourcelist], **kwargs)
-            dataset.dims.create_scale(source_dim, 'source')
+            source_dim.make_scale('source')
             dataset.dims[0].attach_scale(source_dim)
         if times:
             try:
@@ -223,7 +223,7 @@ class NSDFWriter(object):
             except KeyError:
                 time_pop = self.uniform_time_dim.create_group(population_name)
             time_dim = time_pop.create_dataset(dataset_name, data=times, dtype=dtype, **kwargs)
-            dataset.dims.create_scale(time_dim, 'time')
+            time_dim.make_scale('time')
             dataset.dims[1].attach_scale(time_dim)
             if t_unit is not None:
                 time_dim.attrs['UNIT'] = t_unit
@@ -415,7 +415,7 @@ class NSDFWriter(object):
                                                        dtype=dtype, **kwargs)
                     if t_unit:
                         tdim.attrs['UNIT'] = t_unit
-                    variable.dims.create_scale(time_dim, 'time')
+                    time_dim.make_scale('time')
                     variable.attach_scale(time_dim)
                 else:    # variable length dataset
                     variable = population.create_dataset(variable_name,

@@ -123,7 +123,7 @@ def makeNeuroMeshModel():
         smstoich.ksolve = smksolve
         smstoich.dsolve = smdsolve
         smstoich.path = "/model/chem/spine/##"
-        print 'spine num Pools = ', smstoich.numAllPools
+        print('spine num Pools = ', smstoich.numAllPools)
         assert( smstoich.numAllPools == 3 )
         assert( smdsolve.numPools == 3 )
         assert( smdsolve.numAllVoxels == sdc )
@@ -143,8 +143,8 @@ def makeNeuroMeshModel():
         assert( pmdsolve.numPools == 3 )
         assert( pmdsolve.numAllVoxels == pdc )
         foo = moose.element( '/model/chem/psd/Ca' )
-        print 'PSD: numfoo = ', foo.numData
-        print 'PSD: numAllVoxels = ', pmksolve.numAllVoxels
+        print( 'PSD: numfoo = ', foo.numData)
+        print( 'PSD: numAllVoxels = ', pmksolve.numAllVoxels)
 
         # Put in junctions between the diffusion solvers
         nmdsolve.buildNeuroMeshJunctions( smdsolve, pmdsolve )
@@ -205,14 +205,14 @@ def addPlot( objpath, field, plot ):
 		tab = moose.Table( '/graphs/' + plot )
 		obj = moose.element( objpath )
 		if obj.className == 'Neutral':
-			print "addPlot failed: object is a Neutral: ", objpath
+			print( "addPlot failed: object is a Neutral: ", objpath)
 			return moose.element( '/' )
 		else:
 			#print "object was found: ", objpath, obj.className
 			moose.connect( tab, 'requestOut', obj, field )
 			return tab
 	else:
-		print "addPlot failed: object not found: ", objpath
+		print( "addPlot failed: object not found: ", objpath)
 		return moose.element( '/' )
 
 def makeCaPlots():
@@ -338,7 +338,7 @@ def save_NSDF( cPlotDt, ePlotDt, voxel_val_dict, vox_info ): #added by Chaitanya
 		    
 def tie_data_map(d_set, m_set, name, axis=0): #Added by Chaitanya
     d_set.dims[axis].label = name
-    d_set.dims.create_scale(m_set, name)
+    m_set.make_scale(name)
     d_set.dims[axis].attach_scale(m_set)
     m_set.attrs.create('NAME', data='source')
 

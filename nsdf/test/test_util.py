@@ -1,6 +1,4 @@
-from builtins import str
-from builtins import range
-# test_model.py --- 
+# test_model.py ---
 # 
 # Filename: test_model.py
 # Description: 
@@ -8,9 +6,9 @@ from builtins import range
 # Maintainer: 
 # Created: Tue Jul 15 16:30:54 2014 (+0530)
 # Version: 
-# Last-Updated: 
-#           By: 
-#     Update #: 0
+# Last-Updated: Thu Mar 18 15:19:07 2021 (-0400)
+#           By: Subhasis Ray
+#     Update #: 1
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -49,14 +47,18 @@ from builtins import range
 
 import unittest
 
+from nsdf import model
+import util
+
 class TestModel(unittest.TestCase):
     """Test model and modeltree."""
     def setUp(self):
         self.root = model.ModelComponent('root', '1')
 
     def tearDown(self):
-        reset_uid()
-        
+        # reset_uid()
+       pass
+
     def test_add_child(self):
         name = 'test'
         uid = '123'
@@ -80,7 +82,7 @@ class TestModel(unittest.TestCase):
         self.assertRaises(TypeError, self.root.add_child, 'hello')
         
     def test_path(self):
-        self.mdict = create_ob_model_tree()
+        self.mdict = util.create_ob_model_tree()
         for cell in self.mdict['granule_cells']:
             self.assertTrue(cell.path.startswith('/model/Granule/granule_'))
             for name, component in list(cell.children.items()):                
@@ -88,9 +90,9 @@ class TestModel(unittest.TestCase):
                                  '{}/{}'.format(cell.path, name))
 
     def test_id_path_dict(self):
-        self.mdict = create_ob_model_tree()
+        self.mdict = util.create_ob_model_tree()
         id_path_dict = self.mdict['model_tree']
-        for ii in range(1, uid__):
+        for ii in range(1, util.uid__):
             self.assertIn(str(ii), id_path_dict)
 
 class TestCommonPrefix(unittest.TestCase):
@@ -103,7 +105,7 @@ class TestCommonPrefix(unittest.TestCase):
             '/modeltree/model/Mitral/mitral_7/mc_11',
             '/modeltree/model/Mitral/mitral_4']
     def test_common_prefix(self):
-        self.assertEqual(common_prefix(self.paths), '/modeltree/model/Mitral')
+        self.assertEqual(util.common_prefix(self.paths), '/modeltree/model/Mitral')
         
 if __name__ == '__main__':
     unittest.main()

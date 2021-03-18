@@ -21,12 +21,13 @@ def iter_loadtxt(filename, delimiter='\t', skiprows=0, dtype=float):
 
 def tie_data_map(d_set, m_set, name, axis=0):
     d_set.dims[axis].label = name
-    d_set.dims.create_scale(m_set, name)
+    m_set.make_scale(name)
+    # d_set.dims.create_scale(m_set, name)
     d_set.dims[axis].attach_scale(m_set)
     m_set.attrs.create('NAME', data='SOURCE')
 
 def read_analog(full_path, field_name, end_time, all_pops, h):
-    print 'Assumes recording at every 0.1ms'
+    print('Assumes recording at every 0.1ms')
     cell_range = [0,1000,1050,1140,1230,1320,1560,2360,2560,3060,3160,3260,3360,3460,3560]
     pop_names = ['pyrRS23','pyrFRB23','bask23','axax23','LTS23', 
                  'spinste14', 'tuftIB5', 'tuftRS5', 'nontuftRS6', 
@@ -41,7 +42,7 @@ def read_analog(full_path, field_name, end_time, all_pops, h):
                                  shape=(num_cells*cmpts_per_cell,int(end_time*10)), dtype=np.float32)
         for cell_idx in range(cell_range[pop_idx], cell_range[pop_idx+1]): #each cell do
             filename = os.path.join(full_path, str(cell_idx)+'.dat')
-            print cell_idx , ' of population ', pop_names[pop_idx] 
+            print(cell_idx , ' of population ', pop_names[pop_idx])
             #arr = pd.read_csv(filename, sep='\t',names=[field_name], usecols=[4],nrows=cmpts_per_cell*int(end_time*10))
             arr = pd.read_csv(filename, sep='\t',names=[field_name], nrows=cmpts_per_cell*int(end_time*10))
             d_set[duh_*cmpts_per_cell:(duh_+1)*cmpts_per_cell, :] = arr.values.reshape(int(end_time*10), cmpts_per_cell).T
@@ -50,8 +51,8 @@ def read_analog(full_path, field_name, end_time, all_pops, h):
             duh_ += 1
         m_dset = h.create_dataset('/map/uniform/'+ pop_names[pop_idx]+ '/'+field_name+'_names', data=unique_names)
         tie_data_map(d_set, m_dset, 'name', 0) #adding DS attributes
-        print 'Done population : ', pop_idx
-    print 'Done analog reading', filename
+        print('Done population : ', pop_idx)
+    print('Done analog reading', filename)
     return h
 
 def read_digital(filename, fieldname, tmax, all_pops, h):
@@ -77,7 +78,7 @@ def read_digital(filename, fieldname, tmax, all_pops, h):
         jj = '/map/events/'+pop_name+'/'+fieldname+'_names'
         m_dset = h.create_dataset(jj, data=cell_dicts.keys())
         tie_data_map(e_dset, m_dset, 'SOURCE', 0) #adding DS attributes
-    print 'Done', filename
+    print('Done', filename)
     return h
 
 def read_digital_nan(filename, fieldname, tmax, all_pops, h):
@@ -112,7 +113,7 @@ def read_digital_nan(filename, fieldname, tmax, all_pops, h):
         jj = '/map/events/'+pop_name+'/'+fieldname+'_names'
         m_dset = h.create_dataset(jj, data=new_cell_dicts.keys())
         tie_data_map(e_dset, m_dset, 'SOURCE', 0) #adding DS attributes
-    print 'Done', filename
+    print('Done', filename)
     return h
 
 def read_digital_compound(filename, fieldname, tmax, all_pops, h):
@@ -142,7 +143,7 @@ def read_digital_compound(filename, fieldname, tmax, all_pops, h):
             e_mset[idx] = (str(cell_name), ii+'_'+str(cell_name))
         #attach_to_all_under(h, 'events/'+pop_name, e_mset)
             
-    print 'Done', filename
+    print('Done', filename)
     return h
 
 def attach_to_all_under(h, variable_name, mset):
@@ -151,14 +152,14 @@ def attach_to_all_under(h, variable_name, mset):
             for d_set in pop_ii.values():
                 tie_data_map(d_set, mset, 'SOURCE', axis=0)
     except KeyError:
-        print ': Nothing exists under that name, skipping : ', variable_name
+        print( ': Nothing exists under that name, skipping : ', variable_name)
 
 def add_time(h, t_max, t_step):
     #time = np.arange(0, t_max, t_step)
     time = np.linspace(0, t_max, t_max/t_step, endpoint=False)
     dset_time = h.create_dataset('/map/uniform/time', data=time)
     attach_to_all_under(h, 'uniform', dset_time)
-    print 'Attached time DS'
+    print('Attached time DS')
 
 if __name__ == '__main__':
     h = h5py.File('traub_spikes_nan.h5', 'a')
@@ -187,7 +188,7 @@ if __name__ == '__main__':
     #h = read_digital_compound(spike_path, spike_name, t_max, all_pops, h)
     #h = read_digital(spike_path, spike_name, t_max, all_pops, h)
     h = read_digital_nan(spike_path, spike_name, t_max, all_pops, h)
-    print 'Done processing all input spikes'
+    print('Done processing all input spikes')
     
     #processing output spike data
     spike_path = os.path.join(path_folder, 'output.dat')
@@ -195,7 +196,7 @@ if __name__ == '__main__':
     #h = read_digital_compound(spike_path, spike_name, t_max, all_pops, h)
     #h = read_digital(spike_path, spike_name, t_max, all_pops, h)
     h = read_digital_nan(spike_path, spike_name, t_max, all_pops, h)
-    print 'Done processing all output spikes'
+    print('Done processing all output spikes')
 
     #processing log information
     log_file = os.path.join(path_folder, log_filename)

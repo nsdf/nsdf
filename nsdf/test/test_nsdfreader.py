@@ -216,6 +216,7 @@ class TestNSDFReaderOneD(unittest.TestCase):
             np.testing.assert_allclose(var, fvar)
 
     def test_attributes(self):
+        reader = nsdf.NSDFReader(self.filename)
         self.assertEqual(reader.title, self.data_dict['title'])
         self.assertEqual(reader.description, self.data_dict['description'])
         for left, right in it.izip_longest(reader.creator,
