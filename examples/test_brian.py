@@ -42,7 +42,7 @@ i_spikes = len(Mi.spiketimes)
 
 def tie_data_map(d_set, m_set, name, axis=0):
     d_set.dims[axis].label = name
-    d_set.dims.create_scale(m_set, name)
+    m_set.make_scale(name)
     d_set.dims[axis].attach_scale(m_set)
     m_set.attrs.create('NAME', data='source')
 

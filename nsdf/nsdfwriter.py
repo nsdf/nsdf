@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Apr 25 19:51:42 2014 (+0530)
 # Version: 
-# Last-Updated: Tue Feb  6 13:58:38 2018 (-0500)
+# Last-Updated: Thu Mar 18 14:23:53 2021 (-0400)
 #           By: Subhasis Ray
-#     Update #: 98
+#     Update #: 104
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -76,7 +76,7 @@ def match_datasets(hdfds, pydata):
     """Match entries in hdfds with those in pydata. Returns true if the
     two sets are equal. False otherwise.
 
-    """
+    """    
     src_set = set([item for item in hdfds])
     dsrc_set = set(pydata)
     return src_set == dsrc_set
@@ -320,7 +320,7 @@ class NSDFWriter(object):
             creator_list (list of str): list of creators of the file.
 
         """
-        if isinstance(creator_list, basestring):
+        if isinstance(creator_list, str):
             creator_list = [creator_list]
         attr = np.zeros((len(creator_list),), dtype=VLENSTR)
         attr[:] = creator_list
@@ -352,7 +352,7 @@ class NSDFWriter(object):
                 involved in generating the data in the file.
 
         """
-        if isinstance(software_list, basestring):
+        if isinstance(software_list, str):
             software_list = [software_list]        
         attr = np.zeros((len(software_list),), dtype=VLENSTR)
         attr[:] = software_list
@@ -372,7 +372,7 @@ class NSDFWriter(object):
                 to generate the data.
 
         """
-        if isinstance(method_list, basestring):
+        if isinstance(method_list, str):
             method_list = [method_list]
         attr = np.zeros((len(method_list),), dtype=VLENSTR)
         attr[:] = method_list
@@ -467,7 +467,7 @@ class NSDFWriter(object):
                 contributed towards the data stored in the file.
 
         """
-        if isinstance(contributor_list, basestring):
+        if isinstance(contributor_list, str):
             contributor_list = [contributor_list]
         attr = np.zeros((len(contributor_list),), dtype=VLENSTR)
         attr[:] = contributor_list
@@ -641,8 +641,9 @@ class NSDFWriter(object):
             base = self.mapping[UNIFORM]
         except KeyError:
             base = self.mapping.create_group(UNIFORM)
+        src_data = np.array(idlist, dtype=VLENSTR)
         src_ds = base.create_dataset(name, shape=(len(idlist),),
-                                 dtype=VLENSTR, data=idlist)
+                                 dtype=VLENSTR, data=src_data)
         self._link_map_model(src_ds)
         return src_ds
 
@@ -670,8 +671,9 @@ class NSDFWriter(object):
         base = self.mapping.require_group(NONUNIFORM)
         assert self.dialect != dialect.ONED
         assert len(idlist) > 0
+        src_data = np.array(idlist, dtype=VLENSTR)
         src_ds = base.create_dataset(popname, shape=(len(idlist),),
-                                 dtype=VLENSTR, data=idlist)
+                                 dtype=VLENSTR, data=src_data)
         self._link_map_model(src_ds)
         return src_ds
     
@@ -733,8 +735,9 @@ class NSDFWriter(object):
         assert ((self.dialect != dialect.ONED) and
                 (self.dialect != dialect.NUREGULAR)),   \
             'only for VLEN or NANPADDED dialects'
+        src_data = np.array(idlist, dtype=VLENSTR)
         src_ds = base.create_dataset(name, shape=(len(idlist),),
-                                 dtype=VLENSTR, data=idlist)
+                                 data=src_data)
         self._link_map_model(src_ds)
         return src_ds
 
@@ -788,6 +791,7 @@ class NSDFWriter(object):
         if len(idlist) == 0:
             raise ValueError('idlist must be nonempty')
         base = self.mapping.require_group(STATIC)
+        idlist = np.array(idlist, dtype=VLENSTR)
         src_ds = base.create_dataset(popname, shape=(len(idlist),),
                                  dtype=VLENSTR, data=idlist)
         self.modelroot.update_id_path_dict()
@@ -853,7 +857,7 @@ class NSDFWriter(object):
                 data=data,
                 maxshape=(data.shape[0], maxcol),
                 **self.h5args)
-            dataset.dims.create_scale(source_ds, 'source')
+            source_ds.make_scale('source')
             dataset.dims[0].attach_scale(source_ds)
             dataset.dims[0].label = 'source'
             dataset.attrs['tstart'] = tstart
@@ -922,7 +926,7 @@ class NSDFWriter(object):
                 data=data,
                 maxshape=(data.shape[0], maxcol),
                 **self.h5args)
-            dataset.dims.create_scale(source_ds, 'source')
+            source_ds.make_scale('source')
             dataset.dims[0].attach_scale(source_ds)
             dataset.dims[0].label = 'source'
             dataset.attrs['field'] = data_object.field
@@ -934,7 +938,8 @@ class NSDFWriter(object):
                 dtype=np.float64,
                 data=data_object.get_times(),
                 **self.h5args)
-            dataset.dims.create_scale(tscale, 'time')
+            tscale.make_scale('time')
+            # dataset.dims.create_scale(tscale, 'time')
             dataset.dims[1].attach_scale(tscale)
             dataset.dims[1].label = 'time'
             tscale.attrs['unit'] = data_object.tunit
@@ -1055,7 +1060,8 @@ class NSDFWriter(object):
                     data=time,
                     maxshape=(maxcol,),
                     **self.h5args)
-                dset.dims.create_scale(timescale, 'time')
+                # dset.dims.create_scale(timescale, 'time')
+                timescale.make_scale('time')
                 dset.dims[0].label = 'time'
                 dset.dims[0].attach_scale(timescale)
                 timescale.attrs['unit'] = data_object.tunit
@@ -1135,7 +1141,7 @@ class NSDFWriter(object):
                 **self.h5args)
             dataset.attrs['field'] = data_object.field
             dataset.attrs['unit'] = data_object.unit
-            dataset.dims.create_scale(source_ds, 'source')
+            source_ds.make_scale('source')
             dataset.dims[0].attach_scale(source_ds)
             dataset.dims[0].label = 'source'
             # FIXME: VLENFLOAT should be made VLENDOUBLE whenever h5py
@@ -1146,7 +1152,8 @@ class NSDFWriter(object):
                 maxshape=(maxrows,),
                 dtype=VLENFLOAT,
                 **self.h5args)
-            dataset.dims.create_scale(time_ds, 'time')
+            time_ds.make_scale('time')
+            # dataset.dims.create_scale(time_ds, 'time')
             dataset.dims[0].attach_scale(time_ds)
             dataset.dims[0].label = 'time'            
             time_ds.attrs['unit'] = data_object.tunit
@@ -1226,7 +1233,7 @@ class NSDFWriter(object):
                 **self.h5args)
             dataset.attrs['field'] = data_object.field
             dataset.attrs['unit'] = data_object.unit
-            dataset.dims.create_scale(source_ds, 'source')
+            source_ds.make_scale('source')
             dataset.dims[0].attach_scale(source_ds)
             dataset.dims[0].label = 'source'
             time_ds = self.time_dim.create_dataset(
@@ -1236,7 +1243,8 @@ class NSDFWriter(object):
                 dtype=data_object.ttype,
                 fillvalue=np.nan,
                 **self.h5args)
-            dataset.dims.create_scale(time_ds, 'time')
+            time_ds.make_scale('time')
+            # dataset.dims.create_scale(time_ds, 'time')
             dataset.dims[1].attach_scale(time_ds)
             dataset.dims[1].label = 'time'            
             time_ds.attrs['unit'] = data_object.tunit
@@ -1393,7 +1401,7 @@ class NSDFWriter(object):
                 **self.h5args)
             dataset.attrs['field'] = data_object.field
             dataset.attrs['unit'] = data_object.unit
-            dataset.dims.create_scale(source_ds, 'source')
+            source_ds.make_scale('source')
             dataset.dims[0].attach_scale(source_ds)
             dataset.dims[0].label = 'source'            
         for iii, source in enumerate(source_ds):
@@ -1454,7 +1462,7 @@ class NSDFWriter(object):
                 **self.h5args)
             dataset.attrs['field'] = data_object.field
             dataset.attrs['unit'] = data_object.unit
-            dataset.dims.create_scale(source_ds, 'source')
+            source_ds.make_scale('source')
             dataset.dims[0].attach_scale(source_ds)
             dataset.dims[0].label = 'source'            
         for iii, source in enumerate(source_ds):
@@ -1510,7 +1518,7 @@ class NSDFWriter(object):
                 data=data,
                 maxshape=(data.shape[0], maxcol),
                 **self.h5args)
-            dataset.dims.create_scale(source_ds, 'source')
+            source_ds.make_scale('source')
             dataset.dims[0].attach_scale(source_ds)
             dataset.dims[0].label = 'source'                        
             dataset.attrs['field'] = data_object.field

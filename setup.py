@@ -9,9 +9,9 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(name="nsdf",
-      version="0.1",
+      version="0.2",
       author="Subhasis Ray and Chaitanya Chintaluri",
-      author_email="ray dot subhasis at gmail dot com",
+      author_email="ray.subhasis@gmail.com",
       description=("NSDF (Neuroscience Simulation Data Format)"),
       license="GPL 3",
       keywords="neuroscience simulation format data",
@@ -26,6 +26,5 @@ setup(name="nsdf",
           "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
       ],
       install_requires=[
-          "cython",
-          "h5py>=2.3"
+          "h5py>=3.0"
       ])

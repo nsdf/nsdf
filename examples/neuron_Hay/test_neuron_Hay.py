@@ -198,13 +198,13 @@ for name,c_list in i_dict.iteritems():
 #coordinates of EPSP site
 i_clamp_curr = np.interp(time_vals, t_vec, h.isoma)            
 epsp_curr = np.interp(time_vals, t_vec, h.isyn)            
-print 'epsp+dend site:', h.siteVec_a[0], h.siteVec_a[1]
-print 'dend2 site:', h.siteVec_b[0], h.siteVec_b[1]
+print( 'epsp+dend site:', h.siteVec_a[0], h.siteVec_a[1])
+print( 'dend2 site:', h.siteVec_b[0], h.siteVec_b[1])
 sec = h.L5PC.apic[int(h.siteVec_a[0])] #epsp + dend loc
 t_seg = float(sec.nseg)
 seg_num_a = int(t_seg*h.siteVec_a[1])
 seg_num_b = int(t_seg*h.siteVec_b[1])
-print seg_num_a, seg_num_b, int(t_seg)
+print( seg_num_a, seg_num_b, int(t_seg))
 x,y,z,d = retrieve_coordinate(sec)
 factor1 = h.siteVec_a[1]
 factor2 = 1.0 - h.siteVec_a[1]
@@ -235,13 +235,13 @@ v_all = np.vstack((v_soma, v_dend, v_dend2))
 
 def tie_data_map(d_set, m_set, name, axis=0):
     d_set.dims[axis].label = name
-    d_set.dims.create_scale(m_set, name)
+    m_set.make_scale(name)
     d_set.dims[axis].attach_scale(m_set)
     m_set.attrs.create('NAME', data='source')
 
 def tie_data_map_extended(d_set, m_set, name, axis=0):
     d_set.dims[axis].label = name
-    d_set.dims.create_scale(m_set, name)
+    m_set.make_scale(name)
     d_set.dims[axis].attach_scale(m_set)
     m_set.attrs.create('NAME', data='source')
     if axis==0:
