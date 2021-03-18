@@ -10,10 +10,7 @@ format is generic enough that any time series data should fit in. Thus
 the actual application can be much broader than simulations in
 neuroscience.
 
- * NSDF is under development and we welcome feedback and suggestions from
-the community.
-
- * If you use nsdf for your research, please consider citing the article with NSDF specification:
+* If you use nsdf for your research, please consider citing the article with NSDF specification:
  
  Ray, Subhasis, Chaitanya Chintaluri, Upinder S. Bhalla, and Daniel K. Wójcik. 2015. "NSDF: Neuroscience Simulation Data Format." Neuroinformatics, November, 1–21. doi:10.1007/s12021-015-9282-5.
 
@@ -21,9 +18,7 @@ the community.
 Requirements
 ------------
 
-nsdf module works with h5py 2.3.1. Python 2.7 and numpy. The latest
-development version should also work with Python 3, but not fully
-tested yet.
+The latest nsdf module works with h5py 3x, Python 3 and numpy.
 
 To build the documentation you also need sphinx,
 sphinxcontrib-napoleon packages.
@@ -66,8 +61,8 @@ Other Tools
 [dataviz](https://github.com/subhacom/dataviz)
 A GUI utility for viewing HDF5 datasets.
 
-[Moogli](https://aviralg.github.io/Moogli/) Coming Soon.
-A Simulator independent visualization tool for neuronal simulations.
+[Moogli](https://github.com/BhallaLab/moogli) is a sister project of the [MOOSE](https://moose.ncbs.res.in/) neuro-simulator.
+It is a simulator independent visualization tool for neuronal simulations.
 
 Credits
 -------
