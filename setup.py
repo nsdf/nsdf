@@ -9,7 +9,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(name="nsdf",
-      version="0.2",
+      version="0.2-1",
       author="Subhasis Ray and Chaitanya Chintaluri",
       author_email="ray.subhasis@gmail.com",
       description="NSDF is the Neuroscience Simulation Data Format",
