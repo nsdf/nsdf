@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Apr 25 19:51:42 2014 (+0530)
 # Version: 
-# Last-Updated: Tue Apr  9 19:23:11 2024 (+0530)
+# Last-Updated: Tue Apr  9 20:25:29 2024 (+0530)
 #           By: Subhasis Ray
-#     Update #: 110
+#     Update #: 111
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -47,7 +47,6 @@
 """
 Writer for NSDF file format.
 """
-from __future__ import print_function
 
 try:
     from builtins import next
@@ -78,7 +77,9 @@ def match_datasets(hdfds, pydata):
 
     """
     # HDF5 VLEN string are represented as byte objects in h5py
-    strinfo = h5.check_string_dtype(hdfds.dtype)
+    strinfo = None
+    if isinstance(hdfds, h5.Dataset):
+        strinfo = h5.check_string_dtype(hdfds.dtype)
     if strinfo is None:
         src_set = set([item for item in hdfds])
     else:
@@ -841,7 +842,10 @@ class NSDFWriter(object):
         if not match_datasets(source_ds, data_object.get_sources()):
             raise KeyError('members of `source_ds` must match sources in'
                            ' `data`.')
-        ordered_data = [data_object.get_data(src) for src in source_ds]
+        strinfo = h5.check_string_dtype(source_ds.dtype)
+        if strinfo is not None:
+            sources = [src.decode(strinfo.encoding) for src in source_ds]
+        ordered_data = [data_object.get_data(src) for src in sources]
         data = np.vstack(ordered_data)
         try:
             dataset = ugrp[data_object.name]
@@ -1306,25 +1310,32 @@ class NSDFWriter(object):
         assert ((self.dialect == dialect.ONED) or
             self.dialect == dialect.NUREGULAR), \
             'add 1D dataset under event only for dialect=ONED or NUREGULAR'
+        strinfo = h5.check_string_dtype(source_ds['source'].dtype)
+        if strinfo is None:
+            sources = source_ds['source']
+        else:
+            sources = [src.decode(strinfo.encoding) for src in source_ds['source']]
         if source_name_dict is None:
-            names = np.asarray(source_ds['source'], dtype=np.str_)
-            if np.any((np.char.find(names, '/') >= 0) |
-                      (np.char.find(names, '.') >= 0)):
-                names = [str(index) for index in range(len(names))]
-            source_name_dict = dict(zip(source_ds['source'], names))
+            # if names contain invalid chars for HDF5 name, substitute with index
+            if np.any((np.char.find(sources, '/') >= 0) |
+                      (np.char.find(sources, '.') >= 0)):
+                names = [str(index) for index in range(len(sources))]
+            else:
+                names = sources
+            source_name_dict = dict(zip(sources, names))
         assert len(set(source_name_dict.values())) == len(source_ds), \
             'The names in `source_name_dict` must be unique'
         popname = source_ds.name.split('/')[-2]
         ngrp = self.data[EVENT].require_group(popname)
         assert match_datasets(source_name_dict.keys(),
                               data_object.get_sources()),  \
-            'number of sources do not match number of datasets'
+            'sources do not match dataset'
         datagrp = ngrp.require_group(data_object.name)
         datagrp.attrs['source'] = source_ds.ref
         datagrp.attrs['unit'] = data_object.unit
         datagrp.attrs['field'] = data_object.field
         ret = {}
-        for iii, source in enumerate(source_ds['source']):
+        for iii, source in enumerate(sources):
             data = data_object.get_data(source)
             dsetname = source_name_dict[source]
             try:
