@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Apr 25 19:51:42 2014 (+0530)
 # Version: 
-# Last-Updated: Thu Mar 18 14:23:53 2021 (-0400)
+# Last-Updated: Tue Apr  9 16:44:54 2024 (+0530)
 #           By: Subhasis Ray
-#     Update #: 104
+#     Update #: 106
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -245,8 +245,10 @@ class NSDFWriter(object):
                                         hdfgroup=self.modeltree)
         self.h5args = h5args
 
-    def __del__(self):
-        self._fd.close()
+    # Raises error in Python 3.12
+    # Attributes are already removed apparentlu
+    # def __del__(self):
+    #     self._fd.close()
 
     def set_properties(self, properties):
         """Set the file attributes (environments).
