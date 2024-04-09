@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Apr 25 19:51:42 2014 (+0530)
 # Version: 
-# Last-Updated: Tue Apr  9 18:58:38 2024 (+0530)
+# Last-Updated: Tue Apr  9 19:23:11 2024 (+0530)
 #           By: Subhasis Ray
-#     Update #: 107
+#     Update #: 110
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -82,7 +82,7 @@ def match_datasets(hdfds, pydata):
     if strinfo is None:
         src_set = set([item for item in hdfds])
     else:
-        src_set = set([item.encode(strinfo.encoding) for item in hdfds])
+        src_set = set([item.decode(strinfo.encoding) for item in hdfds])
     dsrc_set = set(pydata)
     return src_set == dsrc_set
 
@@ -231,6 +231,7 @@ class NSDFWriter(object):
                   (=True/False).
 
         """
+        self.filename = filename
         self._fd = h5.File(filename, mode)
         self.timestamp = datetime.utcnow()
         self._fd.attrs['created'] = self.timestamp.isoformat()
@@ -1501,12 +1502,19 @@ class NSDFWriter(object):
         
         """
         popname = source_ds.name.rpartition('/')[-1]
+        strinfo = h5.check_string_dtype(source_ds.dtype)
+        # This is to handle  h5py VLEN str presented as bytes
+        # conflicting with python str
+        if strinfo is not None:
+            src_ds_ = [src.decode(strinfo.encoding) for src in source_ds]
+        else:
+            src_ds_ = src_ds
         ugrp = self.data[STATIC].require_group(popname)
         if not match_datasets(source_ds, data_object.get_sources()):
             raise KeyError('members of `source_ds` must match keys of'
                            ' `source_data_dict`.')
         ordered_data = [data_object.get_data( src) for src in    \
-                        source_ds]
+                        src_ds_]
         data = np.vstack(ordered_data)
         try:
             dataset = ugrp[data_object.name]
