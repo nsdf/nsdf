@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Apr 25 19:51:42 2014 (+0530)
 # Version: 
-# Last-Updated: Tue Apr  9 16:44:54 2024 (+0530)
+# Last-Updated: Tue Apr  9 18:58:38 2024 (+0530)
 #           By: Subhasis Ray
-#     Update #: 106
+#     Update #: 107
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -76,8 +76,13 @@ def match_datasets(hdfds, pydata):
     """Match entries in hdfds with those in pydata. Returns true if the
     two sets are equal. False otherwise.
 
-    """    
-    src_set = set([item for item in hdfds])
+    """
+    # HDF5 VLEN string are represented as byte objects in h5py
+    strinfo = h5.check_string_dtype(hdfds.dtype)
+    if strinfo is None:
+        src_set = set([item for item in hdfds])
+    else:
+        src_set = set([item.encode(strinfo.encoding) for item in hdfds])
     dsrc_set = set(pydata)
     return src_set == dsrc_set
 
@@ -793,7 +798,7 @@ class NSDFWriter(object):
         if len(idlist) == 0:
             raise ValueError('idlist must be nonempty')
         base = self.mapping.require_group(STATIC)
-        idlist = np.array(idlist, dtype=VLENSTR)
+        # idlist = np.array(idlist, dtype=VLENSTR)
         src_ds = base.create_dataset(popname, shape=(len(idlist),),
                                  dtype=VLENSTR, data=idlist)
         self.modelroot.update_id_path_dict()
