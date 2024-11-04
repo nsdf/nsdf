@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Mon Jul 21 16:20:00 2014 (+0530)
 # Version: 
-# Last-Updated: 
-#           By: 
-#     Update #: 0
+# Last-Updated: Tue Apr  9 18:56:53 2024 (+0530)
+#           By: Subhasis Ray
+#     Update #: 1
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -52,7 +52,8 @@ import numpy as np
 
 VLENFLOAT = h5.special_dtype(vlen=np.dtype('float32'))
 VLENDOUBLE = h5.special_dtype(vlen=np.dtype('float64'))
-VLENSTR = h5.special_dtype(vlen=str)
+# VLENSTR = h5.special_dtype(vlen=str)  # h5py 2
+VLENSTR = h5.string_dtype(encoding='utf-8')  # newer h5py
 REFTYPE = h5.special_dtype(ref=h5.Reference)
 VLENBYTE = h5.special_dtype(vlen=bytes)
 SRCDATAMAPTYPE = np.dtype([('source', VLENSTR), ('data', REFTYPE)])

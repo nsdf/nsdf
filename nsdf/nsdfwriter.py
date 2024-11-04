@@ -5,15 +5,6 @@
 # Author: Subhasis Ray [email: {lastname} dot {firstname} at gmail dot com]
 # Maintainer: 
 # Created: Fri Apr 25 19:51:42 2014 (+0530)
-# Version: 
-# Last-Updated: Mon Nov  4 20:41:00 2024 (+0530)
-#           By: Subhasis Ray
-#     Update #: 122
-# URL: 
-# Keywords: 
-# Compatibility: 
-# 
-# 
 
 # Commentary: 
 # 
@@ -47,7 +38,6 @@
 """
 Writer for NSDF file format.
 """
-from __future__ import print_function
 
 try:
     from builtins import next
@@ -76,8 +66,15 @@ def match_datasets(hdfds, pydata):
     """Match entries in hdfds with those in pydata. Returns true if the
     two sets are equal. False otherwise.
 
-    """    
-    src_set = set([item for item in hdfds])
+    """
+    # HDF5 VLEN string are represented as byte objects in h5py
+    strinfo = None
+    if isinstance(hdfds, h5.Dataset):
+        strinfo = h5.check_string_dtype(hdfds.dtype)
+    if strinfo is None:
+        src_set = set([item for item in hdfds])
+    else:
+        src_set = set([item.decode(strinfo.encoding) for item in hdfds])
     dsrc_set = set(pydata)
     return src_set == dsrc_set
 
@@ -226,6 +223,7 @@ class NSDFWriter(object):
                   (=True/False).
 
         """
+        self.filename = filename
         self._fd = h5.File(filename, mode)
         self.timestamp = datetime.utcnow()
         self._fd.attrs['created'] = self.timestamp.isoformat()
@@ -797,7 +795,7 @@ class NSDFWriter(object):
         if len(idlist) == 0:
             raise ValueError('idlist must be nonempty')
         base = self.mapping.require_group(STATIC)
-        idlist = np.array(idlist, dtype=VLENSTR)
+        # idlist = np.array(idlist, dtype=VLENSTR)
         src_ds = base.create_dataset(popname, shape=(len(idlist),),
                                  dtype=VLENSTR, data=idlist)
         self.modelroot.update_id_path_dict()
@@ -839,7 +837,10 @@ class NSDFWriter(object):
         if not match_datasets(source_ds, data_object.get_sources()):
             raise KeyError('members of `source_ds` must match sources in'
                            ' `data`.')
-        ordered_data = [data_object.get_data(src) for src in source_ds]
+        strinfo = h5.check_string_dtype(source_ds.dtype)
+        if strinfo is not None:
+            sources = [src.decode(strinfo.encoding) for src in source_ds]
+        ordered_data = [data_object.get_data(src) for src in sources]
         data = np.vstack(ordered_data)
         try:
             dataset = ugrp[data_object.name]
@@ -1304,25 +1305,32 @@ class NSDFWriter(object):
         assert ((self.dialect == dialect.ONED) or
             self.dialect == dialect.NUREGULAR), \
             'add 1D dataset under event only for dialect=ONED or NUREGULAR'
+        strinfo = h5.check_string_dtype(source_ds['source'].dtype)
+        if strinfo is None:
+            sources = source_ds['source']
+        else:
+            sources = [src.decode(strinfo.encoding) for src in source_ds['source']]
         if source_name_dict is None:
-            names = np.asarray(source_ds['source'], dtype=np.str_)
-            if np.any((np.char.find(names, '/') >= 0) |
-                      (np.char.find(names, '.') >= 0)):
-                names = [str(index) for index in range(len(names))]
-            source_name_dict = dict(zip(source_ds['source'], names))
+            # if names contain invalid chars for HDF5 name, substitute with index
+            if np.any((np.char.find(sources, '/') >= 0) |
+                      (np.char.find(sources, '.') >= 0)):
+                names = [str(index) for index in range(len(sources))]
+            else:
+                names = sources
+            source_name_dict = dict(zip(sources, names))
         assert len(set(source_name_dict.values())) == len(source_ds), \
             'The names in `source_name_dict` must be unique'
         popname = source_ds.name.split('/')[-2]
         ngrp = self.data[EVENT].require_group(popname)
         assert match_datasets(source_name_dict.keys(),
                               data_object.get_sources()),  \
-            'number of sources do not match number of datasets'
+            'sources do not match dataset'
         datagrp = ngrp.require_group(data_object.name)
         datagrp.attrs['source'] = source_ds.ref
         datagrp.attrs['unit'] = data_object.unit
         datagrp.attrs['field'] = data_object.field
         ret = {}
-        for iii, source in enumerate(source_ds['source']):
+        for iii, source in enumerate(sources):
             data = data_object.get_data(source)
             dsetname = source_name_dict[source]
             try:
@@ -1500,12 +1508,19 @@ class NSDFWriter(object):
         
         """
         popname = source_ds.name.rpartition('/')[-1]
+        strinfo = h5.check_string_dtype(source_ds.dtype)
+        # This is to handle  h5py VLEN str presented as bytes
+        # conflicting with python str
+        if strinfo is not None:
+            src_ds_ = [src.decode(strinfo.encoding) for src in source_ds]
+        else:
+            src_ds_ = src_ds
         ugrp = self.data[STATIC].require_group(popname)
         if not match_datasets(source_ds, data_object.get_sources()):
             raise KeyError('members of `source_ds` must match keys of'
                            ' `source_data_dict`.')
         ordered_data = [data_object.get_data( src) for src in    \
-                        source_ds]
+                        src_ds_]
         data = np.vstack(ordered_data)
         try:
             dataset = ugrp[data_object.name]
