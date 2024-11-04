@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Fri Apr 25 19:51:42 2014 (+0530)
 # Version: 
-# Last-Updated: Thu Mar 18 14:23:53 2021 (-0400)
+# Last-Updated: Mon Nov  4 20:41:00 2024 (+0530)
 #           By: Subhasis Ray
-#     Update #: 104
+#     Update #: 122
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -245,7 +245,13 @@ class NSDFWriter(object):
                                         hdfgroup=self.modeltree)
         self.h5args = h5args
 
-    def __del__(self):
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, traceback):
+        self._fd.close()
+
+    def close(self):
         self._fd.close()
 
     def set_properties(self, properties):

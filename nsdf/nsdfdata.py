@@ -6,9 +6,9 @@
 # Maintainer: 
 # Created: Tue Jul 29 12:55:01 2014 (+0530)
 # Version: 
-# Last-Updated: 
-#           By: 
-#     Update #: 0
+# Last-Updated: Mon Nov  4 20:11:31 2024 (+0530)
+#           By: Subhasis Ray
+#     Update #: 1
 # URL: 
 # Keywords: 
 # Compatibility: 
@@ -89,7 +89,7 @@ class NSDFData(object):
             None
 
         """
-        self._src_data_dict[source] = np.asarray(data, dtype=self.dtype)
+        self._src_data_dict[source.encode('UTF-8')] = np.asarray(data, dtype=self.dtype)
 
     def get_source_data_dict(self):
         """Return a dictionary storing the mapping from source->data."""
